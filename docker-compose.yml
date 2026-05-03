@@ -1,0 +1,131 @@
+version: "3.9"
+
+networks:
+  oficina_net:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: oficina_postgres
+    restart: unless-stopped
+    networks:
+      - oficina_net
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-oficina}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oficina_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-oficina_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-oficina} -d ${POSTGRES_DB:-oficina_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: { context: ., dockerfile: Dockerfile, target: runner }
+    container_name: oficina_api
+    restart: unless-stopped
+    networks:
+      - oficina_net
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-oficina}:${POSTGRES_PASSWORD:-oficina_pass}@postgres:5432/${POSTGRES_DB:-oficina_db}
+      JWT_SECRET: ${JWT_SECRET:-mude-esta-chave-producao-32chars!!}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sonar_postgres:
+    image: postgres:16-alpine
+    container_name: oficina_sonar_postgres
+    restart: unless-stopped
+    networks:
+      - oficina_net
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonarqube
+    volumes:
+      - sonar_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonarqube"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sonarqube:
+    image: sonarqube:10-community
+    container_name: oficina_sonarqube
+    restart: unless-stopped
+    networks:
+      - oficina_net
+    depends_on:
+      sonar_postgres: { condition: service_healthy }
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar_postgres:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+    ulimits:
+      nofile: { soft: 65536, hard: 65536 }
+    healthcheck:
+      test: ["CMD-SHELL", 'wget -qO- http://localhost:9000/api/system/status | grep -q "UP"']
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  sonar_scanner:
+    image: sonarsource/sonar-scanner-cli:latest
+    container_name: oficina_sonar_scanner
+    networks:
+      - oficina_net
+    depends_on:
+      sonarqube: { condition: service_healthy }
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+    volumes:
+      - .:/usr/src
+      - sonar_scanner_cache:/opt/sonar-scanner/.sonar/cache
+    working_dir: /usr/src
+    command: >
+      sonar-scanner
+        -Dsonar.projectKey=oficina-mvp
+        -Dsonar.projectName="Oficina Mecânica MVP"
+        -Dsonar.projectVersion=1.0.0
+        -Dsonar.sources=src
+        -Dsonar.tests=tests
+        -Dsonar.language=ts
+        -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info
+        -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.test.ts
+        -Dsonar.host.url=http://sonarqube:9000
+    profiles: ["scan"]
+
+volumes:
+  postgres_data: { name: oficina_postgres_data }
+  sonar_postgres_data: { name: oficina_sonar_postgres_data }
+  sonar_data: { name: oficina_sonar_data }
+  sonar_extensions: { name: oficina_sonar_extensions }
+  sonar_logs: { name: oficina_sonar_logs }
+  sonar_scanner_cache: { name: oficina_sonar_scanner_cache }

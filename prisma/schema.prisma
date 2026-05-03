@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id           String   @id @default(uuid())
+  nome         String
+  email        String   @unique
+  senha        String
+  role         Role     @default(FUNCIONARIO)
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  @@map("usuarios")
+}
+
+model Cliente {
+  id           String         @id @default(uuid())
+  nome         String
+  cpfCnpj      String         @unique @map("cpf_cnpj")
+  tipoPessoa   TipoPessoa     @map("tipo_pessoa")
+  email        String?
+  telefone     String?
+  endereco     String?
+  ativo        Boolean        @default(true)
+  criadoEm     DateTime       @default(now()) @map("criado_em")
+  atualizadoEm DateTime       @updatedAt @map("atualizado_em")
+  veiculos     Veiculo[]
+  ordens       OrdemServico[]
+
+  @@map("clientes")
+}
+
+model Veiculo {
+  id           String         @id @default(uuid())
+  placa        String         @unique
+  marca        String
+  modelo       String
+  ano          Int
+  cor          String?
+  clienteId    String         @map("cliente_id")
+  ativo        Boolean        @default(true)
+  criadoEm     DateTime       @default(now()) @map("criado_em")
+  atualizadoEm DateTime       @updatedAt @map("atualizado_em")
+  cliente      Cliente        @relation(fields: [clienteId], references: [id])
+  ordens       OrdemServico[]
+
+  @@map("veiculos")
+}
+
+model Servico {
+  id            String          @id @default(uuid())
+  nome          String
+  descricao     String?
+  preco         Decimal         @db.Decimal(10, 2)
+  tempoPrevisto Int?            @map("tempo_previsto")
+  ativo         Boolean         @default(true)
+  criadoEm      DateTime        @default(now()) @map("criado_em")
+  atualizadoEm  DateTime        @updatedAt @map("atualizado_em")
+  itensOS       ItemServicoOS[]
+
+  @@map("servicos")
+}
+
+model Peca {
+  id           String       @id @default(uuid())
+  nome         String
+  descricao    String?
+  preco        Decimal      @db.Decimal(10, 2)
+  quantidade   Int          @default(0)
+  estoqueMin   Int          @default(0) @map("estoque_min")
+  unidade      String       @default("un")
+  ativo        Boolean      @default(true)
+  criadoEm     DateTime     @default(now()) @map("criado_em")
+  atualizadoEm DateTime     @updatedAt @map("atualizado_em")
+  itensPecaOS  ItemPecaOS[]
+
+  @@map("pecas")
+}
+
+model OrdemServico {
+  id           String          @id @default(uuid())
+  numero       Int             @unique @default(autoincrement())
+  clienteId    String          @map("cliente_id")
+  veiculoId    String          @map("veiculo_id")
+  status       StatusOS        @default(RECEBIDA)
+  descricao    String?
+  observacoes  String?
+  valorTotal   Decimal         @default(0) @map("valor_total") @db.Decimal(10, 2)
+  aprovadoEm   DateTime?       @map("aprovado_em")
+  iniciadoEm   DateTime?       @map("iniciado_em")
+  finalizadoEm DateTime?       @map("finalizado_em")
+  entregueEm   DateTime?       @map("entregue_em")
+  criadoEm     DateTime        @default(now()) @map("criado_em")
+  atualizadoEm DateTime        @updatedAt @map("atualizado_em")
+  cliente      Cliente         @relation(fields: [clienteId], references: [id])
+  veiculo      Veiculo         @relation(fields: [veiculoId], references: [id])
+  servicos     ItemServicoOS[]
+  pecas        ItemPecaOS[]
+  historico    HistoricoOS[]
+
+  @@map("ordens_servico")
+}
+
+model ItemServicoOS {
+  id        String       @id @default(uuid())
+  ordemId   String       @map("ordem_id")
+  servicoId String       @map("servico_id")
+  preco     Decimal      @db.Decimal(10, 2)
+  tempoReal Int?         @map("tempo_real")
+  ordem     OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
+  servico   Servico      @relation(fields: [servicoId], references: [id])
+
+  @@map("itens_servico_os")
+}
+
+model ItemPecaOS {
+  id         String       @id @default(uuid())
+  ordemId    String       @map("ordem_id")
+  pecaId     String       @map("peca_id")
+  quantidade Int
+  preco      Decimal      @db.Decimal(10, 2)
+  ordem      OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
+  peca       Peca         @relation(fields: [pecaId], references: [id])
+
+  @@map("itens_peca_os")
+}
+
+model HistoricoOS {
+  id             String       @id @default(uuid())
+  ordemId        String       @map("ordem_id")
+  statusAnterior StatusOS?    @map("status_anterior")
+  statusNovo     StatusOS     @map("status_novo")
+  observacao     String?
+  criadoEm       DateTime     @default(now()) @map("criado_em")
+  ordem          OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
+
+  @@map("historico_os")
+}
+
+enum Role {
+  ADMIN
+  FUNCIONARIO
+}
+
+enum TipoPessoa {
+  FISICA
+  JURIDICA
+}
+
+enum StatusOS {
+  RECEBIDA
+  EM_DIAGNOSTICO
+  AGUARDANDO_APROVACAO
+  EM_EXECUCAO
+  FINALIZADA
+  ENTREGUE
+  CANCELADA
+}

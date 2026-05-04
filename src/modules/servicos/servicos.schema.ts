@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 
 export const criarServicoSchema = z.object({
   nome: z.string().min(2).max(200),
@@ -26,6 +27,27 @@ export const erroResponseSchema = z.object({
 export const tempoMedioResponseSchema = z.object({
   tempoMedio: z.number().int().nullable(),
   totalExecucoes: z.number().int(),
+});
+
+export const servicoResponseSchema = z.object({
+  id: z.string().uuid(),
+  nome: z.string(),
+  descricao: z.string().nullish(),
+  preco: z.number() as z.ZodType<number | Prisma.Decimal>,
+  tempoPrevisto: z.number().int().nullable(),
+  ativo: z.boolean(),
+  criadoEm: z.date(),
+  atualizadoEm: z.date(),
+});
+
+export const listarServicosResponseSchema = z.object({
+  data: z.array(servicoResponseSchema),
+  meta: z.object({
+    page: z.number().int(),
+    limit: z.number().int(),
+    total: z.number().int(),
+    totalPages: z.number().int(),
+  }),
 });
 
 export type CriarServicoInput = z.infer<typeof criarServicoSchema>;

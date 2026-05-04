@@ -9,6 +9,8 @@ import {
   paramsIdSchema,
   erroResponseSchema,
   tempoMedioResponseSchema,
+  servicoResponseSchema,
+  listarServicosResponseSchema,
 } from "./servicos.schema";
 import { autenticar } from "../../shared/middlewares/auth";
 
@@ -27,6 +29,11 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
         security,
         summary: "Criar serviço",
         body: criarServicoSchema,
+        response: {
+          201: servicoResponseSchema,
+          401: erroResponseSchema,
+          409: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -43,6 +50,7 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
         security,
         summary: "Listar serviços",
         querystring: listarServicosSchema,
+        response: { 200: listarServicosResponseSchema },
       },
     },
     async (req, rep) => {
@@ -59,6 +67,10 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
         security,
         summary: "Buscar serviço por ID",
         params: paramsIdSchema,
+        response: {
+          200: servicoResponseSchema,
+          404: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -96,6 +108,11 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
         summary: "Atualizar serviço",
         params: paramsIdSchema,
         body: atualizarServicoSchema,
+        response: {
+          200: servicoResponseSchema,
+          404: erroResponseSchema,
+          409: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {

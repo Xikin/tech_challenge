@@ -14,6 +14,9 @@ import {
   numeroParamsSchema,
   consultaPublicaQuerySchema,
   erroResponseSchema,
+  osResponseSchema,
+  listarOSResponseSchema,
+  consultaPublicaResponseSchema,
 } from "./ordens.schema";
 import { autenticar } from "../../shared/middlewares/auth";
 
@@ -31,6 +34,11 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         summary: "Consultar status da OS (sem login)",
         description: "Cliente informa número da OS e CPF/CNPJ para acompanhar sem autenticação.",
         querystring: consultaPublicaQuerySchema,
+        response: {
+          200: consultaPublicaResponseSchema,
+          404: erroResponseSchema,
+          400: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -47,6 +55,11 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         security,
         summary: "Criar OS",
         body: criarOSSchema,
+        response: {
+          201: osResponseSchema,
+          404: erroResponseSchema,
+          422: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -63,6 +76,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         security,
         summary: "Listar OS",
         querystring: listarOSSchema,
+        response: { 200: listarOSResponseSchema, 401: erroResponseSchema },
       },
     },
     async (req, rep) => {
@@ -79,6 +93,11 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         security,
         summary: "Buscar OS por número",
         params: numeroParamsSchema,
+        response: {
+          200: osResponseSchema,
+          401: erroResponseSchema,
+          404: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -95,6 +114,11 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         security,
         summary: "Buscar OS por ID",
         params: paramsIdSchema,
+        response: {
+          200: osResponseSchema,
+          401: erroResponseSchema,
+          404: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -112,6 +136,11 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         summary: "Atualizar OS",
         params: paramsIdSchema,
         body: atualizarOSSchema,
+        response: {
+          200: osResponseSchema,
+          404: erroResponseSchema,
+          422: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -130,6 +159,11 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         description: "Permitido apenas para OS Recebida, Em Diagnóstico ou Aguardando Aprovação.",
         params: paramsIdSchema,
         body: adicionarItensSchema,
+        response: {
+          200: osResponseSchema,
+          404: erroResponseSchema,
+          422: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -149,6 +183,11 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
           "Recebida → Em Diagnóstico → Aguardando Aprovação → Em Execução → Finalizada → Entregue",
         params: paramsIdSchema,
         body: avancarStatusSchema,
+        response: {
+          200: osResponseSchema,
+          404: erroResponseSchema,
+          422: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -167,6 +206,11 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         description: "Retorna OS para Em Diagnóstico e devolve as peças ao estoque.",
         params: paramsIdSchema,
         body: reprovarOSSchema,
+        response: {
+          200: osResponseSchema,
+          404: erroResponseSchema,
+          422: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {
@@ -186,6 +230,11 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
           "Cancela a OS e devolve as peças ao estoque. Permitido para: Recebida, Em Diagnóstico, Aguardando Aprovação e Em Execução.",
         params: paramsIdSchema,
         body: cancelarOSSchema,
+        response: {
+          200: osResponseSchema,
+          404: erroResponseSchema,
+          422: erroResponseSchema,
+        },
       },
     },
     async (req, rep) => {

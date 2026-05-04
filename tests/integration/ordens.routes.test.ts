@@ -10,6 +10,8 @@ const CLI_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 const VEI_ID = "b2c3d4e5-f6a7-8901-bcde-f12345678901";
 const OS_ID = "d4e5f6a7-b8c9-0123-defa-234567890123";
 const SRV_ID = "c3d4e5f6-a7b8-9012-cdef-123456789012";
+const ITEM_SRV_ID = "f6a7b8c9-d0e1-2345-fabc-456789012345";
+const HIST_ID = "e5f6a7b8-c9d0-1234-efab-345678901234";
 
 const mockOS = {
   id: OS_ID,
@@ -17,6 +19,8 @@ const mockOS = {
   clienteId: CLI_ID,
   veiculoId: VEI_ID,
   status: "RECEBIDA",
+  descricao: null,
+  observacoes: null,
   valorTotal: 89.9,
   aprovadoEm: null,
   iniciadoEm: null,
@@ -39,16 +43,26 @@ const mockOS = {
   },
   servicos: [
     {
-      id: "i1",
+      id: ITEM_SRV_ID,
       ordemId: OS_ID,
       servicoId: SRV_ID,
       preco: 89.9,
       tempoReal: null,
-      servico: { id: SRV_ID, nome: "Óleo", preco: 89.9 },
+      servico: {
+        id: SRV_ID,
+        nome: "Óleo",
+        descricao: null,
+        preco: 89.9,
+        tempoPrevisto: null,
+        ativo: true,
+        criadoEm: new Date(),
+        atualizadoEm: new Date(),
+      },
     },
   ],
   pecas: [],
-  historico: [{ statusNovo: "RECEBIDA", observacao: "Criada", criadoEm: new Date() }],
+  historico: [{ id: HIST_ID, ordemId: OS_ID, statusAnterior: null, statusNovo: "RECEBIDA", observacao: "Criada", criadoEm: new Date() }],
+  _count: { servicos: 1, pecas: 0 },
 };
 
 beforeAll(async () => {
@@ -238,7 +252,7 @@ describe("Ordens Routes", () => {
 
 describe("PATCH /ordens/:id/cancelar", () => {
   it("200 cancela OS recebida", async () => {
-    const osRecebida = { ...mockOS, status: "RECEBIDA", pecas: [{ pecaId: "p1", quantidade: 2 }] };
+    const osRecebida = { ...mockOS, status: "RECEBIDA" };
     vi.mocked(prisma.ordemServico.findUnique)
       .mockResolvedValueOnce(osRecebida as any)
       .mockResolvedValueOnce({ ...osRecebida, status: "CANCELADA" } as any);

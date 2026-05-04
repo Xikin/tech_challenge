@@ -15,7 +15,7 @@ import { autenticar, exigirRole } from "../../shared/middlewares/auth";
 
 export const authRoutes: FastifyPluginAsync = async (instance) => {
   const fastify = instance.withTypeProvider<ZodTypeProvider>();
-  const service = new AuthService(new AuthRepository(), instance as FastifyInstance);
+  const service = new AuthService(new AuthRepository(), instance);
 
   fastify.post(
     "/login",

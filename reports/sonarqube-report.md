@@ -7,6 +7,12 @@
 
 ---
 
+## Dashboard SonarQube
+
+![SonarQube Quality Gate Dashboard](images/sonarqube-dashboard.png)
+
+---
+
 ## 1. Resumo Executivo
 
 | Métrica                | Valor     | Classificação |

@@ -34,15 +34,15 @@ Sistema Integrado de Atendimento e Execução de Serviços.
 
 ### Por que PostgreSQL?
 
-O domínio da oficina é intrinsecamente relacional: um cliente possui veículos, cada veículo pode ter múltiplas ordens de serviço, e cada OS agrega itens de serviço e itens de peça com preços congelados no momento da inclusão. Esse modelo de dados se encaixa naturalmente em um banco relacional com chaves estrangeiras e integridade referencial garantida em nível de banco — não apenas em aplicação.
+Uma oficina mecânica tem dados que se conectam naturalmente: o cliente tem veículos, cada veículo pode ter várias ordens de serviço, e cada OS reúne serviços e peças com os preços registrados no momento em que foram incluídos. Esse tipo de dado pede um banco relacional — e o PostgreSQL é a escolha mais sólida e confiável para isso.
 
-Além da adequação ao modelo, três características do PostgreSQL foram decisivas para este projeto:
+Três pontos foram decisivos na escolha:
 
-**Transações ACID.** Operações críticas como debitar estoque ao adicionar uma peça ou devolver itens ao cancelar uma OS precisam ser atômicas. Uma falha no meio do processo não pode deixar o estoque inconsistente. O Prisma utiliza transações do PostgreSQL para garantir isso.
+**Operações seguras.** Quando uma peça é adicionada numa OS, o estoque precisa ser descontado ao mesmo tempo. Se algo der errado no meio do caminho, o banco desfaz tudo automaticamente — sem deixar o estoque pela metade. O Prisma usa esse recurso do PostgreSQL para garantir que as coisas aconteçam de forma completa ou não aconteçam.
 
-**Tipo `DECIMAL` para valores monetários.** Preços de peças e serviços são armazenados como `DECIMAL(10,2)`, evitando erros de arredondamento inerentes ao `FLOAT`. Isso é fundamental para que o `valorTotal` de uma OS seja sempre exato.
+**Valores sem erro de arredondamento.** Preços de peças e serviços são guardados num formato numérico preciso (`DECIMAL`), não em ponto flutuante. Isso evita aqueles centavos a mais ou a menos que surgem quando se usa formatos inadequados para dinheiro.
 
-**Sequências para numeração de OS.** O campo `OrdemServico.numero` usa `@default(autoincrement())`, que no PostgreSQL é implementado como uma sequência atômica — garantindo números únicos e sequenciais mesmo sob concorrência, sem necessidade de lock manual.
+**Numeração de OS sem duplicata.** Cada ordem de serviço recebe um número único e em ordem. O PostgreSQL garante isso de forma automática, mesmo que várias OSs sejam abertas ao mesmo tempo.
 
 ---
 

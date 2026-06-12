@@ -11,12 +11,12 @@ import {
 import { ZodError } from "zod";
 import { env } from "./config/env";
 import { AppError } from "./shared/errors";
-import { authRoutes } from "./modules/auth/auth.routes";
-import { clientesRoutes } from "./modules/clientes/clientes.routes";
-import { veiculosRoutes } from "./modules/veiculos/veiculos.routes";
-import { servicosRoutes } from "./modules/servicos/servicos.routes";
-import { pecasRoutes } from "./modules/pecas/pecas.routes";
-import { ordensRoutes } from "./modules/ordens/ordens.routes";
+import { authRoutes } from "./presentation/http/routes/auth.routes";
+import { clientesRoutes } from "./presentation/http/routes/clientes.routes";
+import { veiculosRoutes } from "./presentation/http/routes/veiculos.routes";
+import { servicosRoutes } from "./presentation/http/routes/servicos.routes";
+import { pecasRoutes } from "./presentation/http/routes/pecas.routes";
+import { ordensRoutes } from "./presentation/http/routes/ordens.routes";
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({ logger: env.NODE_ENV !== "test" });

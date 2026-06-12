@@ -30,11 +30,13 @@
     "fastify": "^4.28.1",
     "fastify-plugin": "^4.5.1",
     "fastify-type-provider-zod": "^2.0.0",
+    "nodemailer": "^8.0.9",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.0.0",
+    "@types/nodemailer": "^8.0.0",
     "@vitest/coverage-v8": "^2.1.8",
     "prisma": "^5.22.0",
     "tsx": "^4.19.2",

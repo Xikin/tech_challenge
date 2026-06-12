@@ -9,6 +9,11 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default("8h"),
   BCRYPT_ROUNDS: z.coerce.number().default(12),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default("Oficina Mecânica <noreply@oficina.com>"),
 });
 
 export type Env = z.infer<typeof envSchema>;

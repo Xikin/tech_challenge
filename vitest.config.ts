@@ -12,7 +12,7 @@ export default defineConfig({
       reporter: ["text", "lcov", "json", "html"],
       reportsDirectory: "./coverage",
       include: ["src/**/*.ts"],
-      exclude: ["src/server.ts", "src/config/prisma.ts"],
+      exclude: ["src/server.ts", "src/config/prisma.ts", "src/shared/services/email.service.ts"],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },
   },

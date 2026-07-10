@@ -106,7 +106,7 @@ describe('Ordens Routes', () => {
       vi.mocked(prisma.ordemServico.findFirst).mockResolvedValue(null);
       const res = await app.inject({
         method: 'GET',
-        url: '/ordens/consulta-publica?numero=999&cpfCnpj=0',
+        url: '/ordens/consulta-publica?numero=999&cpfCnpj=11144477735',
       });
       expect(res.statusCode).toBe(404);
     });

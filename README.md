@@ -2,6 +2,17 @@
 
 Sistema Integrado de Atendimento e Execução de Serviços.
 
+## Fase 2 — Escalabilidade, qualidade e automação
+
+A Fase 1 entregou a API funcional (clientes, veículos, ordens de serviço, peças). Esta fase evolui essa base para suportar produção real:
+
+- **Clean Architecture**: código reorganizado em camadas `domain → application → infrastructure → presentation`, com um caso de uso por ação e repositórios acessados só por interface (ver [docs/arquitetura.md](docs/arquitetura.md)).
+- **Testes automatizados**: unitários (use cases com repositórios mockados) e de integração (rotas HTTP com Postgres real) — cobertura atual **89,8%**.
+- **Containerização e orquestração**: Docker/docker-compose para dev local e manifestos Kubernetes (Deployment, Service, ConfigMap, Secret, HPA) para produção.
+- **Infraestrutura como código**: cluster Kubernetes local (Kind) provisionado via Terraform.
+- **CI/CD**: pipeline no GitHub Actions que builda, testa, empacota a imagem Docker e faz deploy automático no cluster a cada push em `main`.
+- **Notificação por e-mail**: cliente recebe e-mail a cada mudança de status da OS e quando o orçamento fica pronto para aprovação.
+
 ---
 
 ## Qualidade e Segurança
@@ -71,11 +82,69 @@ open http://localhost:3000/docs
 
 ---
 
+## Arquitetura e infraestrutura
+
+```
+Cliente HTTP
+     │
+     ▼
+┌──────────────────────────────┐        ┌──────────────────────┐
+│  oficina-api (Fastify)       │◄──────►│  PostgreSQL           │
+│  domain → application →      │        │  (Deployment + PVC)   │
+│  infrastructure/presentation │        └──────────────────────┘
+│  2-10 réplicas via HPA       │
+└──────────────────────────────┘
+     ▲
+     │ imagem publicada em cada push na main
+┌──────────────────────────────┐
+│  CI/CD (GitHub Actions)      │  build → test → docker build/push (GHCR) → deploy
+└──────────────────────────────┘
+     ▲
+     │ provisiona o cluster antes do primeiro deploy
+┌──────────────────────────────┐
+│  Terraform (Kind + K8s)      │  cluster → namespace → secret
+└──────────────────────────────┘
+```
+
+- **Componentes da aplicação**: API Fastify (camadas Clean Architecture, ver [docs/arquitetura.md](docs/arquitetura.md)) + PostgreSQL, ambos rodando como Deployments no namespace `oficina`.
+- **Infraestrutura provisionada**: cluster Kubernetes (Kind) criado pelo Terraform ([docs/terraform.md](docs/terraform.md)); dentro dele, os manifestos em [`/k8s`](k8s) criam namespace, ConfigMap, Secret, PVC do Postgres, Deployments, Services e o HPA ([docs/kubernetes.md](docs/kubernetes.md)).
+- **Fluxo de deploy**: push em `main` → pipeline roda testes → builda e publica a imagem no GHCR → aplica os manifestos K8s com a nova imagem, incluindo o Postgres e o HPA ([docs/cicd.md](docs/cicd.md)).
+
+### Deploy em Kubernetes
+
+```bash
+# 1. Provisiona o cluster local (Kind) com Terraform — ver docs/terraform.md
+cd infra
+cp terraform.tfvars.example terraform.tfvars   # preencha com valores reais
+terraform init
+terraform apply
+
+# 2. Builda a imagem, carrega no cluster Kind e aplica os manifestos — ver docs/kubernetes.md
+cd ..
+docker build -t oficina:local --target runner .
+./scripts/k8s-deploy.sh oficina:local oficina
+```
+
+O Terraform já cria o namespace `oficina` e o Secret `oficina-secret` (a partir do `terraform.tfvars`); o script `k8s-deploy.sh` carrega a imagem no cluster e aplica ConfigMap, Postgres, API e HPA. Em produção (CI/CD), esses mesmos manifestos são aplicados automaticamente pelo job `deploy` do [workflow](.github/workflows/ci-cd.yml) a cada push em `main`, usando a imagem publicada no GHCR em vez de uma imagem local.
+
+---
+
+## Testando a API
+
+Collection completa do Postman (todos os endpoints, incluindo o fluxo de e-mail transacional da OS): [`postman/oficina-mvp.postman_collection.json`](postman/oficina-mvp.postman_collection.json). Importe no Postman e siga as instruções na descrição da collection.
+
+Ou use a documentação interativa (Swagger) em `http://localhost:3000/docs` com a API rodando.
+
+---
+
 ## Documentação
 
 | Documento                                            | Descrição                                                             |
 | ---------------------------------------------------- | --------------------------------------------------------------------- |
 | [Domínio](docs/dominio.md)                           | Linguagem ubíqua, entidades, regras invariantes e ciclo de vida da OS |
-| [Arquitetura](docs/arquitetura.md)                   | Camadas, módulos, endpoints e máquina de estados                      |
+| [Arquitetura](docs/arquitetura.md)                   | Camadas Clean Architecture, módulos, endpoints e máquina de estados   |
 | [Desenvolvimento](docs/desenvolvimento.md)           | Execução local, testes, variáveis de ambiente e comandos úteis        |
+| [Kubernetes](docs/kubernetes.md)                     | Manifestos, recursos do cluster e como aplicá-los                     |
+| [Terraform](docs/terraform.md)                       | Provisionamento do cluster e do Secret via IaC                        |
+| [CI/CD](docs/cicd.md)                                | Pipeline do GitHub Actions — jobs, triggers e segredos necessários    |
 | [Qualidade e Segurança](docs/qualidade-seguranca.md) | SonarQube e OWASP ZAP                                                 |

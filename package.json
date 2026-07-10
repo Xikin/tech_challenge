@@ -17,7 +17,9 @@
     "sonar": "sh scripts/sonar-scan.sh",
     "sonar:up": "docker compose up -d sonar_postgres sonarqube",
     "sonar:scan": "docker compose --profile scan run --rm sonar_scanner",
-    "sonar:down": "docker compose stop sonarqube sonar_postgres"
+    "sonar:down": "docker compose stop sonarqube sonar_postgres",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\" \"prisma/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\" \"prisma/**/*.ts\""
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
@@ -38,6 +40,7 @@
     "@types/node": "^22.0.0",
     "@types/nodemailer": "^8.0.0",
     "@vitest/coverage-v8": "^2.1.8",
+    "prettier": "^3.9.5",
     "prisma": "^5.22.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",

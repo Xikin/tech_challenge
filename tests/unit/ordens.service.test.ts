@@ -1,26 +1,26 @@
-import { describe, it, expect, vi } from "vitest";
-import { BuscarOrdemPorIdUseCase } from "../../src/application/use-cases/ordens/buscar-ordem-por-id.use-case";
-import { AvancarStatusUseCase } from "../../src/application/use-cases/ordens/avancar-status.use-case";
-import { ReprovarOrcamentoUseCase } from "../../src/application/use-cases/ordens/reprovar-orcamento.use-case";
-import { CriarOrdemUseCase } from "../../src/application/use-cases/ordens/criar-ordem.use-case";
-import { AtualizarOrdemUseCase } from "../../src/application/use-cases/ordens/atualizar-ordem.use-case";
-import { ConsultarStatusPublicoUseCase } from "../../src/application/use-cases/ordens/consultar-status-publico.use-case";
-import { CancelarOrdemUseCase } from "../../src/application/use-cases/ordens/cancelar-ordem.use-case";
-import type { IOrdemRepository } from "../../src/domain/repositories/ordens.repository.interface";
-import type { IEmailService } from "../../src/domain/services/email.service.interface";
-import { NotFoundError, BusinessError, StockError } from "../../src/shared/errors";
+import { describe, it, expect, vi } from 'vitest';
+import { BuscarOrdemPorIdUseCase } from '../../src/application/use-cases/ordens/buscar-ordem-por-id.use-case';
+import { AvancarStatusUseCase } from '../../src/application/use-cases/ordens/avancar-status.use-case';
+import { ReprovarOrcamentoUseCase } from '../../src/application/use-cases/ordens/reprovar-orcamento.use-case';
+import { CriarOrdemUseCase } from '../../src/application/use-cases/ordens/criar-ordem.use-case';
+import { AtualizarOrdemUseCase } from '../../src/application/use-cases/ordens/atualizar-ordem.use-case';
+import { ConsultarStatusPublicoUseCase } from '../../src/application/use-cases/ordens/consultar-status-publico.use-case';
+import { CancelarOrdemUseCase } from '../../src/application/use-cases/ordens/cancelar-ordem.use-case';
+import type { IOrdemRepository } from '../../src/domain/repositories/ordens.repository.interface';
+import type { IEmailService } from '../../src/domain/services/email.service.interface';
+import { NotFoundError, BusinessError, StockError } from '../../src/shared/errors';
 
-const OS_ID = "d4e5f6a7-b8c9-0123-defa-234567890123";
-const CLI_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
-const VEI_ID = "b2c3d4e5-f6a7-8901-bcde-f12345678901";
-const SRV_ID = "c3d4e5f6-a7b8-9012-cdef-123456789012";
+const OS_ID = 'd4e5f6a7-b8c9-0123-defa-234567890123';
+const CLI_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+const VEI_ID = 'b2c3d4e5-f6a7-8901-bcde-f12345678901';
+const SRV_ID = 'c3d4e5f6-a7b8-9012-cdef-123456789012';
 
 const mockOS = {
   id: OS_ID,
   numero: 1,
   clienteId: CLI_ID,
   veiculoId: VEI_ID,
-  status: "RECEBIDA",
+  status: 'RECEBIDA',
   valorTotal: 89.9,
   aprovadoEm: null,
   iniciadoEm: null,
@@ -28,12 +28,12 @@ const mockOS = {
   entregueEm: null,
   criadoEm: new Date(),
   atualizadoEm: new Date(),
-  cliente: { id: CLI_ID, nome: "João", cpfCnpj: "11144477735", email: null, telefone: null },
+  cliente: { id: CLI_ID, nome: 'João', cpfCnpj: '11144477735', email: null, telefone: null },
   veiculo: {
     id: VEI_ID,
-    placa: "ABC1234",
-    marca: "Toyota",
-    modelo: "Corolla",
+    placa: 'ABC1234',
+    marca: 'Toyota',
+    modelo: 'Corolla',
     ano: 2020,
     cor: null,
     clienteId: CLI_ID,
@@ -43,12 +43,12 @@ const mockOS = {
   },
   servicos: [
     {
-      id: "i1",
+      id: 'i1',
       ordemId: OS_ID,
       servicoId: SRV_ID,
       preco: 89.9,
       tempoReal: null,
-      servico: { id: SRV_ID, nome: "Óleo", preco: 89.9 },
+      servico: { id: SRV_ID, nome: 'Óleo', preco: 89.9 },
     },
   ],
   pecas: [],
@@ -79,27 +79,27 @@ const makeEmailService = () =>
     enviarAprovacaoSolicitada: vi.fn().mockResolvedValue(undefined),
   }) as unknown as IEmailService;
 
-describe("BuscarOrdemPorIdUseCase", () => {
-  it("retorna OS existente", async () => {
+describe('BuscarOrdemPorIdUseCase', () => {
+  it('retorna OS existente', async () => {
     const repo = makeRepo();
     vi.mocked(repo.buscarPorId).mockResolvedValue(mockOS as any);
     expect((await new BuscarOrdemPorIdUseCase(repo).execute(OS_ID)).id).toBe(OS_ID);
   });
 
-  it("lança NotFoundError", async () => {
+  it('lança NotFoundError', async () => {
     const repo = makeRepo();
     vi.mocked(repo.buscarPorId).mockResolvedValue(null);
     await expect(new BuscarOrdemPorIdUseCase(repo).execute(OS_ID)).rejects.toThrow(NotFoundError);
   });
 });
 
-describe("AvancarStatusUseCase — máquina de estados", () => {
+describe('AvancarStatusUseCase — máquina de estados', () => {
   const fluxo = [
-    ["RECEBIDA", "EM_DIAGNOSTICO"],
-    ["EM_DIAGNOSTICO", "AGUARDANDO_APROVACAO"],
-    ["AGUARDANDO_APROVACAO", "EM_EXECUCAO"],
-    ["EM_EXECUCAO", "FINALIZADA"],
-    ["FINALIZADA", "ENTREGUE"],
+    ['RECEBIDA', 'EM_DIAGNOSTICO'],
+    ['EM_DIAGNOSTICO', 'AGUARDANDO_APROVACAO'],
+    ['AGUARDANDO_APROVACAO', 'EM_EXECUCAO'],
+    ['EM_EXECUCAO', 'FINALIZADA'],
+    ['FINALIZADA', 'ENTREGUE'],
   ];
 
   fluxo.forEach(([de, para]) => {
@@ -117,41 +117,41 @@ describe("AvancarStatusUseCase — máquina de estados", () => {
     });
   });
 
-  it("lança BusinessError em ENTREGUE", async () => {
+  it('lança BusinessError em ENTREGUE', async () => {
     const repo = makeRepo();
     const emailService = makeEmailService();
-    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: "ENTREGUE" } as any);
+    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: 'ENTREGUE' } as any);
     await expect(new AvancarStatusUseCase(repo, emailService).execute(OS_ID, {})).rejects.toThrow(
       BusinessError,
     );
   });
 });
 
-describe("ReprovarOrcamentoUseCase", () => {
-  it("reprova e devolve peças", async () => {
+describe('ReprovarOrcamentoUseCase', () => {
+  it('reprova e devolve peças', async () => {
     const repo = makeRepo();
     const osAg = {
       ...mockOS,
-      status: "AGUARDANDO_APROVACAO",
-      pecas: [{ pecaId: "p1", quantidade: 2 }],
+      status: 'AGUARDANDO_APROVACAO',
+      pecas: [{ pecaId: 'p1', quantidade: 2 }],
     };
     vi.mocked(repo.buscarPorId)
       .mockResolvedValueOnce(osAg as any)
-      .mockResolvedValueOnce({ ...osAg, status: "EM_DIAGNOSTICO" } as any);
+      .mockResolvedValueOnce({ ...osAg, status: 'EM_DIAGNOSTICO' } as any);
     vi.mocked(repo.reprovar).mockResolvedValue(undefined);
-    await new ReprovarOrcamentoUseCase(repo).execute(OS_ID, "Caro");
+    await new ReprovarOrcamentoUseCase(repo).execute(OS_ID, 'Caro');
     expect(repo.reprovar).toHaveBeenCalledWith(expect.objectContaining({ id: OS_ID }));
   });
 
-  it("lança BusinessError se não aguardando", async () => {
+  it('lança BusinessError se não aguardando', async () => {
     const repo = makeRepo();
-    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: "RECEBIDA" } as any);
+    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: 'RECEBIDA' } as any);
     await expect(new ReprovarOrcamentoUseCase(repo).execute(OS_ID)).rejects.toThrow(BusinessError);
   });
 });
 
-describe("CriarOrdemUseCase", () => {
-  it("lança NotFoundError cliente inexistente", async () => {
+describe('CriarOrdemUseCase', () => {
+  it('lança NotFoundError cliente inexistente', async () => {
     const repo = makeRepo();
     vi.mocked(repo.buscarCliente).mockResolvedValue(null);
     await expect(
@@ -164,7 +164,7 @@ describe("CriarOrdemUseCase", () => {
     ).rejects.toThrow(NotFoundError);
   });
 
-  it("lança NotFoundError veículo inexistente", async () => {
+  it('lança NotFoundError veículo inexistente', async () => {
     const repo = makeRepo();
     vi.mocked(repo.buscarCliente).mockResolvedValue({ id: CLI_ID } as any);
     vi.mocked(repo.buscarVeiculo).mockResolvedValue(null);
@@ -178,14 +178,14 @@ describe("CriarOrdemUseCase", () => {
     ).rejects.toThrow(NotFoundError);
   });
 
-  it("lança StockError peça sem estoque", async () => {
+  it('lança StockError peça sem estoque', async () => {
     const repo = makeRepo();
     vi.mocked(repo.buscarCliente).mockResolvedValue({ id: CLI_ID } as any);
     vi.mocked(repo.buscarVeiculo).mockResolvedValue({ id: VEI_ID } as any);
     vi.mocked(repo.buscarServico).mockResolvedValue({ id: SRV_ID, preco: 89.9 } as any);
     vi.mocked(repo.buscarPeca).mockResolvedValue({
-      id: "p1",
-      nome: "Filtro",
+      id: 'p1',
+      nome: 'Filtro',
       preco: 22,
       quantidade: 1,
     } as any);
@@ -194,95 +194,95 @@ describe("CriarOrdemUseCase", () => {
         clienteId: CLI_ID,
         veiculoId: VEI_ID,
         servicos: [{ servicoId: SRV_ID }],
-        pecas: [{ pecaId: "p1", quantidade: 5 }],
+        pecas: [{ pecaId: 'p1', quantidade: 5 }],
       }),
     ).rejects.toThrow(StockError);
   });
 });
 
-describe("AtualizarOrdemUseCase", () => {
-  it("lança BusinessError OS finalizada", async () => {
+describe('AtualizarOrdemUseCase', () => {
+  it('lança BusinessError OS finalizada', async () => {
     const repo = makeRepo();
-    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: "FINALIZADA" } as any);
+    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: 'FINALIZADA' } as any);
     await expect(
-      new AtualizarOrdemUseCase(repo).execute(OS_ID, { descricao: "X" }),
+      new AtualizarOrdemUseCase(repo).execute(OS_ID, { descricao: 'X' }),
     ).rejects.toThrow(BusinessError);
   });
 });
 
-describe("ConsultarStatusPublicoUseCase", () => {
-  it("retorna statusLabel", async () => {
+describe('ConsultarStatusPublicoUseCase', () => {
+  it('retorna statusLabel', async () => {
     const repo = makeRepo();
     vi.mocked(repo.buscarStatusPublico).mockResolvedValue({
       ...mockOS,
-      status: "RECEBIDA",
+      status: 'RECEBIDA',
       servicos: [],
       historico: [],
-      veiculo: { placa: "ABC1234", marca: "Toyota", modelo: "Corolla" },
+      veiculo: { placa: 'ABC1234', marca: 'Toyota', modelo: 'Corolla' },
     } as any);
-    const result = await new ConsultarStatusPublicoUseCase(repo).execute(1, "11144477735");
-    expect(result.statusLabel).toBe("Recebida");
+    const result = await new ConsultarStatusPublicoUseCase(repo).execute(1, '11144477735');
+    expect(result.statusLabel).toBe('Recebida');
   });
 
-  it("lança NotFoundError", async () => {
+  it('lança NotFoundError', async () => {
     const repo = makeRepo();
     vi.mocked(repo.buscarStatusPublico).mockResolvedValue(null);
-    await expect(
-      new ConsultarStatusPublicoUseCase(repo).execute(999, "0"),
-    ).rejects.toThrow(NotFoundError);
+    await expect(new ConsultarStatusPublicoUseCase(repo).execute(999, '0')).rejects.toThrow(
+      NotFoundError,
+    );
   });
 });
 
-describe("CancelarOrdemUseCase", () => {
-  it("cancela OS recebida e devolve peças", async () => {
+describe('CancelarOrdemUseCase', () => {
+  it('cancela OS recebida e devolve peças', async () => {
     const repo = makeRepo();
-    const osComPecas = { ...mockOS, status: "RECEBIDA", pecas: [{ pecaId: "p1", quantidade: 2 }] };
+    const osComPecas = { ...mockOS, status: 'RECEBIDA', pecas: [{ pecaId: 'p1', quantidade: 2 }] };
     vi.mocked(repo.buscarPorId)
       .mockResolvedValueOnce(osComPecas as any)
-      .mockResolvedValueOnce({ ...osComPecas, status: "CANCELADA" } as any);
+      .mockResolvedValueOnce({ ...osComPecas, status: 'CANCELADA' } as any);
     vi.mocked(repo.cancelar).mockResolvedValue(undefined);
 
-    const result = await new CancelarOrdemUseCase(repo).execute(OS_ID, "Cliente desistiu");
+    const result = await new CancelarOrdemUseCase(repo).execute(OS_ID, 'Cliente desistiu');
 
     expect(repo.cancelar).toHaveBeenCalledWith(
       expect.objectContaining({
         id: OS_ID,
-        statusAnterior: "RECEBIDA",
-        motivo: "Cliente desistiu",
-        pecas: [{ pecaId: "p1", quantidade: 2 }],
+        statusAnterior: 'RECEBIDA',
+        motivo: 'Cliente desistiu',
+        pecas: [{ pecaId: 'p1', quantidade: 2 }],
       }),
     );
-    expect((result as any).status).toBe("CANCELADA");
+    expect((result as any).status).toBe('CANCELADA');
   });
 
-  it("cancela OS em execução", async () => {
+  it('cancela OS em execução', async () => {
     const repo = makeRepo();
-    const osExecucao = { ...mockOS, status: "EM_EXECUCAO", pecas: [] };
+    const osExecucao = { ...mockOS, status: 'EM_EXECUCAO', pecas: [] };
     vi.mocked(repo.buscarPorId)
       .mockResolvedValueOnce(osExecucao as any)
-      .mockResolvedValueOnce({ ...osExecucao, status: "CANCELADA" } as any);
+      .mockResolvedValueOnce({ ...osExecucao, status: 'CANCELADA' } as any);
     vi.mocked(repo.cancelar).mockResolvedValue(undefined);
 
     const result = await new CancelarOrdemUseCase(repo).execute(OS_ID);
     expect(repo.cancelar).toHaveBeenCalled();
-    expect((result as any).status).toBe("CANCELADA");
+    expect((result as any).status).toBe('CANCELADA');
   });
 
-  it("lança BusinessError ao cancelar OS finalizada", async () => {
+  it('lança BusinessError ao cancelar OS finalizada', async () => {
     const repo = makeRepo();
-    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: "FINALIZADA" } as any);
+    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: 'FINALIZADA' } as any);
     await expect(new CancelarOrdemUseCase(repo).execute(OS_ID)).rejects.toThrow(BusinessError);
   });
 
-  it("lança BusinessError ao cancelar OS entregue", async () => {
+  it('lança BusinessError ao cancelar OS entregue', async () => {
     const repo = makeRepo();
-    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: "ENTREGUE" } as any);
+    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: 'ENTREGUE' } as any);
     await expect(new CancelarOrdemUseCase(repo).execute(OS_ID)).rejects.toThrow(BusinessError);
   });
 
-  it("lança BusinessError ao cancelar OS já cancelada", async () => {
+  it('lança BusinessError ao cancelar OS já cancelada', async () => {
     const repo = makeRepo();
-    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: "CANCELADA" } as any);
+    vi.mocked(repo.buscarPorId).mockResolvedValue({ ...mockOS, status: 'CANCELADA' } as any);
     await expect(new CancelarOrdemUseCase(repo).execute(OS_ID)).rejects.toThrow(BusinessError);
   });
 });

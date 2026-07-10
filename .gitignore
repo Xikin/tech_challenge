@@ -3,3 +3,24 @@ dist/
 .env
 coverage/
 *.log
+
+# Terraform
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+infra/terraform.tfstate.*.backup
+infra/terraform.tfvars
+
+# Kubeconfig gerado pelo provider kind (contém client cert/key do cluster local)
+infra/*-config
+
+# Kubernetes secrets gerados localmente (nunca commitar)
+k8s/secret.yaml
+
+# act (testes locais do GitHub Actions)
+.secrets
+
+# Runner self-hosted do GitHub Actions (contém .credentials, .credentials_rsaparams
+# e .env com KUBECONFIG — nunca commitar; também inclui o binário pesado do runner)
+actions-runner/

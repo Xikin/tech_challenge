@@ -13,7 +13,7 @@ services:
       - oficina_net
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-oficina}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oficina_pass}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-oficina_db}
     ports:
       - "5432:5432"
@@ -37,8 +37,8 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOST: 0.0.0.0
-      DATABASE_URL: postgresql://${POSTGRES_USER:-oficina}:${POSTGRES_PASSWORD:-oficina_pass}@postgres:5432/${POSTGRES_DB:-oficina_db}
-      JWT_SECRET: ${JWT_SECRET:-mude-esta-chave-producao-32chars!!}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-oficina}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-oficina_db}
+      JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
       SMTP_HOST: ${SMTP_HOST:-}
@@ -61,13 +61,13 @@ services:
     networks:
       - oficina_net
     environment:
-      POSTGRES_USER: sonar
-      POSTGRES_PASSWORD: sonar
-      POSTGRES_DB: sonarqube
+      POSTGRES_USER: ${SONAR_DB_USER:-sonar}
+      POSTGRES_PASSWORD: ${SONAR_DB_PASSWORD}
+      POSTGRES_DB: ${SONAR_DB_NAME:-sonarqube}
     volumes:
       - sonar_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sonar -d sonarqube"]
+      test: ["CMD-SHELL", "pg_isready -U ${SONAR_DB_USER:-sonar} -d ${SONAR_DB_NAME:-sonarqube}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -81,9 +81,9 @@ services:
     depends_on:
       sonar_postgres: { condition: service_healthy }
     environment:
-      SONAR_JDBC_URL: jdbc:postgresql://sonar_postgres:5432/sonarqube
-      SONAR_JDBC_USERNAME: sonar
-      SONAR_JDBC_PASSWORD: sonar
+      SONAR_JDBC_URL: jdbc:postgresql://sonar_postgres:5432/${SONAR_DB_NAME:-sonarqube}
+      SONAR_JDBC_USERNAME: ${SONAR_DB_USER:-sonar}
+      SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD}
       SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
     ports:
       - "9000:9000"

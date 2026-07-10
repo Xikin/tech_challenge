@@ -1,4 +1,4 @@
-import type { TipoPessoa } from "@prisma/client";
+import type { TipoPessoa } from '../enums/tipo-pessoa.enum';
 
 export interface ClienteRecord {
   id: string;
@@ -36,9 +36,11 @@ export interface AtualizarClienteData {
 
 export interface IClienteRepository {
   criar(data: CriarClienteData): Promise<ClienteRecord>;
-  buscarPorId(id: string): Promise<ClienteRecord & Record<string, unknown> | null>;
+  buscarPorId(id: string): Promise<(ClienteRecord & Record<string, unknown>) | null>;
   buscarPorCpfCnpj(cpfCnpj: string): Promise<ClienteRecord | null>;
-  listar(params: ListarClientesParams): Promise<{ data: (ClienteRecord & Record<string, unknown>)[]; total: number }>;
+  listar(
+    params: ListarClientesParams,
+  ): Promise<{ data: (ClienteRecord & Record<string, unknown>)[]; total: number }>;
   atualizar(id: string, data: AtualizarClienteData): Promise<ClienteRecord>;
   remover(id: string): Promise<ClienteRecord>;
 }

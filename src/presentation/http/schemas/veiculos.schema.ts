@@ -1,9 +1,9 @@
-import { z } from "zod";
-import { validarPlaca, limparPlaca } from "../../../shared/utils/validators";
+import { z } from 'zod';
+import { validarPlaca, limparPlaca } from '../../../shared/utils/validators';
 
 export const criarVeiculoSchema = z.object({
   clienteId: z.string().uuid(),
-  placa: z.string().transform(limparPlaca).refine(validarPlaca, { message: "Placa inválida" }),
+  placa: z.string().transform(limparPlaca).refine(validarPlaca, { message: 'Placa inválida' }),
   marca: z.string().min(1).max(100),
   modelo: z.string().min(1).max(100),
   ano: z

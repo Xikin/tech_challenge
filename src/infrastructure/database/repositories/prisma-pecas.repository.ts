@@ -1,5 +1,5 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "../../../config/prisma";
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../../config/prisma';
 import type {
   IPecaRepository,
   PecaRecord,
@@ -7,12 +7,12 @@ import type {
   CriarPecaData,
   AtualizarPecaData,
   ListarPecasParams,
-} from "../../../domain/repositories/pecas.repository.interface";
+} from '../../../domain/repositories/pecas.repository.interface';
 
 type PrismaRawPeca = { preco: { toNumber(): number } | number } & Record<string, unknown>;
 
-function mapPeca<T extends PrismaRawPeca>(peca: T): Omit<T, "preco"> & { preco: number } {
-  const preco = typeof peca.preco === "number" ? peca.preco : peca.preco.toNumber();
+function mapPeca<T extends PrismaRawPeca>(peca: T): Omit<T, 'preco'> & { preco: number } {
+  const preco = typeof peca.preco === 'number' ? peca.preco : peca.preco.toNumber();
   return { ...peca, preco };
 }
 
@@ -29,7 +29,7 @@ export class PrismaPecaRepository implements IPecaRepository {
   async buscarPorNome(nome: string, excludeId?: string): Promise<PecaRecord | null> {
     const peca = await prisma.peca.findFirst({
       where: {
-        nome: { equals: nome, mode: "insensitive" },
+        nome: { equals: nome, mode: 'insensitive' },
         ativo: true,
         ...(excludeId && { NOT: { id: excludeId } }),
       },
@@ -44,13 +44,13 @@ export class PrismaPecaRepository implements IPecaRepository {
       ativo: true,
       ...(busca && {
         OR: [
-          { nome: { contains: busca, mode: "insensitive" } },
-          { descricao: { contains: busca, mode: "insensitive" } },
+          { nome: { contains: busca, mode: 'insensitive' } },
+          { descricao: { contains: busca, mode: 'insensitive' } },
         ],
       }),
     };
     const [pecas, total] = await Promise.all([
-      prisma.peca.findMany({ where, skip, take: limit, orderBy: { nome: "asc" } }),
+      prisma.peca.findMany({ where, skip, take: limit, orderBy: { nome: 'asc' } }),
       prisma.peca.count({ where }),
     ]);
     return { data: pecas.map((p) => mapPeca(p) as PecaRecord), total };
@@ -74,6 +74,8 @@ export class PrismaPecaRepository implements IPecaRepository {
   }
 
   async remover(id: string): Promise<PecaRecord> {
-    return mapPeca(await prisma.peca.update({ where: { id }, data: { ativo: false } })) as PecaRecord;
+    return mapPeca(
+      await prisma.peca.update({ where: { id }, data: { ativo: false } }),
+    ) as PecaRecord;
   }
 }

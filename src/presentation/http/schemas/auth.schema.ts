@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -11,10 +11,10 @@ export const criarUsuarioSchema = z.object({
   senha: z
     .string()
     .min(8)
-    .regex(/[A-Z]/, "Deve ter ao menos uma letra maiúscula")
-    .regex(/[0-9]/, "Deve ter ao menos um número")
-    .regex(/[@$!%*?&]/, "Deve ter ao menos um caractere especial"),
-  role: z.enum(["ADMIN", "FUNCIONARIO"]).default("FUNCIONARIO"),
+    .regex(/[A-Z]/, 'Deve ter ao menos uma letra maiúscula')
+    .regex(/[0-9]/, 'Deve ter ao menos um número')
+    .regex(/[@$!%*?&]/, 'Deve ter ao menos um caractere especial'),
+  role: z.enum(['ADMIN', 'FUNCIONARIO']).default('FUNCIONARIO'),
 });
 
 export const loginResponseSchema = z.object({
@@ -23,7 +23,7 @@ export const loginResponseSchema = z.object({
     id: z.string().uuid(),
     nome: z.string(),
     email: z.string(),
-    role: z.enum(["ADMIN", "FUNCIONARIO"]),
+    role: z.enum(['ADMIN', 'FUNCIONARIO']),
   }),
 });
 
@@ -40,7 +40,7 @@ export const listarUsuariosResponseSchema = z.array(
     id: z.string().uuid(),
     nome: z.string(),
     email: z.string(),
-    role: z.enum(["ADMIN", "FUNCIONARIO"]),
+    role: z.enum(['ADMIN', 'FUNCIONARIO']),
     ativo: z.boolean(),
     criadoEm: z.date(),
   }),

@@ -1,4 +1,4 @@
-import type { IAuthRepository } from "../../../domain/repositories/auth.repository.interface";
+import type { IAuthRepository } from '../../../domain/repositories/auth.repository.interface';
 
 export class ListarUsuariosUseCase {
   constructor(private readonly authRepo: IAuthRepository) {}

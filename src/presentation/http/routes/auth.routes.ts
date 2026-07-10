@@ -1,10 +1,10 @@
-import type { FastifyPluginAsync } from "fastify";
-import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { PrismaAuthRepository } from "../../../infrastructure/database/repositories/prisma-auth.repository";
-import { FastifyTokenService } from "../../../infrastructure/services/fastify-token.service";
-import { LoginUseCase } from "../../../application/use-cases/auth/login.use-case";
-import { CriarUsuarioUseCase } from "../../../application/use-cases/auth/criar-usuario.use-case";
-import { ListarUsuariosUseCase } from "../../../application/use-cases/auth/listar-usuarios.use-case";
+import type { FastifyPluginAsync } from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { PrismaAuthRepository } from '../../../infrastructure/database/repositories/prisma-auth.repository';
+import { FastifyTokenService } from '../../../infrastructure/services/fastify-token.service';
+import { LoginUseCase } from '../../../application/use-cases/auth/login.use-case';
+import { CriarUsuarioUseCase } from '../../../application/use-cases/auth/criar-usuario.use-case';
+import { ListarUsuariosUseCase } from '../../../application/use-cases/auth/listar-usuarios.use-case';
 import {
   loginSchema,
   criarUsuarioSchema,
@@ -13,8 +13,8 @@ import {
   listarUsuariosResponseSchema,
   meResponseSchema,
   errorResponseSchema,
-} from "../schemas/auth.schema";
-import { autenticar, exigirRole } from "../middlewares/auth.middleware";
+} from '../schemas/auth.schema';
+import { autenticar, exigirRole } from '../middlewares/auth.middleware';
 
 export const authRoutes: FastifyPluginAsync = async (instance) => {
   const fastify = instance.withTypeProvider<ZodTypeProvider>();
@@ -26,11 +26,11 @@ export const authRoutes: FastifyPluginAsync = async (instance) => {
   const listarUsuarios = new ListarUsuariosUseCase(repo);
 
   fastify.post(
-    "/login",
+    '/login',
     {
       schema: {
-        tags: ["Autenticação"],
-        summary: "Login",
+        tags: ['Autenticação'],
+        summary: 'Login',
         body: loginSchema,
         response: { 200: loginResponseSchema, 401: errorResponseSchema },
       },
@@ -39,12 +39,12 @@ export const authRoutes: FastifyPluginAsync = async (instance) => {
   );
 
   fastify.post(
-    "/usuarios",
+    '/usuarios',
     {
-      onRequest: [exigirRole("ADMIN")],
+      onRequest: [exigirRole('ADMIN')],
       schema: {
-        tags: ["Autenticação"],
-        summary: "Criar usuário (Admin)",
+        tags: ['Autenticação'],
+        summary: 'Criar usuário (Admin)',
         security: [{ bearerAuth: [] }],
         body: criarUsuarioSchema,
         response: { 201: usuarioResponseSchema },
@@ -54,12 +54,12 @@ export const authRoutes: FastifyPluginAsync = async (instance) => {
   );
 
   fastify.get(
-    "/usuarios",
+    '/usuarios',
     {
-      onRequest: [exigirRole("ADMIN")],
+      onRequest: [exigirRole('ADMIN')],
       schema: {
-        tags: ["Autenticação"],
-        summary: "Listar usuários (Admin)",
+        tags: ['Autenticação'],
+        summary: 'Listar usuários (Admin)',
         security: [{ bearerAuth: [] }],
         response: { 200: listarUsuariosResponseSchema },
       },
@@ -68,12 +68,12 @@ export const authRoutes: FastifyPluginAsync = async (instance) => {
   );
 
   fastify.get(
-    "/me",
+    '/me',
     {
       onRequest: [autenticar],
       schema: {
-        tags: ["Autenticação"],
-        summary: "Dados do usuário logado",
+        tags: ['Autenticação'],
+        summary: 'Dados do usuário logado',
         security: [{ bearerAuth: [] }],
         response: { 200: meResponseSchema },
       },

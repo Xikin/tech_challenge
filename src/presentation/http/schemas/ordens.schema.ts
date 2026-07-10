@@ -1,5 +1,14 @@
-import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { z } from 'zod';
+import type { DecimalLike } from '../../../domain/types/decimal-like';
+import { validarCPF, validarCNPJ, limparDocumento } from '../../../shared/utils/validators';
+
+const cpfCnpjSchema = z
+  .string()
+  .transform(limparDocumento)
+  .refine(
+    (doc) => (doc.length === 11 ? validarCPF(doc) : doc.length === 14 ? validarCNPJ(doc) : false),
+    { message: 'CPF ou CNPJ inválido' },
+  );
 
 export const criarOSSchema = z.object({
   clienteId: z.string().uuid(),
@@ -47,13 +56,13 @@ export const listarOSSchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
   status: z
     .enum([
-      "RECEBIDA",
-      "EM_DIAGNOSTICO",
-      "AGUARDANDO_APROVACAO",
-      "EM_EXECUCAO",
-      "FINALIZADA",
-      "ENTREGUE",
-      "CANCELADA",
+      'RECEBIDA',
+      'EM_DIAGNOSTICO',
+      'AGUARDANDO_APROVACAO',
+      'EM_EXECUCAO',
+      'FINALIZADA',
+      'ENTREGUE',
+      'CANCELADA',
     ])
     .optional(),
   clienteId: z.string().uuid().optional(),
@@ -67,7 +76,7 @@ export const numeroParamsSchema = z.object({ numero: z.coerce.number().int() });
 
 export const consultaPublicaQuerySchema = z.object({
   numero: z.coerce.number().int().positive(),
-  cpfCnpj: z.string(),
+  cpfCnpj: cpfCnpjSchema,
 });
 
 export const erroResponseSchema = z.object({
@@ -89,13 +98,13 @@ const itemServicoOSSchema = z.object({
   id: z.string().uuid(),
   ordemId: z.string().uuid(),
   servicoId: z.string().uuid(),
-  preco: z.number() as z.ZodType<number | Prisma.Decimal>,
+  preco: z.number() as z.ZodType<number | DecimalLike>,
   tempoReal: z.number().int().nullable(),
   servico: z.object({
     id: z.string().uuid(),
     nome: z.string(),
     descricao: z.string().nullish(),
-    preco: z.number() as z.ZodType<number | Prisma.Decimal>,
+    preco: z.number() as z.ZodType<number | DecimalLike>,
     tempoPrevisto: z.number().int().nullable(),
     ativo: z.boolean(),
     criadoEm: z.date(),
@@ -108,12 +117,12 @@ const itemPecaOSSchema = z.object({
   ordemId: z.string().uuid(),
   pecaId: z.string().uuid(),
   quantidade: z.number().int(),
-  preco: z.number() as z.ZodType<number | Prisma.Decimal>,
+  preco: z.number() as z.ZodType<number | DecimalLike>,
   peca: z.object({
     id: z.string().uuid(),
     nome: z.string(),
     descricao: z.string().nullish(),
-    preco: z.number() as z.ZodType<number | Prisma.Decimal>,
+    preco: z.number() as z.ZodType<number | DecimalLike>,
     quantidade: z.number().int(),
     estoqueMin: z.number().int(),
     unidade: z.string(),
@@ -131,7 +140,7 @@ export const osResponseSchema = z.object({
   status: z.string(),
   descricao: z.string().nullable(),
   observacoes: z.string().nullable(),
-  valorTotal: z.number() as z.ZodType<number | Prisma.Decimal>,
+  valorTotal: z.number() as z.ZodType<number | DecimalLike>,
   aprovadoEm: z.date().nullable(),
   iniciadoEm: z.date().nullable(),
   finalizadoEm: z.date().nullable(),
@@ -170,7 +179,7 @@ const osListItemSchema = z.object({
   status: z.string(),
   descricao: z.string().nullable(),
   observacoes: z.string().nullable(),
-  valorTotal: z.number() as z.ZodType<number | Prisma.Decimal>,
+  valorTotal: z.number() as z.ZodType<number | DecimalLike>,
   aprovadoEm: z.date().nullable(),
   iniciadoEm: z.date().nullable(),
   finalizadoEm: z.date().nullable(),
@@ -178,7 +187,12 @@ const osListItemSchema = z.object({
   criadoEm: z.date(),
   atualizadoEm: z.date(),
   cliente: z.object({ id: z.string().uuid(), nome: z.string(), cpfCnpj: z.string() }),
-  veiculo: z.object({ id: z.string().uuid(), placa: z.string(), marca: z.string(), modelo: z.string() }),
+  veiculo: z.object({
+    id: z.string().uuid(),
+    placa: z.string(),
+    marca: z.string(),
+    modelo: z.string(),
+  }),
   _count: z.object({ servicos: z.number().int(), pecas: z.number().int() }),
 });
 
@@ -197,14 +211,19 @@ export const consultaPublicaResponseSchema = z.object({
   numero: z.number().int(),
   status: z.string(),
   statusLabel: z.string(),
-  valorTotal: z.number() as z.ZodType<number | Prisma.Decimal>,
+  valorTotal: z.number() as z.ZodType<number | DecimalLike>,
   criadoEm: z.date(),
   aprovadoEm: z.date().nullable(),
   iniciadoEm: z.date().nullable(),
   finalizadoEm: z.date().nullable(),
   entregueEm: z.date().nullable(),
   veiculo: z.object({ placa: z.string(), marca: z.string(), modelo: z.string() }),
-  servicos: z.array(z.object({ servico: z.object({ nome: z.string() }), preco: z.number() as z.ZodType<number | Prisma.Decimal> })),
+  servicos: z.array(
+    z.object({
+      servico: z.object({ nome: z.string() }),
+      preco: z.number() as z.ZodType<number | DecimalLike>,
+    }),
+  ),
   historico: z.array(
     z.object({ statusNovo: z.string(), observacao: z.string().nullable(), criadoEm: z.date() }),
   ),

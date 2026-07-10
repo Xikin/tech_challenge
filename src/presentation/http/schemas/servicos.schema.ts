@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { z } from 'zod';
+import type { DecimalLike } from '../../../domain/types/decimal-like';
 
 export const criarServicoSchema = z.object({
   nome: z.string().min(2).max(200),
@@ -33,7 +33,7 @@ export const servicoResponseSchema = z.object({
   id: z.string().uuid(),
   nome: z.string(),
   descricao: z.string().nullish(),
-  preco: z.number() as z.ZodType<number | Prisma.Decimal>,
+  preco: z.number() as z.ZodType<number | DecimalLike>,
   tempoPrevisto: z.number().int().nullable(),
   ativo: z.boolean(),
   criadoEm: z.date(),

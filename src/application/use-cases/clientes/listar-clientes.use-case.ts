@@ -1,4 +1,7 @@
-import type { IClienteRepository, ListarClientesParams } from "../../../domain/repositories/clientes.repository.interface";
+import type {
+  IClienteRepository,
+  ListarClientesParams,
+} from '../../../domain/repositories/clientes.repository.interface';
 
 export class ListarClientesUseCase {
   constructor(private readonly repo: IClienteRepository) {}

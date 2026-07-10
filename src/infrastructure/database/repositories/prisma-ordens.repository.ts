@@ -1,5 +1,5 @@
-import { Prisma, StatusOS } from "@prisma/client";
-import { prisma } from "../../../config/prisma";
+import { Prisma, StatusOS } from '@prisma/client';
+import { prisma } from '../../../config/prisma';
 import type {
   IOrdemRepository,
   ListarOrdensParams,
@@ -8,14 +8,14 @@ import type {
   ReprovarOrdemData,
   CancelarOrdemData,
   AdicionarItensData,
-} from "../../../domain/repositories/ordens.repository.interface";
+} from '../../../domain/repositories/ordens.repository.interface';
 
 const includeCompleto = {
   cliente: { select: { id: true, nome: true, cpfCnpj: true, email: true, telefone: true } },
   veiculo: true,
   servicos: { include: { servico: true } },
   pecas: { include: { peca: true } },
-  historico: { orderBy: { criadoEm: "asc" as const } },
+  historico: { orderBy: { criadoEm: 'asc' as const } },
 } satisfies Prisma.OrdemServicoInclude;
 
 const STATUS_PRIORITY: Record<string, number> = {
@@ -39,13 +39,23 @@ export class PrismaOrdemRepository implements IOrdemRepository {
 
   async buscarStatusPublico(numero: number, cpfCnpj: string) {
     return prisma.ordemServico.findFirst({
-      where: { numero, cliente: { cpfCnpj: cpfCnpj.replace(/\D/g, "") } },
+      where: { numero, cliente: { cpfCnpj: cpfCnpj.replace(/\D/g, '') } },
       select: {
-        id: true, numero: true, status: true, valorTotal: true,
-        criadoEm: true, aprovadoEm: true, iniciadoEm: true, finalizadoEm: true, entregueEm: true,
+        id: true,
+        numero: true,
+        status: true,
+        valorTotal: true,
+        criadoEm: true,
+        aprovadoEm: true,
+        iniciadoEm: true,
+        finalizadoEm: true,
+        entregueEm: true,
         veiculo: { select: { placa: true, marca: true, modelo: true } },
         servicos: { select: { servico: { select: { nome: true } }, preco: true } },
-        historico: { orderBy: { criadoEm: "asc" }, select: { statusNovo: true, observacao: true, criadoEm: true } },
+        historico: {
+          orderBy: { criadoEm: 'asc' },
+          select: { statusNovo: true, observacao: true, criadoEm: true },
+        },
       },
     });
   }
@@ -55,9 +65,7 @@ export class PrismaOrdemRepository implements IOrdemRepository {
     const skip = (page - 1) * limit;
 
     const where: Prisma.OrdemServicoWhereInput = {
-      ...(status
-        ? { status }
-        : { status: { notIn: [StatusOS.FINALIZADA, StatusOS.ENTREGUE] } }),
+      ...(status ? { status } : { status: { notIn: [StatusOS.FINALIZADA, StatusOS.ENTREGUE] } }),
       ...(clienteId && { clienteId }),
       ...(veiculoId && { veiculoId }),
       ...((dataInicio || dataFim) && {
@@ -71,7 +79,7 @@ export class PrismaOrdemRepository implements IOrdemRepository {
     const [todasOrdens, total] = await Promise.all([
       prisma.ordemServico.findMany({
         where,
-        orderBy: { criadoEm: "asc" },
+        orderBy: { criadoEm: 'asc' },
         include: {
           cliente: { select: { id: true, nome: true, cpfCnpj: true } },
           veiculo: { select: { id: true, placa: true, marca: true, modelo: true } },
@@ -99,14 +107,27 @@ export class PrismaOrdemRepository implements IOrdemRepository {
           descricao: dados.descricao,
           observacoes: dados.observacoes,
           valorTotal: dados.valorTotal,
-          servicos: { create: dados.servicos.map((s) => ({ servicoId: s.servicoId, preco: s.preco })) },
-          pecas: { create: dados.pecas.map((p) => ({ pecaId: p.pecaId, quantidade: p.quantidade, preco: p.preco })) },
-          historico: { create: { statusNovo: StatusOS.RECEBIDA, observacao: "Ordem de serviço criada" } },
+          servicos: {
+            create: dados.servicos.map((s) => ({ servicoId: s.servicoId, preco: s.preco })),
+          },
+          pecas: {
+            create: dados.pecas.map((p) => ({
+              pecaId: p.pecaId,
+              quantidade: p.quantidade,
+              preco: p.preco,
+            })),
+          },
+          historico: {
+            create: { statusNovo: StatusOS.RECEBIDA, observacao: 'Ordem de serviço criada' },
+          },
         },
         include: includeCompleto,
       });
       for (const p of dados.pecas) {
-        await tx.peca.update({ where: { id: p.pecaId }, data: { quantidade: { decrement: p.quantidade } } });
+        await tx.peca.update({
+          where: { id: p.pecaId },
+          data: { quantidade: { decrement: p.quantidade } },
+        });
       }
       return ordem;
     });
@@ -118,15 +139,29 @@ export class PrismaOrdemRepository implements IOrdemRepository {
 
   async avancarStatus(dados: AvancarStatusData): Promise<void> {
     await prisma.$transaction(async (tx) => {
-      await tx.ordemServico.update({ where: { id: dados.id }, data: { status: dados.novoStatus, ...dados.timestampExtra } });
+      await tx.ordemServico.update({
+        where: { id: dados.id },
+        data: { status: dados.novoStatus, ...dados.timestampExtra },
+      });
       await tx.historicoOS.create({
-        data: { ordemId: dados.id, statusAnterior: dados.statusAtual, statusNovo: dados.novoStatus, observacao: dados.observacao },
+        data: {
+          ordemId: dados.id,
+          statusAnterior: dados.statusAtual,
+          statusNovo: dados.novoStatus,
+          observacao: dados.observacao,
+        },
       });
       if (dados.novoStatus === StatusOS.FINALIZADA && dados.tempoReal && dados.qtdServicos > 0) {
         const tempoPorServico = Math.round(dados.tempoReal / dados.qtdServicos);
-        const itens = await tx.itemServicoOS.findMany({ where: { ordemId: dados.id }, select: { id: true } });
+        const itens = await tx.itemServicoOS.findMany({
+          where: { ordemId: dados.id },
+          select: { id: true },
+        });
         for (const item of itens) {
-          await tx.itemServicoOS.update({ where: { id: item.id }, data: { tempoReal: tempoPorServico } });
+          await tx.itemServicoOS.update({
+            where: { id: item.id },
+            data: { tempoReal: tempoPorServico },
+          });
         }
       }
     });
@@ -135,15 +170,21 @@ export class PrismaOrdemRepository implements IOrdemRepository {
   async reprovar(dados: ReprovarOrdemData): Promise<void> {
     await prisma.$transaction(async (tx) => {
       for (const p of dados.pecas) {
-        await tx.peca.update({ where: { id: p.pecaId }, data: { quantidade: { increment: p.quantidade } } });
+        await tx.peca.update({
+          where: { id: p.pecaId },
+          data: { quantidade: { increment: p.quantidade } },
+        });
       }
-      await tx.ordemServico.update({ where: { id: dados.id }, data: { status: StatusOS.EM_DIAGNOSTICO } });
+      await tx.ordemServico.update({
+        where: { id: dados.id },
+        data: { status: StatusOS.EM_DIAGNOSTICO },
+      });
       await tx.historicoOS.create({
         data: {
           ordemId: dados.id,
           statusAnterior: StatusOS.AGUARDANDO_APROVACAO,
           statusNovo: StatusOS.EM_DIAGNOSTICO,
-          observacao: dados.observacao ?? "Cliente não aprovou o orçamento",
+          observacao: dados.observacao ?? 'Cliente não aprovou o orçamento',
         },
       });
     });
@@ -152,15 +193,21 @@ export class PrismaOrdemRepository implements IOrdemRepository {
   async cancelar(dados: CancelarOrdemData): Promise<void> {
     await prisma.$transaction(async (tx) => {
       for (const p of dados.pecas) {
-        await tx.peca.update({ where: { id: p.pecaId }, data: { quantidade: { increment: p.quantidade } } });
+        await tx.peca.update({
+          where: { id: p.pecaId },
+          data: { quantidade: { increment: p.quantidade } },
+        });
       }
-      await tx.ordemServico.update({ where: { id: dados.id }, data: { status: StatusOS.CANCELADA } });
+      await tx.ordemServico.update({
+        where: { id: dados.id },
+        data: { status: StatusOS.CANCELADA },
+      });
       await tx.historicoOS.create({
         data: {
           ordemId: dados.id,
           statusAnterior: dados.statusAnterior,
           statusNovo: StatusOS.CANCELADA,
-          observacao: dados.motivo ?? "Ordem de serviço cancelada",
+          observacao: dados.motivo ?? 'Ordem de serviço cancelada',
         },
       });
     });
@@ -170,18 +217,33 @@ export class PrismaOrdemRepository implements IOrdemRepository {
     await prisma.$transaction(async (tx) => {
       if (dados.servicos.length) {
         await tx.itemServicoOS.createMany({
-          data: dados.servicos.map((s) => ({ ordemId: dados.ordemId, servicoId: s.servicoId, preco: s.preco })),
+          data: dados.servicos.map((s) => ({
+            ordemId: dados.ordemId,
+            servicoId: s.servicoId,
+            preco: s.preco,
+          })),
         });
       }
       if (dados.pecas.length) {
         await tx.itemPecaOS.createMany({
-          data: dados.pecas.map((p) => ({ ordemId: dados.ordemId, pecaId: p.pecaId, quantidade: p.quantidade, preco: p.preco })),
+          data: dados.pecas.map((p) => ({
+            ordemId: dados.ordemId,
+            pecaId: p.pecaId,
+            quantidade: p.quantidade,
+            preco: p.preco,
+          })),
         });
         for (const p of dados.pecas) {
-          await tx.peca.update({ where: { id: p.pecaId }, data: { quantidade: { decrement: p.quantidade } } });
+          await tx.peca.update({
+            where: { id: p.pecaId },
+            data: { quantidade: { decrement: p.quantidade } },
+          });
         }
       }
-      await tx.ordemServico.update({ where: { id: dados.ordemId }, data: { valorTotal: dados.novoTotal } });
+      await tx.ordemServico.update({
+        where: { id: dados.ordemId },
+        data: { valorTotal: dados.novoTotal },
+      });
     });
   }
 

@@ -1,8 +1,11 @@
-import bcrypt from "bcryptjs";
-import { ConflictError } from "../../../shared/errors";
-import type { IAuthRepository, CriarUsuarioData } from "../../../domain/repositories/auth.repository.interface";
-import type { Role } from "@prisma/client";
-import { env } from "../../../config/env";
+import bcrypt from 'bcryptjs';
+import { ConflictError } from '../../../shared/errors';
+import type {
+  IAuthRepository,
+  CriarUsuarioData,
+} from '../../../domain/repositories/auth.repository.interface';
+import type { Role } from '../../../domain/enums/role.enum';
+import { env } from '../../../config/env';
 
 export interface CriarUsuarioInput {
   nome: string;
@@ -16,7 +19,7 @@ export class CriarUsuarioUseCase {
 
   async execute(input: CriarUsuarioInput) {
     const existe = await this.authRepo.buscarPorEmail(input.email);
-    if (existe) throw new ConflictError("Email já cadastrado");
+    if (existe) throw new ConflictError('Email já cadastrado');
 
     const senhaHash = await bcrypt.hash(input.senha, env.BCRYPT_ROUNDS);
     const data: CriarUsuarioData = {

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const criarPecaSchema = z.object({
   nome: z.string().min(2).max(200),
@@ -6,7 +6,7 @@ export const criarPecaSchema = z.object({
   preco: z.number().positive(),
   quantidade: z.number().int().min(0).default(0),
   estoqueMin: z.number().int().min(0).default(0),
-  unidade: z.string().max(10).default("un"),
+  unidade: z.string().max(10).default('un'),
 });
 
 export const atualizarPecaSchema = criarPecaSchema.partial();

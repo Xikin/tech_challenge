@@ -1,6 +1,6 @@
-import { buildApp } from "./app";
-import { env } from "./config/env";
-import { prisma } from "./config/prisma";
+import { buildApp } from './app';
+import { env } from './config/env';
+import { prisma } from './config/prisma';
 
 async function start() {
   const app = await buildApp();
@@ -10,7 +10,7 @@ async function start() {
   app.log.info(`📚 Documentação: http://localhost:${env.PORT}/docs`);
 }
 
-process.on("SIGTERM", async () => {
+process.on('SIGTERM', async () => {
   await prisma.$disconnect();
   process.exit(0);
 });

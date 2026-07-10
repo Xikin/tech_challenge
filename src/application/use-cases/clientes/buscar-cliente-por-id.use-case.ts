@@ -1,12 +1,12 @@
-import { NotFoundError } from "../../../shared/errors";
-import type { IClienteRepository } from "../../../domain/repositories/clientes.repository.interface";
+import { NotFoundError } from '../../../shared/errors';
+import type { IClienteRepository } from '../../../domain/repositories/clientes.repository.interface';
 
 export class BuscarClientePorIdUseCase {
   constructor(private readonly repo: IClienteRepository) {}
 
   async execute(id: string) {
     const cliente = await this.repo.buscarPorId(id);
-    if (!cliente) throw new NotFoundError("Cliente");
+    if (!cliente) throw new NotFoundError('Cliente');
     return cliente;
   }
 }

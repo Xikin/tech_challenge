@@ -1,4 +1,7 @@
-import type { IPecaRepository, ListarPecasParams } from "../../../domain/repositories/pecas.repository.interface";
+import type {
+  IPecaRepository,
+  ListarPecasParams,
+} from '../../../domain/repositories/pecas.repository.interface';
 
 export class ListarPecasUseCase {
   constructor(private readonly repo: IPecaRepository) {}

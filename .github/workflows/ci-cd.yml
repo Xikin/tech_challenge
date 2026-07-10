@@ -83,7 +83,7 @@ jobs:
 
     outputs:
       image: ${{ steps.meta.outputs.tags }}
-      image_ref: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.name_lc }}:${{ github.sha }}
+      image_ref: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.name_lc }}:sha-${{ github.sha }}
 
     steps:
       - name: Checkout

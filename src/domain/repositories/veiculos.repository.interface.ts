@@ -1,4 +1,4 @@
-export type VeiculoRecord ={
+export type VeiculoRecord = {
   id: string;
   placa: string;
   marca: string;
@@ -9,7 +9,7 @@ export type VeiculoRecord ={
   ativo: boolean;
   criadoEm: Date;
   atualizadoEm: Date;
-}
+};
 
 export type CriarVeiculoData = {
   placa: string;
@@ -18,7 +18,7 @@ export type CriarVeiculoData = {
   ano: number;
   cor?: string;
   clienteId: string;
-}
+};
 
 export type AtualizarVeiculoData = {
   placa?: string;
@@ -26,7 +26,7 @@ export type AtualizarVeiculoData = {
   modelo?: string;
   ano?: number;
   cor?: string;
-}
+};
 
 export interface IVeiculoRepository {
   criar(data: CriarVeiculoData): Promise<VeiculoRecord & Record<string, unknown>>;

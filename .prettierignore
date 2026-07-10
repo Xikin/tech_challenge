@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+reports
+actions-runner
+infra/.terraform
+k8s/secret.yaml
+package-lock.json
+*.md

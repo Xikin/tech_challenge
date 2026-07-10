@@ -1,5 +1,5 @@
 export function validarCPF(cpf: string): boolean {
-  const c = cpf.replace(/\D/g, "");
+  const c = cpf.replace(/\D/g, '');
   if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
   let s = 0;
   for (let i = 0; i < 9; i++) s += +c[i] * (10 - i);
@@ -14,10 +14,10 @@ export function validarCPF(cpf: string): boolean {
 }
 
 export function validarCNPJ(cnpj: string): boolean {
-  const c = cnpj.replace(/\D/g, "");
+  const c = cnpj.replace(/\D/g, '');
   if (c.length !== 14 || /^(\d)\1{13}$/.test(c)) return false;
   const calc = (s: string, w: number[]) => {
-    const sum = s.split("").reduce((a, d, i) => a + +d * w[i], 0);
+    const sum = s.split('').reduce((a, d, i) => a + +d * w[i], 0);
     const r = sum % 11;
     return r < 2 ? 0 : 11 - r;
   };
@@ -27,16 +27,16 @@ export function validarCNPJ(cnpj: string): boolean {
 }
 
 export function validarPlaca(placa: string): boolean {
-  const p = placa.replace(/[-\s]/g, "").toUpperCase();
+  const p = placa.replace(/[-\s]/g, '').toUpperCase();
   return /^[A-Z]{3}[0-9]{4}$/.test(p) || /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(p);
 }
 
 export function limparDocumento(doc: string): string {
-  return doc.replace(/\D/g, "");
+  return doc.replace(/\D/g, '');
 }
 export function limparPlaca(placa: string): string {
-  return placa.replace(/[-\s]/g, "").toUpperCase();
+  return placa.replace(/[-\s]/g, '').toUpperCase();
 }
-export function detectarTipoPessoa(doc: string): "FISICA" | "JURIDICA" {
-  return doc.replace(/\D/g, "").length === 11 ? "FISICA" : "JURIDICA";
+export function detectarTipoPessoa(doc: string): 'FISICA' | 'JURIDICA' {
+  return doc.replace(/\D/g, '').length === 11 ? 'FISICA' : 'JURIDICA';
 }

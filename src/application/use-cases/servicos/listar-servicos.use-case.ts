@@ -1,4 +1,7 @@
-import type { IServicoRepository, ListarServicosParams } from "../../../domain/repositories/servicos.repository.interface";
+import type {
+  IServicoRepository,
+  ListarServicosParams,
+} from '../../../domain/repositories/servicos.repository.interface';
 
 export class ListarServicosUseCase {
   constructor(private readonly repo: IServicoRepository) {}

@@ -1,10 +1,10 @@
-import { prisma } from "../../../config/prisma";
+import { prisma } from '../../../config/prisma';
 import type {
   IVeiculoRepository,
   VeiculoRecord,
   CriarVeiculoData,
   AtualizarVeiculoData,
-} from "../../../domain/repositories/veiculos.repository.interface";
+} from '../../../domain/repositories/veiculos.repository.interface';
 
 export class PrismaVeiculoRepository implements IVeiculoRepository {
   async criar(data: CriarVeiculoData) {
@@ -17,7 +17,7 @@ export class PrismaVeiculoRepository implements IVeiculoRepository {
   async buscarPorId(id: string) {
     return prisma.veiculo.findFirst({
       where: { id, ativo: true },
-      include: { cliente: true, ordens: { orderBy: { criadoEm: "desc" }, take: 5 } },
+      include: { cliente: true, ordens: { orderBy: { criadoEm: 'desc' }, take: 5 } },
     });
   }
 
@@ -36,7 +36,7 @@ export class PrismaVeiculoRepository implements IVeiculoRepository {
     return prisma.veiculo.findMany({
       where: { ativo: true, ...(clienteId && { clienteId }) },
       include: { cliente: { select: { id: true, nome: true, cpfCnpj: true } } },
-      orderBy: { placa: "asc" },
+      orderBy: { placa: 'asc' },
     });
   }
 
@@ -45,7 +45,10 @@ export class PrismaVeiculoRepository implements IVeiculoRepository {
   }
 
   async remover(id: string): Promise<VeiculoRecord> {
-    return prisma.veiculo.update({ where: { id }, data: { ativo: false } }) as Promise<VeiculoRecord>;
+    return prisma.veiculo.update({
+      where: { id },
+      data: { ativo: false },
+    }) as Promise<VeiculoRecord>;
   }
 
   async clienteExiste(clienteId: string) {

@@ -1,10 +1,10 @@
-import type { Prisma } from "@prisma/client";
+import type { DecimalLike } from '../types/decimal-like';
 
 export interface ServicoRecord {
   id: string;
   nome: string;
   descricao: string | null;
-  preco: number | Prisma.Decimal;
+  preco: number | DecimalLike;
   tempoPrevisto: number | null;
   ativo: boolean;
   criadoEm: Date;

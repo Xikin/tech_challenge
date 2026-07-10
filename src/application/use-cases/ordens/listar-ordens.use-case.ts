@@ -1,4 +1,7 @@
-import type { IOrdemRepository, ListarOrdensParams } from "../../../domain/repositories/ordens.repository.interface";
+import type {
+  IOrdemRepository,
+  ListarOrdensParams,
+} from '../../../domain/repositories/ordens.repository.interface';
 
 export class ListarOrdensUseCase {
   constructor(private readonly repo: IOrdemRepository) {}

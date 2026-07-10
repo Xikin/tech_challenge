@@ -1,12 +1,12 @@
-import { z } from "zod";
-import { validarCPF, validarCNPJ, limparDocumento } from "../../../shared/utils/validators";
+import { z } from 'zod';
+import { validarCPF, validarCNPJ, limparDocumento } from '../../../shared/utils/validators';
 
 const cpfCnpjSchema = z
   .string()
   .transform(limparDocumento)
   .refine(
     (doc) => (doc.length === 11 ? validarCPF(doc) : doc.length === 14 ? validarCNPJ(doc) : false),
-    { message: "CPF ou CNPJ inválido" },
+    { message: 'CPF ou CNPJ inválido' },
   );
 
 export const criarClienteSchema = z.object({
@@ -32,7 +32,7 @@ export const clienteResponseSchema = z.object({
   id: z.string().uuid(),
   nome: z.string(),
   cpfCnpj: z.string(),
-  tipoPessoa: z.enum(["FISICA", "JURIDICA"]),
+  tipoPessoa: z.enum(['FISICA', 'JURIDICA']),
   email: z.string().nullish(),
   telefone: z.string().nullish(),
   endereco: z.string().nullish(),

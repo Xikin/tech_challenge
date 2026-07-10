@@ -1,4 +1,4 @@
-import type { IVeiculoRepository } from "../../../domain/repositories/veiculos.repository.interface";
+import type { IVeiculoRepository } from '../../../domain/repositories/veiculos.repository.interface';
 
 export class ListarVeiculosUseCase {
   constructor(private readonly repo: IVeiculoRepository) {}

@@ -1,4 +1,4 @@
-import type { IPecaRepository } from "../../../domain/repositories/pecas.repository.interface";
+import type { IPecaRepository } from '../../../domain/repositories/pecas.repository.interface';
 
 export class AlertasEstoqueUseCase {
   constructor(private readonly repo: IPecaRepository) {}

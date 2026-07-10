@@ -1,5 +1,5 @@
-import type { FastifyInstance } from "fastify";
-import type { ITokenService, TokenPayload } from "../../domain/services/token.service.interface";
+import type { FastifyInstance } from 'fastify';
+import type { ITokenService, TokenPayload } from '../../domain/services/token.service.interface';
 
 export class FastifyTokenService implements ITokenService {
   constructor(private readonly fastify: FastifyInstance) {}

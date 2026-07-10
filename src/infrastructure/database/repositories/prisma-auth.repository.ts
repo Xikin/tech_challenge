@@ -1,5 +1,10 @@
-import { prisma } from "../../../config/prisma";
-import type { IAuthRepository, UsuarioRecord, UsuarioPublico, CriarUsuarioData } from "../../../domain/repositories/auth.repository.interface";
+import { prisma } from '../../../config/prisma';
+import type {
+  IAuthRepository,
+  UsuarioRecord,
+  UsuarioPublico,
+  CriarUsuarioData,
+} from '../../../domain/repositories/auth.repository.interface';
 
 export class PrismaAuthRepository implements IAuthRepository {
   async buscarPorEmail(email: string): Promise<UsuarioRecord | null> {
@@ -17,7 +22,7 @@ export class PrismaAuthRepository implements IAuthRepository {
     return prisma.usuario.findMany({
       where: { ativo: true },
       select: { id: true, nome: true, email: true, role: true, ativo: true, criadoEm: true },
-      orderBy: { nome: "asc" },
+      orderBy: { nome: 'asc' },
     });
   }
 }

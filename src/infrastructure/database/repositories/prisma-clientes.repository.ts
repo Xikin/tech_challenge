@@ -1,13 +1,13 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "../../../config/prisma";
-import { detectarTipoPessoa } from "../../../shared/utils/validators";
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../../config/prisma';
+import { detectarTipoPessoa } from '../../../shared/utils/validators';
 import type {
   IClienteRepository,
   ClienteRecord,
   CriarClienteData,
   AtualizarClienteData,
   ListarClientesParams,
-} from "../../../domain/repositories/clientes.repository.interface";
+} from '../../../domain/repositories/clientes.repository.interface';
 
 export class PrismaClienteRepository implements IClienteRepository {
   async criar(data: CriarClienteData): Promise<ClienteRecord> {
@@ -21,7 +21,7 @@ export class PrismaClienteRepository implements IClienteRepository {
       where: { id, ativo: true },
       include: {
         veiculos: { where: { ativo: true } },
-        ordens: { orderBy: { criadoEm: "desc" }, take: 5 },
+        ordens: { orderBy: { criadoEm: 'desc' }, take: 5 },
       },
     });
   }
@@ -37,9 +37,9 @@ export class PrismaClienteRepository implements IClienteRepository {
       ativo: true,
       ...(busca && {
         OR: [
-          { nome: { contains: busca, mode: "insensitive" } },
+          { nome: { contains: busca, mode: 'insensitive' } },
           { cpfCnpj: { contains: busca } },
-          { email: { contains: busca, mode: "insensitive" } },
+          { email: { contains: busca, mode: 'insensitive' } },
         ],
       }),
     };
@@ -48,7 +48,7 @@ export class PrismaClienteRepository implements IClienteRepository {
         where,
         skip,
         take: limit,
-        orderBy: { nome: "asc" },
+        orderBy: { nome: 'asc' },
         include: { _count: { select: { veiculos: true, ordens: true } } },
       }),
       prisma.cliente.count({ where }),
@@ -61,6 +61,9 @@ export class PrismaClienteRepository implements IClienteRepository {
   }
 
   async remover(id: string): Promise<ClienteRecord> {
-    return prisma.cliente.update({ where: { id }, data: { ativo: false } }) as Promise<ClienteRecord>;
+    return prisma.cliente.update({
+      where: { id },
+      data: { ativo: false },
+    }) as Promise<ClienteRecord>;
   }
 }

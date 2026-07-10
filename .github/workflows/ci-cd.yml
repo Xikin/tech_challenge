@@ -130,6 +130,10 @@ jobs:
     env:
       IMAGE_REF: ${{ needs.docker.outputs.image_ref }}
 
+    permissions:
+      contents: read
+      packages: read
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -154,6 +158,15 @@ jobs:
             --from-literal=SMTP_HOST="${{ secrets.SMTP_HOST }}" \
             --from-literal=SMTP_USER="${{ secrets.SMTP_USER }}" \
             --from-literal=SMTP_PASS="${{ secrets.SMTP_PASS }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Criar/atualizar Secret de pull do GHCR
+        run: |
+          kubectl create secret docker-registry ghcr-pull-secret \
+            --namespace=oficina \
+            --docker-server=${{ env.REGISTRY }} \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy banco de dados (PostgreSQL)

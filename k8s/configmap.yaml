@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oficina-config
+  namespace: oficina
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  HOST: "0.0.0.0"
+  POSTGRES_DB: "oficina_db"
+  POSTGRES_USER: "oficina"
+  JWT_EXPIRES_IN: "8h"
+  BCRYPT_ROUNDS: "12"
+  SMTP_PORT: "587"
+  SMTP_FROM: "Oficina Mecânica <noreply@oficina.com>"

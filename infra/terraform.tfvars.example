@@ -1,0 +1,14 @@
+# Copie este arquivo para terraform.tfvars e preencha os valores reais.
+# O arquivo terraform.tfvars é ignorado pelo git (.gitignore).
+
+cluster_name  = "oficina"
+namespace     = "oficina"
+api_node_port = 30000
+
+postgres_password = "troque-por-senha-segura"
+jwt_secret        = "troque-por-segredo-com-minimo-32-caracteres"
+
+# SMTP é opcional — deixe em branco se não for usar envio de e-mails
+smtp_host = ""
+smtp_user = ""
+smtp_pass = ""

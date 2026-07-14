@@ -18,6 +18,39 @@ const includeCompleto = {
   historico: { orderBy: { criadoEm: 'asc' as const } },
 } satisfies Prisma.OrdemServicoInclude;
 
+type DecimalValue = { toNumber(): number } | number;
+
+function toNumber(value: DecimalValue): number {
+  return typeof value === 'number' ? value : value.toNumber();
+}
+
+function mapOrdemCompleta<
+  T extends {
+    valorTotal: DecimalValue;
+    servicos: { preco: DecimalValue; servico: { preco: DecimalValue } }[];
+    pecas: { preco: DecimalValue; peca: { preco: DecimalValue } }[];
+  },
+>(ordem: T) {
+  return {
+    ...ordem,
+    valorTotal: toNumber(ordem.valorTotal),
+    servicos: ordem.servicos.map((s) => ({
+      ...s,
+      preco: toNumber(s.preco),
+      servico: { ...s.servico, preco: toNumber(s.servico.preco) },
+    })),
+    pecas: ordem.pecas.map((p) => ({
+      ...p,
+      preco: toNumber(p.preco),
+      peca: { ...p.peca, preco: toNumber(p.peca.preco) },
+    })),
+  };
+}
+
+function mapValorTotal<T extends { valorTotal: DecimalValue }>(ordem: T) {
+  return { ...ordem, valorTotal: toNumber(ordem.valorTotal) };
+}
+
 const STATUS_PRIORITY: Record<string, number> = {
   EM_EXECUCAO: 1,
   AGUARDANDO_APROVACAO: 2,
@@ -30,15 +63,17 @@ const STATUS_PRIORITY: Record<string, number> = {
 
 export class PrismaOrdemRepository implements IOrdemRepository {
   async buscarPorId(id: string) {
-    return prisma.ordemServico.findUnique({ where: { id }, include: includeCompleto });
+    const ordem = await prisma.ordemServico.findUnique({ where: { id }, include: includeCompleto });
+    return ordem ? mapOrdemCompleta(ordem) : null;
   }
 
   async buscarPorNumero(numero: number) {
-    return prisma.ordemServico.findUnique({ where: { numero }, include: includeCompleto });
+    const ordem = await prisma.ordemServico.findUnique({ where: { numero }, include: includeCompleto });
+    return ordem ? mapOrdemCompleta(ordem) : null;
   }
 
   async buscarStatusPublico(numero: number, cpfCnpj: string) {
-    return prisma.ordemServico.findFirst({
+    const ordem = await prisma.ordemServico.findFirst({
       where: { numero, cliente: { cpfCnpj: cpfCnpj.replace(/\D/g, '') } },
       select: {
         id: true,
@@ -58,6 +93,12 @@ export class PrismaOrdemRepository implements IOrdemRepository {
         },
       },
     });
+    if (!ordem) return null;
+    return {
+      ...ordem,
+      valorTotal: toNumber(ordem.valorTotal),
+      servicos: ordem.servicos.map((s) => ({ ...s, preco: toNumber(s.preco) })),
+    };
   }
 
   async listar(params: ListarOrdensParams) {
@@ -95,7 +136,7 @@ export class PrismaOrdemRepository implements IOrdemRepository {
         a.criadoEm.getTime() - b.criadoEm.getTime(),
     );
 
-    return { data: ordenadas.slice(skip, skip + limit), total };
+    return { data: ordenadas.slice(skip, skip + limit).map(mapValorTotal), total };
   }
 
   async criar(dados: CriarOrdemData) {
@@ -129,12 +170,13 @@ export class PrismaOrdemRepository implements IOrdemRepository {
           data: { quantidade: { decrement: p.quantidade } },
         });
       }
-      return ordem;
+      return mapOrdemCompleta(ordem);
     });
   }
 
   async atualizar(id: string, data: { descricao?: string; observacoes?: string }) {
-    return prisma.ordemServico.update({ where: { id }, data, include: includeCompleto });
+    const ordem = await prisma.ordemServico.update({ where: { id }, data, include: includeCompleto });
+    return mapOrdemCompleta(ordem);
   }
 
   async avancarStatus(dados: AvancarStatusData): Promise<void> {

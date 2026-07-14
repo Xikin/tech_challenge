@@ -8,25 +8,34 @@ import type {
   ListarServicosParams,
 } from '../../../domain/repositories/servicos.repository.interface';
 
+type PrismaRawServico = { preco: { toNumber(): number } | number } & Record<string, unknown>;
+
+function mapServico<T extends PrismaRawServico>(servico: T): Omit<T, 'preco'> & { preco: number } {
+  const preco = typeof servico.preco === 'number' ? servico.preco : servico.preco.toNumber();
+  return { ...servico, preco };
+}
+
 export class PrismaServicoRepository implements IServicoRepository {
   async criar(data: CriarServicoData): Promise<ServicoRecord> {
-    return prisma.servico.create({ data }) as Promise<ServicoRecord>;
+    return mapServico(await prisma.servico.create({ data })) as ServicoRecord;
   }
 
   async buscarPorId(id: string): Promise<ServicoRecord | null> {
-    return prisma.servico.findFirst({
+    const servico = await prisma.servico.findFirst({
       where: { id, ativo: true },
-    }) as Promise<ServicoRecord | null>;
+    });
+    return servico ? (mapServico(servico) as ServicoRecord) : null;
   }
 
   async buscarPorNome(nome: string, excludeId?: string): Promise<ServicoRecord | null> {
-    return prisma.servico.findFirst({
+    const servico = await prisma.servico.findFirst({
       where: {
         nome: { equals: nome, mode: 'insensitive' },
         ativo: true,
         ...(excludeId && { NOT: { id: excludeId } }),
       },
-    }) as Promise<ServicoRecord | null>;
+    });
+    return servico ? (mapServico(servico) as ServicoRecord) : null;
   }
 
   async listar(params: ListarServicosParams) {
@@ -45,18 +54,20 @@ export class PrismaServicoRepository implements IServicoRepository {
       prisma.servico.findMany({ where, skip, take: limit, orderBy: { nome: 'asc' } }),
       prisma.servico.count({ where }),
     ]);
-    return { data: data as ServicoRecord[], total };
+    return { data: data.map((s) => mapServico(s) as ServicoRecord), total };
   }
 
   async atualizar(id: string, data: AtualizarServicoData): Promise<ServicoRecord> {
-    return prisma.servico.update({ where: { id }, data }) as Promise<ServicoRecord>;
+    return mapServico(await prisma.servico.update({ where: { id }, data })) as ServicoRecord;
   }
 
   async remover(id: string): Promise<ServicoRecord> {
-    return prisma.servico.update({
-      where: { id },
-      data: { ativo: false },
-    }) as Promise<ServicoRecord>;
+    return mapServico(
+      await prisma.servico.update({
+        where: { id },
+        data: { ativo: false },
+      }),
+    ) as ServicoRecord;
   }
 
   async buscarEmOSAtiva(id: string) {

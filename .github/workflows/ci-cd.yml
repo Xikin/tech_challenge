@@ -1,14 +1,23 @@
 name: CI/CD
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, homolog]
+  push:
+    branches: [main, homolog]
+  workflow_dispatch:
+
+concurrency:
+  group: api-${{ github.ref_name }}
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/oficina
+  AWS_REGION: us-east-1
+  NODE_VERSION: "20"
+  # main -> prod, homolog -> homolog
+  APP_ENV: ${{ github.ref_name == 'main' && 'prod' || 'homolog' }}
 
 jobs:
   test:
@@ -20,7 +29,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: oficina
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_PASSWORD: oficina_ci
           POSTGRES_DB: oficina_db
         ports:
           - 5432:5432
@@ -32,8 +41,8 @@ jobs:
 
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://oficina:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/oficina_db
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      DATABASE_URL: postgresql://oficina:oficina_ci@localhost:5432/oficina_db
+      JWT_SECRET: chave-apenas-para-ci-com-mais-de-32-caracteres
       JWT_EXPIRES_IN: 8h
       BCRYPT_ROUNDS: 4
       PORT: 3000
@@ -41,29 +50,39 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # o Sonar precisa do histórico para atribuir autoria
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-      - name: Install dependencies
-        run: npm ci --frozen-lockfile
+      - name: Instalar dependências
+        run: npm ci
 
-      - name: Generate Prisma client
+      - name: Verificar formatação
+        run: npm run format:check
+
+      - name: Gerar Prisma Client
         run: npx prisma generate
 
-      - name: Run migrations
+      - name: Aplicar migrations
         run: npx prisma migrate deploy
 
-      - name: Build TypeScript
+      - name: Compilar TypeScript
         run: npm run build
 
-      - name: Run tests
+      - name: Testes
         run: npm test
 
-      - name: Upload coverage
+      # O entregável exige "link para o Swagger". Exportar o openapi.json como
+      # artefato garante que a especificação exista mesmo sem ambiente no ar.
+      - name: Exportar especificação OpenAPI
+        run: npm run openapi:export
+
+      - name: Publicar cobertura
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -71,12 +90,20 @@ jobs:
           path: coverage/
           retention-days: 7
 
+      - name: Publicar OpenAPI
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: docs/openapi.json
+          retention-days: 30
+
   sonar:
-    name: SonarQube Analysis
-    runs-on: self-hosted
+    name: Análise SonarCloud
+    runs-on: ubuntu-latest
     needs: test
-    env:
-      SONAR_DB_PASSWORD: ${{ secrets.SONAR_DB_PASSWORD }}
+    # Roda apenas se o token estiver configurado. Na Fase 2 este job dependia de
+    # um SonarQube local num runner self-hosted, que não existe mais.
+    if: ${{ !cancelled() }}
 
     steps:
       - name: Checkout
@@ -90,36 +117,35 @@ jobs:
           name: coverage
           path: coverage
 
-      - name: Subir SonarQube
-        run: docker compose up -d sonar_postgres sonarqube
-
-      - name: Aguardar SonarQube ficar pronto
+      - name: Verificar se o Sonar está configurado
+        id: check
         run: |
-          timeout 180 bash -c '
-            until docker compose exec -T sonarqube wget -qO- http://localhost:9000/api/system/status 2>/dev/null | grep -q "\"status\":\"UP\""; do
-              sleep 5
-            done
-          '
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "configurado=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configurado=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SONAR_TOKEN não configurado — análise de qualidade ignorada."
+          fi
 
-      - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@v4
+      - name: SonarCloud Scan
+        if: steps.check.outputs.configurado == 'true'
+        uses: SonarSource/sonarqube-scan-action@v4
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
 
   docker:
-    name: Build & Push Docker Image
+    name: Build & Push da imagem
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name != 'pull_request'
 
     permissions:
       contents: read
       packages: write
 
     outputs:
-      image: ${{ steps.meta.outputs.tags }}
-      image_ref: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.name_lc }}:sha-${{ github.sha }}
+      image_ref: ${{ steps.ref.outputs.image }}
 
     steps:
       - name: Checkout
@@ -146,7 +172,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.name_lc }}
           tags: |
             type=sha,format=long
-            type=raw,value=latest
+            type=raw,value=${{ env.APP_ENV }}
 
       - name: Build e push
         uses: docker/build-push-action@v5
@@ -158,42 +184,85 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Expor referência imutável da imagem
+        id: ref
+        run: echo "image=${{ env.REGISTRY }}/${{ steps.image_name.outputs.name_lc }}:sha-${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
   deploy:
-    name: Deploy Kubernetes
-    runs-on: self-hosted
+    name: Deploy no EKS (${{ github.ref_name == 'main' && 'prod' || 'homolog' }})
+    runs-on: ubuntu-latest
     needs: docker
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name != 'pull_request'
+
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'homolog' }}
+      url: ${{ steps.endpoint.outputs.url }}
+
     env:
       IMAGE_REF: ${{ needs.docker.outputs.image_ref }}
-
-    permissions:
-      contents: read
-      packages: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verificar se as credenciais do lab ainda são válidas
+        run: |
+          if ! aws sts get-caller-identity; then
+            echo "::error::Credenciais AWS expiradas. Atualize os secrets a partir de AWS Details -> AWS CLI no Learner Lab."
+            exit 1
+          fi
+
+      - name: Verificar dependências entre stacks
+        run: |
+          faltando=""
+          for p in \
+            "/oficina/${APP_ENV}/eks/cluster_name" \
+            "/oficina/${APP_ENV}/db/database_url"
+          do
+            aws ssm get-parameter --name "$p" >/dev/null 2>&1 || faltando="$faltando\n  - $p"
+          done
+          if [ -n "$faltando" ]; then
+            echo -e "::error::Parâmetros ausentes no SSM:$faltando\n\nAplique oficina-infra-k8s e oficina-infra-db antes deste deploy."
+            exit 1
+          fi
+
       - name: Configurar kubectl
-        uses: azure/setup-kubectl@v4
+        run: |
+          CLUSTER=$(aws ssm get-parameter --name "/oficina/${APP_ENV}/eks/cluster_name" --query Parameter.Value --output text)
+          echo "CLUSTER=$CLUSTER" >> "$GITHUB_ENV"
+          aws eks update-kubeconfig --region "${AWS_REGION}" --name "$CLUSTER"
+          kubectl cluster-info
 
-      - name: Verificar acesso ao cluster
-        run: kubectl cluster-info
-
-      - name: Aplicar namespace e configmap
+      - name: Aplicar namespace e configuração
         run: |
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
 
-      - name: Criar/atualizar Secret com credenciais
+      - name: Criar/atualizar Secret
         run: |
+          # A DATABASE_URL vem do SSM (escrita pelo Terraform do repositório
+          # oficina-infra-db) — nunca é digitada nem versionada em lugar nenhum.
+          DATABASE_URL=$(aws ssm get-parameter \
+            --name "/oficina/${APP_ENV}/db/database_url" \
+            --with-decryption --query Parameter.Value --output text)
+
           kubectl create secret generic oficina-secret \
             --namespace=oficina \
-            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=DATABASE_URL="$DATABASE_URL" \
             --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
             --from-literal=SMTP_HOST="${{ secrets.SMTP_HOST }}" \
             --from-literal=SMTP_USER="${{ secrets.SMTP_USER }}" \
             --from-literal=SMTP_PASS="${{ secrets.SMTP_PASS }}" \
+            --from-literal=NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Criar/atualizar Secret de pull do GHCR
@@ -205,20 +274,79 @@ jobs:
             --docker-password="${{ secrets.GITHUB_TOKEN }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Deploy banco de dados (PostgreSQL)
-        run: |
-          kubectl apply -f k8s/postgres-pvc.yaml
-          kubectl apply -f k8s/postgres-deployment.yaml
-          kubectl apply -f k8s/postgres-service.yaml
-          kubectl rollout status deployment/postgres -n oficina --timeout=120s
-
       - name: Deploy da API
         run: |
-          sed "s|DOCKER_IMAGE_PLACEHOLDER|$IMAGE_REF|g" k8s/api-deployment.yaml \
-            | kubectl apply -f -
+          sed "s|DOCKER_IMAGE_PLACEHOLDER|$IMAGE_REF|g" k8s/api-deployment.yaml | kubectl apply -f -
           kubectl apply -f k8s/api-service.yaml
           kubectl apply -f k8s/hpa.yaml
-          kubectl rollout status deployment/oficina-api -n oficina --timeout=180s
+          kubectl rollout status deployment/oficina-api -n oficina --timeout=300s
 
-      - name: Verificar pods em execução
-        run: kubectl get pods -n oficina
+      - name: Aguardar o Load Balancer receber endereço
+        id: endpoint
+        run: |
+          echo "Aguardando o provisionamento do NLB (pode levar ~3 min)..."
+          for i in $(seq 1 60); do
+            HOST=$(kubectl get svc oficina-api -n oficina \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            [ -n "$HOST" ] && break
+            sleep 10
+          done
+          if [ -z "$HOST" ]; then
+            echo "::error::O Service não recebeu endereço externo em 10 minutos."
+            kubectl describe svc oficina-api -n oficina
+            exit 1
+          fi
+          echo "NLB: $HOST"
+          echo "host=$HOST" >> "$GITHUB_OUTPUT"
+          echo "url=http://$HOST" >> "$GITHUB_OUTPUT"
+
+      # Fecha o contrato com o repositório do API Gateway: é este valor que a
+      # rota ANY /{proxy+} usa como backend.
+      - name: Publicar endereço da API no SSM
+        run: |
+          aws ssm put-parameter \
+            --name "/oficina/${APP_ENV}/api/endpoint" \
+            --value "${{ steps.endpoint.outputs.host }}" \
+            --type String --overwrite
+
+      - name: Smoke test do ambiente publicado
+        run: |
+          url="${{ steps.endpoint.outputs.url }}"
+          echo "Aguardando o NLB registrar os targets..."
+          for i in $(seq 1 30); do
+            codigo=$(curl -sS -o /tmp/ready.json -w '%{http_code}' "$url/health/ready" --max-time 10 || echo 000)
+            [ "$codigo" = "200" ] && break
+            sleep 10
+          done
+          cat /tmp/ready.json || true
+          if [ "$codigo" != "200" ]; then
+            echo "::error::/health/ready não respondeu 200 (recebido $codigo). O pod provavelmente não alcança o RDS."
+            kubectl get pods -n oficina
+            kubectl logs -n oficina -l app=oficina-api --tail=50
+            exit 1
+          fi
+          # Prova que a autorização está ativa: rota interna sem token = 401.
+          codigo=$(curl -sS -o /dev/null -w '%{http_code}' "$url/clientes" --max-time 10)
+          if [ "$codigo" != "401" ]; then
+            echo "::error::Esperado 401 em /clientes sem token, recebido $codigo"
+            exit 1
+          fi
+
+      - name: Resumo do deploy
+        run: |
+          {
+            echo "## API publicada no EKS"
+            echo ""
+            echo "| Item | Valor |"
+            echo "| --- | --- |"
+            echo "| Ambiente | \`${APP_ENV}\` |"
+            echo "| Cluster | \`${CLUSTER}\` |"
+            echo "| Imagem | \`${IMAGE_REF}\` |"
+            echo "| Load Balancer | ${{ steps.endpoint.outputs.url }} |"
+            echo "| Swagger | ${{ steps.endpoint.outputs.url }}/docs |"
+            echo ""
+            echo "### Estado do cluster"
+            echo '```'
+            kubectl get pods,hpa,svc -n oficina
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

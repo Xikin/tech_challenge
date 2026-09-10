@@ -25,6 +25,11 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((v) => v === 'true'),
+
+  // New Relic. O agente só sobe quando a licença está presente; em
+  // desenvolvimento e nos testes ele fica inteiramente desligado.
+  NEW_RELIC_LICENSE_KEY: z.string().optional(),
+  NEW_RELIC_APP_NAME: z.string().default('oficina-api'),
 });
 
 export type Env = z.infer<typeof envSchema>;

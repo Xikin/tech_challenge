@@ -1,0 +1,36 @@
+# Contexto de build enxuto e sem segredos.
+# Sem este arquivo, `docker build .` enviava actions-runner/ (centenas de MB),
+# o .env e o state do Terraform para o daemon — e o .env acabaria numa camada.
+
+node_modules
+dist
+coverage
+reports
+.git
+.github
+.vscode
+.idea
+
+# Segredos e state
+.env
+.env.*
+!.env.example
+infra
+k8s/secret.yaml
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# Runner self-hosted da Fase 2
+actions-runner
+
+# Documentação não entra na imagem
+docs
+postman
+*.md
+!README.md
+
+Dockerfile
+docker-compose.yml
+.dockerignore

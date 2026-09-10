@@ -64,7 +64,12 @@ beforeAll(async () => {
 
   // Mesmo formato de payload emitido pela Lambda (ver src/token.ts em
   // oficina-auth-lambda): sub é o id do cliente, role é CLIENTE.
-  tokenCliente = app.jwt.sign({ sub: CLIENTE_ID, role: 'CLIENTE', cpf: '52998224725', nome: 'Ana' });
+  tokenCliente = app.jwt.sign({
+    sub: CLIENTE_ID,
+    role: 'CLIENTE',
+    cpf: '52998224725',
+    nome: 'Ana',
+  });
   tokenOutroCliente = app.jwt.sign({
     sub: OUTRO_CLIENTE_ID,
     role: 'CLIENTE',
@@ -229,9 +234,7 @@ describe('CLIENTE acessa apenas os próprios recursos', () => {
 
 describe('pessoal interno mantém acesso amplo', () => {
   it('FUNCIONARIO lê a OS de qualquer cliente', async () => {
-    vi.mocked(prisma.ordemServico.findUnique).mockResolvedValue(
-      ordemDe(OUTRO_CLIENTE_ID) as never,
-    );
+    vi.mocked(prisma.ordemServico.findUnique).mockResolvedValue(ordemDe(OUTRO_CLIENTE_ID) as never);
 
     const res = await app.inject({
       method: 'GET',

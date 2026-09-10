@@ -9,6 +9,9 @@ spec:
     kind: Deployment
     name: oficina-api
   minReplicas: 2
+  # Só é alcançável porque o node group do EKS escala até 4 nós
+  # (ver oficina-infra-k8s). O HPA cria pods; o autoscaling do node group cria
+  # a capacidade que os hospeda.
   maxReplicas: 10
   metrics:
     - type: Resource
@@ -23,3 +26,19 @@ spec:
         target:
           type: Utilization
           averageUtilization: 80
+  behavior:
+    scaleUp:
+      # Reage rápido à carga: a demonstração de autoscaling no vídeo depende
+      # disto acontecer em segundos, não em minutos.
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+    scaleDown:
+      # Desce devagar para não oscilar (flapping) quando o tráfego é irregular.
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60

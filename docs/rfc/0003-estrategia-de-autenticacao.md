@@ -1,6 +1,6 @@
 # RFC-0003: Estratégia de autenticação por CPF
 
-**Status:** Proposta
+**Status:** Implementada (2026-09-09) — ver `oficina-auth-lambda`.
 
 ## Problema
 
@@ -36,8 +36,34 @@ Cliente → GET /ordens/:id (Bearer JWT) → API Gateway → oficina-api (valida
 - Dois emissores de JWT (login interno e Lambda de CPF) compartilhando o mesmo `JWT_SECRET`. Aceitável porque o middleware da API só valida assinatura e claims, não a origem do token — mas exige que o secret seja gerenciado com o mesmo cuidado nos dois repositórios (Kubernetes Secret e variável de ambiente da Lambda).
 - O `role: CLIENTE` precisa de escopo restrito nas rotas (ex.: só visualizar as próprias ordens de serviço) — as rotas atuais foram desenhadas para `ADMIN`/`FUNCIONARIO` e precisam de revisão de autorização, não só de autenticação.
 
-## Próximos passos
+## Próximos passos — situação em 2026-09-09
 
-1. Implementar a Lambda com os três passos acima.
-2. Configurar a rota `/auth/cpf` no API Gateway (pública) e o proxy das demais rotas sensíveis para o cluster (autenticadas).
-3. Ajustar `exigirRole`/rotas de consulta pública de OS para aceitar `CLIENTE`, restringindo ao próprio recurso.
+1. ~~Implementar a Lambda.~~ **Feito** — `oficina-auth-lambda`, bundle de 315 KB,
+   24 testes.
+2. ~~Configurar `/auth/cpf` no API Gateway e o proxy das demais rotas.~~ **Feito**
+   — ver [ADR-0009](../adr/0009-api-gateway-entrada-unica.md).
+3. ~~Ajustar autorização para `CLIENTE`.~~ **Feito** — e foi maior do que esta RFC
+   previa. Ver abaixo.
+
+### Onde esta RFC subestimou o problema
+
+A afirmação de que "nenhuma mudança na validação de token é necessária, só um novo
+emissor" é verdadeira para `jwtVerify()` e **falsa para tudo o mais**:
+
+- **Autorização.** `autenticar` não checava papel, e era o guard de quase todas as
+  rotas. Um token de `CLIENTE` legítimo abriria `GET /clientes` (base inteira, com
+  CPF de todos), `GET /ordens` e `PUT /ordens/:id`. Foi preciso criar
+  `exigirInterno` e `exigirDonoDoRecurso` —
+  [ADR-0008](../adr/0008-autorizacao-do-papel-cliente.md).
+- **Tipos.** `TokenPayload` exigia `email: string`, mas `Cliente.email` é nullable.
+  O claim passou a ser opcional.
+- **Enum.** `CLIENTE` **não** foi adicionado ao enum `Role` do banco, porque
+  cliente não é linha em `usuarios`. O papel existe só no token.
+
+### Sobre o segredo compartilhado
+
+O trade-off de dois emissores com o mesmo `JWT_SECRET` foi mantido, mas com uma
+consequência operacional que vale registrar: se o segredo divergir entre a Lambda e
+a API, o token é emitido com sucesso e **rejeitado silenciosamente** na primeira
+rota protegida. É a falha mais difícil de diagnosticar no projeto, e por isso está
+destacada nos READMEs dos dois repositórios.

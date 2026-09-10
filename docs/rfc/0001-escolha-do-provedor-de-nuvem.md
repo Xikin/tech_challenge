@@ -1,6 +1,9 @@
 # RFC-0001: Escolha do provedor de nuvem
 
-**Status:** Proposta — aguardando aprovação do grupo
+**Status:** Aceita (2026-09-09) — AWS confirmada.
+**Ressalva:** a recomendação de k3s em EC2 desta RFC foi **superada** pelo
+[ADR-0007](../adr/README.md), que adota EKS gerenciado. Ver a seção "Próximos
+passos" ao final.
 
 ## Problema
 
@@ -30,8 +33,26 @@ Para o cluster Kubernetes, propomos **não usar EKS** (custo fixo de control pla
 - Cluster self-managed em EC2 não tem os SLAs, upgrades automáticos e integração nativa de IAM que o EKS oferece.
 - Um único nó é um ponto único de falha de infraestrutura (diferente das réplicas de pod, que já são HA) — aceitável para o escopo do desafio; multi-nó fica como evolução futura se necessário.
 
-## Próximos passos
+## Próximos passos — situação em 2026-09-09
 
-1. Aprovação do grupo sobre a escolha de AWS.
-2. Criar conta/organização AWS dedicada ao projeto.
-3. Trocar o provider Terraform de `kind`/`kubernetes` para `aws` no novo repositório `oficina-infra-k8s`.
+1. ~~Aprovação do grupo sobre a escolha de AWS.~~ **Feito.**
+2. ~~Criar conta AWS dedicada.~~ **Feito** — AWS Academy Learner Lab, com as
+   restrições registradas no
+   [ADR-0005](../../../oficina-infra-k8s/docs/adr/0005-restricoes-aws-academy.md).
+3. ~~Trocar o provider Terraform de `kind` para `aws`.~~ **Feito** em
+   `oficina-infra-k8s`.
+
+### Por que a recomendação de k3s foi abandonada
+
+Ao detalhar a implementação, três problemas apareceram:
+
+- **Não atende ao requisito.** O enunciado pede "Cluster Kubernetes com
+  escalabilidade". Num nó único, o HPA escala pods só até saturar 2 vCPU — o
+  `maxReplicas: 10` é inatingível, e nada escala a capacidade que os hospeda.
+- **Ponto único de falha**, como esta própria RFC admite nos trade-offs.
+- **Enfraquece o argumento de IaC**, porque k3s exige provisionamento imperativo
+  via `user_data`/`remote-exec`.
+
+O custo — único argumento a favor — mostrou-se administrável: ~US$2,40/dia de
+control plane, com `terraform destroy` entre sessões de estudo. A decisão final
+está no [ADR-0007](../adr/README.md).

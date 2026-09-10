@@ -36,6 +36,29 @@ export class AvancarStatusUseCase {
       timestampExtra: timestampsParaStatus(novoStatus),
     });
 
+    // Evento de negócio para os painéis exigidos na Fase 3.
+    //
+    // A duração é calculada a partir de `historico_os`, e NÃO das colunas
+    // aprovadoEm/iniciadoEm/finalizadoEm da própria OS: aquelas são um cache
+    // mantido pela aplicação e podem divergir; `historico_os.criado_em` é
+    // DEFAULT now() gerado pelo banco. Ver docs/modelo-de-dados.md, seção 6.
+    //
+    // O histórico vem ordenado por criadoEm ascendente, então o último item é
+    // a transição mais recente — o momento em que a OS entrou no status atual.
+    const entradaNoStatusAtual = os.historico.at(-1)?.criadoEm ?? os.criadoEm;
+    this.logger.info(
+      {
+        evento: 'os_status_alterado',
+        ordemId: id,
+        numeroOS: os.numero,
+        statusAnterior: os.status,
+        statusNovo: novoStatus,
+        duracaoNoStatusAnteriorMs: Date.now() - new Date(entradaNoStatusAtual).getTime(),
+        valorTotal: Number(os.valorTotal),
+      },
+      'ordem de serviço avançou de status',
+    );
+
     const cliente = os.cliente;
     if (cliente?.email) {
       // O e-mail é disparado sem await de propósito: a transição de status não

@@ -41,7 +41,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   const security = [{ bearerAuth: [] }];
 
   const consultarPublico = new ConsultarStatusPublicoUseCase(repo);
-  const criar = new CriarOrdemUseCase(repo);
+  const criar = (logger: ILogger) => new CriarOrdemUseCase(repo, logger);
   const listar = new ListarOrdensUseCase(repo);
   const buscarPorNumero = new BuscarOrdemPorNumeroUseCase(repo);
   const buscarPorId = new BuscarOrdemPorIdUseCase(repo);
@@ -102,7 +102,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         response: { 201: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
       },
     },
-    async (req, rep) => rep.status(201).send(await criar.execute(req.body)),
+    async (req, rep) => rep.status(201).send(await criar(req.log).execute(req.body)),
   );
 
   fastify.get(

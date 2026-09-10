@@ -1,6 +1,8 @@
 # RFC-0002: Escolha do banco de dados gerenciado
 
-**Status:** Proposta — depende da aprovação de [RFC-0001](0001-escolha-do-provedor-de-nuvem.md)
+**Status:** Implementada (2026-09-09) — RDS PostgreSQL provisionado em
+`oficina-infra-db`. A justificativa formal do motor, o diagrama ER e a explicação
+dos relacionamentos estão em [modelo-de-dados.md](../modelo-de-dados.md).
 
 ## Problema
 
@@ -32,8 +34,17 @@ O que esta RFC decide é **onde e como esse Postgres roda** na Fase 3.
 - `DATABASE_URL` passa a apontar para o endpoint do RDS, injetado via Kubernetes Secret (mesmo padrão já usado para `JWT_SECRET`, ver [`k8s/secret.example.yaml`](../../k8s/secret.example.yaml)).
 - Backups e upgrades de versão do Postgres deixam de ser responsabilidade manual do time.
 
-## Próximos passos
+## Próximos passos — situação em 2026-09-09
 
-1. Provisionar RDS via Terraform (`oficina-infra-db`), com Security Group restringindo acesso só à VPC do cluster.
-2. Migrar dados (se houver ambiente já em uso) do Postgres em Deployment para o RDS.
-3. Atualizar o Secret do cluster com a nova `DATABASE_URL`.
+1. ~~Provisionar RDS via Terraform.~~ **Feito** em `oficina-infra-db`. O Security
+   Group ficou mais restrito do que o proposto: em vez de liberar a VPC inteira,
+   o acesso é concedido por *security group de origem* — o SG dos nós do EKS e um
+   SG "crachá" que a Lambda anexa. Nenhuma regra usa faixa de IP.
+2. Migração de dados: não se aplica — não havia ambiente em uso.
+3. ~~Atualizar o Secret do cluster.~~ **Feito**: o pipeline lê a `DATABASE_URL` do
+   SSM (SecureString) e cria o Secret no deploy. A senha nunca é digitada nem
+   versionada.
+
+Além do previsto, foram adicionados um parameter group com
+`log_min_duration_statement = 1000` (base do painel de queries lentas) e
+Performance Insights.

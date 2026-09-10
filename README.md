@@ -1,165 +1,277 @@
-# Oficina Mecânica
+# Oficina Mecânica — API
 
-Sistema Integrado de Atendimento e Execução de Serviços.
+Sistema Integrado de Atendimento e Execução de Serviços de uma oficina mecânica.
+Aplicação principal executando em Kubernetes — **repositório 4 de 4** do Tech
+Challenge Fase 3.
 
-## Fase 2 — Escalabilidade, qualidade e automação
+Gerencia clientes, veículos, catálogo de serviços, estoque de peças e o ciclo de
+vida da ordem de serviço: Recebida → Em Diagnóstico → Aguardando Aprovação → Em
+Execução → Finalizada → Entregue.
 
-A Fase 1 entregou a API funcional (clientes, veículos, ordens de serviço, peças). Esta fase evolui essa base para suportar produção real:
-
-- **Clean Architecture**: código reorganizado em camadas `domain → application → infrastructure → presentation`, com um caso de uso por ação e repositórios acessados só por interface (ver [docs/arquitetura.md](docs/arquitetura.md)).
-- **Testes automatizados**: unitários (use cases com repositórios mockados) e de integração (rotas HTTP com Postgres real) — cobertura atual **89,8%**.
-- **Containerização e orquestração**: Docker/docker-compose para dev local e manifestos Kubernetes (Deployment, Service, ConfigMap, Secret, HPA) para produção.
-- **Infraestrutura como código**: cluster Kubernetes local (Kind) provisionado via Terraform.
-- **CI/CD**: pipeline no GitHub Actions que builda, testa, empacota a imagem Docker e faz deploy automático no cluster a cada push em `main`.
-- **Notificação por e-mail**: cliente recebe e-mail a cada mudança de status da OS e quando o orçamento fica pronto para aprovação.
-
----
-
-## Qualidade e Segurança
-
-| Indicador                   | Resultado                       |
-| --------------------------- | ------------------------------- |
-| Quality Gate (SonarQube)    | ✅ PASSOU                       |
-| Bugs                        | 0                               |
-| Vulnerabilidades            | 0                               |
-| Security Hotspots           | 0                               |
-| Cobertura de testes         | 89,8%                           |
-
-
-| CORS Misconfiguration (ZAP) | ✅ Corrigido (allowlist explícita via `ALLOWED_ORIGINS`) |
-| SQL Injection / XSS / RCE   | ✅ Nenhuma encontrada           |
-
-> Relatórios completos em [`reports/`](reports/) e [`docs/qualidade-seguranca.md`](docs/qualidade-seguranca.md)
+| Repositório | Papel |
+| --- | --- |
+| [oficina-auth-lambda](../oficina-auth-lambda) | Function serverless de autenticação por CPF + API Gateway |
+| [oficina-infra-k8s](../oficina-infra-k8s) | VPC + cluster EKS + metrics-server |
+| [oficina-infra-db](../oficina-infra-db) | RDS PostgreSQL gerenciado |
+| **oficina-mvp** (este) | Aplicação principal executando no cluster |
 
 ---
 
-## Stack
+## Arquitetura deste repositório
 
-| Tecnologia     | Uso                           |
-| -------------- | ----------------------------- |
-| **Fastify**    | Framework HTTP                |
-| **Prisma**     | ORM + migrations              |
-| **PostgreSQL** | Banco de dados                |
-| **Zod**        | Validação de schemas          |
-| **JWT**        | Autenticação stateless        |
-| **Vitest**     | Testes unitários e integração |
-| **Docker**     | Containerização               |
+```mermaid
+flowchart TB
+    gw{{"API Gateway<br/>oficina-auth-lambda"}}
 
-### Por que PostgreSQL?
+    subgraph eks["Cluster EKS · namespace oficina"]
+        nlb["Service LoadBalancer<br/>NLB"]
 
-Uma oficina mecânica tem dados que se conectam naturalmente: o cliente tem veículos, cada veículo pode ter várias ordens de serviço, e cada OS reúne serviços e peças com os preços registrados no momento em que foram incluídos. Esse tipo de dado pede um banco relacional — e o PostgreSQL é a escolha mais sólida e confiável para isso.
+        subgraph dep["Deployment oficina-api"]
+            p1["pod"]
+            p2["pod"]
+            p3["pod ..."]
+        end
 
-Três pontos foram decisivos na escolha:
+        hpa["HPA<br/>2 a 10 réplicas<br/>CPU 70% / mem 80%"]
+        cm[("ConfigMap<br/>oficina-config")]
+        sec[("Secret<br/>oficina-secret")]
+    end
 
-**Operações seguras.** Quando uma peça é adicionada numa OS, o estoque precisa ser descontado ao mesmo tempo. Se algo der errado no meio do caminho, o banco desfaz tudo automaticamente — sem deixar o estoque pela metade. O Prisma usa esse recurso do PostgreSQL para garantir que as coisas aconteçam de forma completa ou não aconteçam.
+    rds[("RDS PostgreSQL<br/>oficina-infra-db")]
+    nr[("New Relic")]
+    smtp["SMTP"]
 
-**Valores sem erro de arredondamento.** Preços de peças e serviços são guardados num formato numérico preciso (`DECIMAL`), não em ponto flutuante. Isso evita aqueles centavos a mais ou a menos que surgem quando se usa formatos inadequados para dinheiro.
+    gw --> nlb --> dep
+    hpa -.->|"escala"| dep
+    cm -.-> dep
+    sec -.-> dep
+    dep -->|"Prisma · 5432"| rds
+    dep -.->|"APM, logs, traces"| nr
+    dep -.->|"notificações"| smtp
+```
 
-**Numeração de OS sem duplicata.** Cada ordem de serviço recebe um número único e em ordem. O PostgreSQL garante isso de forma automática, mesmo que várias OSs sejam abertas ao mesmo tempo.
+Internamente a aplicação segue Clean Architecture em quatro camadas
+(`domain` → `application` → `infrastructure` / `presentation`), detalhada em
+[docs/arquitetura.md](docs/arquitetura.md).
+
+```
+src/
+├── domain/          contratos: repositórios, serviços, enums — sem framework
+├── application/     casos de uso, um por ação
+├── infrastructure/  Prisma, Nodemailer, JWT
+├── presentation/    rotas Fastify, schemas Zod, middlewares de autorização
+└── shared/          erros e utilitários
+```
 
 ---
 
-## Início rápido (Docker)
+## Tecnologias
+
+| Camada | Tecnologia |
+| --- | --- |
+| Runtime | Node.js 20, TypeScript 5.6 |
+| HTTP | Fastify 4 + `fastify-type-provider-zod` |
+| Banco | PostgreSQL 16 (Amazon RDS) via Prisma 5 |
+| Autenticação | JWT (`@fastify/jwt`), HS256 |
+| Validação | Zod |
+| Testes | Vitest — 137 testes, unitários e de integração |
+| Container | Docker multi-stage, usuário não-root |
+| Orquestração | Kubernetes (Amazon EKS) com HPA |
+| Observabilidade | New Relic APM + logs JSON (pino) com correlação |
+| CI/CD | GitHub Actions — testes, imagem no GHCR, deploy no EKS |
+| Qualidade | SonarCloud (opcional), Prettier |
+
+---
+
+## Autenticação e autorização
+
+Dois emissores de token, um único validador.
+
+| Quem | Como autentica | Onde | Papel |
+| --- | --- | --- | --- |
+| Funcionário / Admin | e-mail + senha | `POST /auth/login` nesta API | `FUNCIONARIO`, `ADMIN` |
+| Cliente final | CPF | `POST /auth/cpf` na [Lambda](../oficina-auth-lambda) | `CLIENTE` |
+
+Ambos os tokens são assinados com o **mesmo `JWT_SECRET`**. Esta API apenas valida.
+
+O papel determina o que se pode acessar:
+
+| Guard | Aplicado em | Regra |
+| --- | --- | --- |
+| `exigirInterno` | todas as rotas administrativas | `role ∈ {ADMIN, FUNCIONARIO}` |
+| `exigirDonoDoRecurso` | `GET /ordens/:id`, `GET /ordens/numero/:n`, `GET /clientes/:id` | interno passa; cliente só acessa o próprio recurso |
+| `exigirRole('ADMIN')` | `/auth/usuarios` | só administrador |
+
+> Isso não é detalhe de implementação. Sem `exigirInterno`, um token de cliente
+> legítimo abriria `GET /clientes` (a base inteira, com CPF de todo mundo) e
+> `PUT /ordens/:id` (alterar OS de terceiros). Ver
+> [ADR-0008](docs/adr/0008-autorizacao-do-papel-cliente.md).
+
+---
+
+## API
+
+- **Swagger UI:** `<API_GATEWAY_URL>/docs`
+- **OpenAPI versionado:** [`docs/openapi.json`](docs/openapi.json) — 27 caminhos,
+  gerado no CI a cada push, então não depende de haver ambiente no ar
+- **Postman:** [`postman/oficina-mvp.postman_collection.json`](postman/oficina-mvp.postman_collection.json)
+  (41 endpoints) + [environment local](postman/oficina-mvp.local.postman_environment.json)
+
+### Fluxo mínimo
 
 ```bash
-# 1. Configure o ambiente
-cp .env.example .env
+BASE=<API_GATEWAY_URL>
 
-# 2. Suba os containers
+# Cliente final — autentica por CPF (Lambda)
+TOKEN=$(curl -sS -X POST "$BASE/auth/cpf" \
+  -H 'content-type: application/json' \
+  -d '{"cpf":"529.982.247-25"}' | jq -r .token)
+
+# Consulta a própria OS
+curl -sS "$BASE/ordens/numero/1042" -H "Authorization: Bearer $TOKEN"
+
+# Funcionário — autentica por e-mail e senha (esta API)
+TOKEN=$(curl -sS -X POST "$BASE/auth/login" \
+  -H 'content-type: application/json' \
+  -d '{"email":"admin@oficina.com","senha":"..."}' | jq -r .token)
+
+curl -sS "$BASE/ordens" -H "Authorization: Bearer $TOKEN"
+```
+
+### Healthchecks
+
+| Rota | Uso | Verifica o banco? |
+| --- | --- | --- |
+| `GET /health` | liveness probe | não — de propósito |
+| `GET /health/ready` | readiness probe e synthetic check | sim (`SELECT 1`) |
+
+Liveness raso e readiness profundo: se ambos tocassem o banco, uma indisponibilidade
+do RDS reiniciaria todos os pods em cascata sem resolver nada.
+
+---
+
+## Execução local
+
+```bash
+git clone <url> && cd oficina-mvp
+cp .env.example .env      # ajuste JWT_SECRET (mínimo 32 caracteres)
+
 docker compose up -d --build
+docker compose exec api npx prisma migrate deploy
+docker compose exec api npm run db:seed
 
-# 3. Rode o seed
-docker compose exec api npx prisma db seed
-
-# 4. Acesse a documentação
+curl http://localhost:3000/health
 open http://localhost:3000/docs
 ```
 
-### Credenciais padrão (após seed)
-
-| Role        | Email                   | Senha     |
-| ----------- | ----------------------- | --------- |
-| Admin       | admin@oficina.com       | Admin@123 |
-| Funcionário | funcionario@oficina.com | Func@123  |
-
----
-
-## Arquitetura e infraestrutura
-
-```
-Cliente HTTP
-     │
-     ▼
-┌──────────────────────────────┐        ┌──────────────────────┐
-│  oficina-api (Fastify)       │◄──────►│  PostgreSQL           │
-│  domain → application →      │        │  (Deployment + PVC)   │
-│  infrastructure/presentation │        └──────────────────────┘
-│  2-10 réplicas via HPA       │
-└──────────────────────────────┘
-     ▲
-     │ imagem publicada em cada push na main
-┌──────────────────────────────┐
-│  CI/CD (GitHub Actions)      │  build → test → docker build/push (GHCR) → deploy
-└──────────────────────────────┘
-     ▲
-     │ provisiona o cluster antes do primeiro deploy
-┌──────────────────────────────┐
-│  Terraform (Kind + K8s)      │  cluster → namespace → secret
-└──────────────────────────────┘
-```
-
-- **Componentes da aplicação**: API Fastify (camadas Clean Architecture, ver [docs/arquitetura.md](docs/arquitetura.md)) + PostgreSQL, ambos rodando como Deployments no namespace `oficina`.
-- **Infraestrutura provisionada**: cluster Kubernetes (Kind) criado pelo Terraform ([docs/terraform.md](docs/terraform.md)); dentro dele, os manifestos em [`/k8s`](k8s) criam namespace, ConfigMap, Secret, PVC do Postgres, Deployments, Services e o HPA ([docs/kubernetes.md](docs/kubernetes.md)).
-- **Fluxo de deploy**: push em `main` → pipeline roda testes → builda e publica a imagem no GHCR → aplica os manifestos K8s com a nova imagem, incluindo o Postgres e o HPA ([docs/cicd.md](docs/cicd.md)).
-
-### Resumo — deploy e configuração de ambiente
-
-| Etapa               | O que acontece                                              | Onde                        |
-| -------------------- | ------------------------------------------------------------- | ---------------------------- |
-| 1. Push/PR em `main` | Roda testes com Postgres efêmero                              | `job: test` no CI/CD          |
-| 2. Build             | Builda a imagem Docker e publica no GHCR                      | `job: docker` no CI/CD        |
-| 3. Deploy            | Aplica `/k8s` no cluster com a nova imagem (ConfigMap, Secret, Postgres, API, HPA) | `job: deploy` no CI/CD (runner self-hosted) |
-| 4. Configuração      | Variáveis não-sensíveis no ConfigMap, credenciais no Secret, ambos consumidos pelo Deployment | [`k8s/configmap.yaml`](k8s/configmap.yaml), [`k8s/secret.example.yaml`](k8s/secret.example.yaml) |
-
-Tabela completa de variáveis (nome, padrão, onde é definida em local/produção/CI) em [docs/desenvolvimento.md](docs/desenvolvimento.md#variáveis-de-ambiente).
-
-### Deploy em Kubernetes
+Sem Docker:
 
 ```bash
-# 1. Provisiona o cluster local (Kind) com Terraform — ver docs/terraform.md
-cd infra
-cp terraform.tfvars.example terraform.tfvars   # preencha com valores reais
-terraform init
-terraform apply
-
-# 2. Builda a imagem, carrega no cluster Kind e aplica os manifestos — ver docs/kubernetes.md
-cd ..
-docker build -t oficina:local --target runner .
-./scripts/k8s-deploy.sh oficina:local oficina
+npm ci
+npx prisma generate
+npx prisma migrate deploy
+npm run dev
 ```
 
-O Terraform já cria o namespace `oficina` e o Secret `oficina-secret` (a partir do `terraform.tfvars`); o script `k8s-deploy.sh` carrega a imagem no cluster e aplica ConfigMap, Postgres, API e HPA. Em produção (CI/CD), esses mesmos manifestos são aplicados automaticamente pelo job `deploy` do [workflow](.github/workflows/ci-cd.yml) a cada push em `main`, usando a imagem publicada no GHCR em vez de uma imagem local.
+### Testes
+
+```bash
+npm test              # 137 testes com cobertura
+npm run test:watch
+npm run typecheck
+npm run format:check
+```
+
+Os testes usam mock do Prisma e não precisam de banco.
 
 ---
 
-## Testando a API
+## Deploy
 
-Collection completa do Postman (todos os endpoints, incluindo o fluxo de e-mail transacional da OS): [`postman/oficina-mvp.postman_collection.json`](postman/oficina-mvp.postman_collection.json). Importe no Postman e siga as instruções na descrição da collection.
+> **Ordem obrigatória entre os repositórios.** Este deploy lê do SSM o nome do
+> cluster e a `DATABASE_URL`, e falha com mensagem explícita se faltarem:
+>
+> ```
+> oficina-infra-k8s  →  oficina-infra-db  →  oficina-mvp  →  oficina-auth-lambda
+> ```
 
-Ou use a documentação interativa (Swagger) em `http://localhost:3000/docs` com a API rodando.
+### Automático
+
+| Gatilho | O que acontece |
+| --- | --- |
+| PR para `main` ou `homolog` | formatação, migrations, build, 137 testes, SonarCloud |
+| Push em `homolog` | tudo acima + imagem no GHCR + deploy no EKS de homologação + smoke test |
+| Push em `main` | tudo acima + deploy no EKS de produção + smoke test |
+
+O smoke test exige que `/health/ready` responda 200 e que `/clientes` sem token
+responda 401 — se a autorização quebrar, o deploy falha.
+
+Ao final, o pipeline publica o hostname do Load Balancer em
+`/oficina/<env>/api/endpoint`, que é o backend usado pelo API Gateway.
+
+### Manual
+
+```bash
+CLUSTER=$(aws ssm get-parameter --name /oficina/prod/eks/cluster_name \
+  --query Parameter.Value --output text)
+aws eks update-kubeconfig --region us-east-1 --name "$CLUSTER"
+
+DATABASE_URL=$(aws ssm get-parameter --name /oficina/prod/db/database_url \
+  --with-decryption --query Parameter.Value --output text)
+
+kubectl apply -f k8s/namespace.yaml -f k8s/configmap.yaml
+kubectl create secret generic oficina-secret -n oficina \
+  --from-literal=DATABASE_URL="$DATABASE_URL" \
+  --from-literal=JWT_SECRET="<o MESMO da Lambda>" \
+  --from-literal=NEW_RELIC_LICENSE_KEY="<chave>" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+sed "s|DOCKER_IMAGE_PLACEHOLDER|ghcr.io/<owner>/oficina:latest|g" \
+  k8s/api-deployment.yaml | kubectl apply -f -
+kubectl apply -f k8s/api-service.yaml -f k8s/hpa.yaml
+kubectl rollout status deployment/oficina-api -n oficina
+```
+
+### Secrets do repositório
+
+| Secret | Origem |
+| --- | --- |
+| `AWS_ACCESS_KEY_ID` | Learner Lab → AWS Details → AWS CLI |
+| `AWS_SECRET_ACCESS_KEY` | idem |
+| `AWS_SESSION_TOKEN` | idem — **expira a cada 4h** |
+| `JWT_SECRET` | **o mesmo** configurado na Lambda de autenticação |
+| `NEW_RELIC_LICENSE_KEY` | New Relic → Administration → API keys |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | opcionais |
+| `SONAR_TOKEN` | opcional — sem ele o job de qualidade é ignorado |
+
+---
+
+## Observabilidade
+
+Diretório [`observabilidade/`](observabilidade/) traz o dashboard pronto para
+importar, as consultas NRQL em texto e as 9 condições de alerta.
+
+Os painéis não inferem nada de status HTTP: os casos de uso emitem eventos de
+negócio explícitos (`os_criada`, `os_status_alterado`, `falha_integracao`).
+
+Toda requisição carrega um `x-request-id` — propagado pelo API Gateway, honrado
+pela aplicação e devolvido em toda resposta —, o que permite seguir uma chamada do
+access log do gateway até a linha de log da aplicação.
 
 ---
 
 ## Documentação
 
-| Documento                                            | Descrição                                                             |
-| ---------------------------------------------------- | --------------------------------------------------------------------- |
-| [Domínio](docs/dominio.md)                           | Linguagem ubíqua, entidades, regras invariantes e ciclo de vida da OS |
-| [Arquitetura](docs/arquitetura.md)                   | Camadas Clean Architecture, módulos, endpoints e máquina de estados   |
-| [Desenvolvimento](docs/desenvolvimento.md)           | Execução local, testes, variáveis de ambiente e comandos úteis        |
-| [Kubernetes](docs/kubernetes.md)                     | Manifestos, recursos do cluster e como aplicá-los                     |
-| [Terraform](docs/terraform.md)                       | Provisionamento do cluster e do Secret via IaC                        |
-| [CI/CD](docs/cicd.md)                                | Pipeline do GitHub Actions — jobs, triggers e segredos necessários    |
-| [Qualidade e Segurança](docs/qualidade-seguranca.md) | SonarQube e OWASP ZAP                                                 |
-| [ADRs](docs/adr/README.md)                           | Decisões arquiteturais permanentes já implementadas                   |
-| [RFCs](docs/rfc/README.md)                           | Decisões técnicas da Fase 3 em discussão (nuvem, banco, autenticação) |
+| Documento | Assunto |
+| --- | --- |
+| [arquitetura-nuvem.md](docs/arquitetura-nuvem.md) | Diagrama de componentes e diagramas de sequência (autenticação e abertura de OS) |
+| [arquitetura.md](docs/arquitetura.md) | Clean Architecture, camadas e endpoints |
+| [modelo-de-dados.md](docs/modelo-de-dados.md) | Justificativa do banco, diagrama ER, relacionamentos e ajustes da Fase 3 |
+| [dominio.md](docs/dominio.md) | Glossário e regras de negócio |
+| [desenvolvimento.md](docs/desenvolvimento.md) | Ambiente local, padrões, testes |
+| [kubernetes.md](docs/kubernetes.md) | Manifestos e operação do cluster |
+| [cicd.md](docs/cicd.md) | Pipeline |
+| [qualidade-seguranca.md](docs/qualidade-seguranca.md) | Sonar, OWASP ZAP |
+| [ADRs](docs/adr/README.md) | Decisões arquiteturais permanentes |
+| [RFCs](docs/rfc/README.md) | Decisões técnicas em discussão |
+| [observabilidade/](observabilidade/) | Dashboards, consultas e alertas |

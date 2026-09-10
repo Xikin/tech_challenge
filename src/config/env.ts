@@ -15,6 +15,16 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('Oficina Mecânica <noreply@oficina.com>'),
   ALLOWED_ORIGINS: z.string().default(''),
+
+  // Fase 3 — observabilidade
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  // O entregável exige "link para o Swagger das APIs"; por isso o default é
+  // ligado inclusive em produção. Desligue com SWAGGER_ENABLED=false se a API
+  // for exposta a um público não confiável.
+  SWAGGER_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
 });
 
 export type Env = z.infer<typeof envSchema>;

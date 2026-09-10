@@ -17,7 +17,7 @@ import {
   listarClientesResponseSchema,
   erroResponseSchema,
 } from '../schemas/clientes.schema';
-import { autenticar } from '../middlewares/auth.middleware';
+import { exigirInterno, exigirDonoDoRecurso } from '../middlewares/auth.middleware';
 
 export const clientesRoutes: FastifyPluginAsync = async (instance) => {
   const fastify = instance.withTypeProvider<ZodTypeProvider>();
@@ -35,7 +35,7 @@ export const clientesRoutes: FastifyPluginAsync = async (instance) => {
   fastify.post(
     '/',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -50,7 +50,7 @@ export const clientesRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -65,7 +65,7 @@ export const clientesRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/cpf-cnpj/:documento',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -81,7 +81,9 @@ export const clientesRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/:id',
     {
-      onRequest: [autenticar],
+      // O próprio cliente pode consultar o seu cadastro: o `sub` do token
+      // emitido pela Lambda de autenticação É o id do cliente.
+      onRequest: [exigirDonoDoRecurso(async (req) => (req.params as { id: string }).id)],
       schema: {
         tags,
         security,
@@ -96,7 +98,7 @@ export const clientesRoutes: FastifyPluginAsync = async (instance) => {
   fastify.put(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -112,7 +114,7 @@ export const clientesRoutes: FastifyPluginAsync = async (instance) => {
   fastify.delete(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,

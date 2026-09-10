@@ -1,7 +1,8 @@
 import { BusinessError, NotFoundError } from '../../../shared/errors';
-import { STATUS_LABEL, TIMESTAMP_CAMPO } from './ordens.constants';
+import { STATUS_LABEL, timestampsParaStatus } from './ordens.constants';
 import type { IOrdemRepository } from '../../../domain/repositories/ordens.repository.interface';
 import type { IEmailService } from '../../../domain/services/email.service.interface';
+import { loggerSilencioso, type ILogger } from '../../../domain/services/logger.service.interface';
 
 export interface AprovarOrcamentoInput {
   aprovado: boolean;
@@ -12,6 +13,7 @@ export class AprovarOrcamentoUseCase {
   constructor(
     private readonly repo: IOrdemRepository,
     private readonly emailService: IEmailService,
+    private readonly logger: ILogger = loggerSilencioso,
   ) {}
 
   async execute(id: string, input: AprovarOrcamentoInput) {
@@ -29,7 +31,7 @@ export class AprovarOrcamentoUseCase {
         novoStatus: 'EM_EXECUCAO',
         observacao: input.observacao ?? 'Orçamento aprovado pelo cliente',
         qtdServicos: os.servicos.length,
-        timestampExtra: TIMESTAMP_CAMPO['EM_EXECUCAO'] ?? {},
+        timestampExtra: timestampsParaStatus('EM_EXECUCAO'),
       });
     } else {
       await this.repo.reprovar({
@@ -54,7 +56,23 @@ export class AprovarOrcamentoUseCase {
           statusNovo: STATUS_LABEL[atualizada!.status],
           observacao: input.observacao,
         })
-        .catch(() => {});
+        .catch((erro: unknown) => {
+          // Ver comentário equivalente em avancar-status.use-case.ts: a falha de
+          // e-mail não derruba a aprovação do orçamento, mas precisa ser emitida
+          // para alimentar o alerta de falha de integração.
+          this.logger.error(
+            {
+              evento: 'falha_integracao',
+              integracao: 'email',
+              operacao: 'notificar_resultado_orcamento',
+              ordemId: id,
+              numeroOS: atualizada!.numero,
+              aprovado: input.aprovado,
+              erro: erro instanceof Error ? erro.message : String(erro),
+            },
+            'falha ao notificar cliente sobre o resultado do orçamento',
+          );
+        });
     }
 
     return atualizada!;

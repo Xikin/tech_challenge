@@ -24,6 +24,8 @@ A Fase 1 entregou a API funcional (clientes, veículos, ordens de serviço, peç
 | Vulnerabilidades            | 0                               |
 | Security Hotspots           | 0                               |
 | Cobertura de testes         | 89,8%                           |
+
+
 | CORS Misconfiguration (ZAP) | ✅ Corrigido (allowlist explícita via `ALLOWED_ORIGINS`) |
 | SQL Injection / XSS / RCE   | ✅ Nenhuma encontrada           |
 

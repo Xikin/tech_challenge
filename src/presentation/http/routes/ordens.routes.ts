@@ -11,6 +11,7 @@ import { AtualizarOrdemUseCase } from '../../../application/use-cases/ordens/atu
 import { AdicionarItensUseCase } from '../../../application/use-cases/ordens/adicionar-itens.use-case';
 import { AvancarStatusUseCase } from '../../../application/use-cases/ordens/avancar-status.use-case';
 import { AprovarOrcamentoUseCase } from '../../../application/use-cases/ordens/aprovar-orcamento.use-case';
+import type { ILogger } from '../../../domain/services/logger.service.interface';
 import { ReprovarOrcamentoUseCase } from '../../../application/use-cases/ordens/reprovar-orcamento.use-case';
 import { CancelarOrdemUseCase } from '../../../application/use-cases/ordens/cancelar-ordem.use-case';
 import {
@@ -30,7 +31,7 @@ import {
   listarOSResponseSchema,
   consultaPublicaResponseSchema,
 } from '../schemas/ordens.schema';
-import { autenticar } from '../middlewares/auth.middleware';
+import { exigirInterno, exigirDonoDoRecurso } from '../middlewares/auth.middleware';
 
 export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   const fastify = instance.withTypeProvider<ZodTypeProvider>();
@@ -46,10 +47,29 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   const buscarPorId = new BuscarOrdemPorIdUseCase(repo);
   const atualizar = new AtualizarOrdemUseCase(repo);
   const adicionarItens = new AdicionarItensUseCase(repo);
-  const avancarStatus = new AvancarStatusUseCase(repo, emailService);
-  const aprovarOrcamento = new AprovarOrcamentoUseCase(repo, emailService);
+  // Estes dois disparam e-mail e, portanto, registram falhas de integração.
+  // São construídos por requisição para receber o `req.log` — o child logger
+  // do Fastify que já carrega o reqId, dando correlação à linha de erro.
+  const avancarStatus = (logger: ILogger) => new AvancarStatusUseCase(repo, emailService, logger);
+  const aprovarOrcamento = (logger: ILogger) =>
+    new AprovarOrcamentoUseCase(repo, emailService, logger);
   const reprovarOrcamento = new ReprovarOrcamentoUseCase(repo);
   const cancelar = new CancelarOrdemUseCase(repo);
+
+  // O cliente final (role CLIENTE, autenticado por CPF na Lambda) pode LER a
+  // própria OS — e só a própria. Todas as demais rotas continuam restritas ao
+  // pessoal da oficina.
+  const donoPorId = exigirDonoDoRecurso(async (req) => {
+    const { id } = req.params as { id: string };
+    const os = await repo.buscarPorId(id);
+    return os ? os.cliente.id : null;
+  });
+
+  const donoPorNumero = exigirDonoDoRecurso(async (req) => {
+    const { numero } = req.params as { numero: number };
+    const os = await repo.buscarPorNumero(Number(numero));
+    return os ? os.cliente.id : null;
+  });
 
   fastify.get(
     '/consulta-publica',
@@ -73,7 +93,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.post(
     '/',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -88,7 +108,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -103,7 +123,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/numero/:numero',
     {
-      onRequest: [autenticar],
+      onRequest: [donoPorNumero],
       schema: {
         tags,
         security,
@@ -118,7 +138,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [donoPorId],
       schema: {
         tags,
         security,
@@ -133,7 +153,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.put(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -149,7 +169,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.post(
     '/:id/itens',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -166,7 +186,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.patch(
     '/:id/avancar',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -178,13 +198,13 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         response: { 200: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
       },
     },
-    async (req, rep) => rep.send(await avancarStatus.execute(req.params.id, req.body)),
+    async (req, rep) => rep.send(await avancarStatus(req.log).execute(req.params.id, req.body)),
   );
 
   fastify.patch(
     '/:id/aprovar-orcamento',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -195,13 +215,13 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         response: { 200: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
       },
     },
-    async (req, rep) => rep.send(await aprovarOrcamento.execute(req.params.id, req.body)),
+    async (req, rep) => rep.send(await aprovarOrcamento(req.log).execute(req.params.id, req.body)),
   );
 
   fastify.patch(
     '/:id/reprovar',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -219,7 +239,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.patch(
     '/:id/cancelar',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,

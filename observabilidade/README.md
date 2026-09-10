@@ -110,7 +110,7 @@ Em *Infrastructure → AWS → Add AWS account*, escolher **metric streams** ou
 
 > No AWS Academy Learner Lab a integração por role costuma falhar, porque não é
 > possível criar a IAM role que o New Relic pede (ver
-> [ADR-0005](../../oficina-infra-k8s/docs/adr/0005-restricoes-aws-academy.md)).
+> [ADR-0005](https://github.com/Xikin/oficina-infra-k8s/blob/main/docs/adr/0005-restricoes-aws-academy.md)).
 > Alternativa que funciona: encaminhar os log groups do CloudWatch por uma
 > subscription filter para a Lambda `newrelic-log-ingestion`, ou simplesmente
 > consultar os logs no CloudWatch para esses três componentes. Os painéis de OS,

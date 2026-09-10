@@ -332,9 +332,9 @@ importar no New Relic.
 
 | Documento | Assunto |
 | --- | --- |
-| [ADR-0005](../../oficina-infra-k8s/docs/adr/0005-restricoes-aws-academy.md) | Restrições do AWS Academy (LabRole, credenciais de 4h, sem NAT) |
-| [ADR-0006](../../oficina-auth-lambda/docs/adr/0006-segredos-da-lambda.md) | Segredos injetados no deploy em vez de lidos em runtime |
-| [ADR-0007](../../oficina-infra-k8s/docs/adr/0007-eks-em-vez-de-k3s.md) | EKS gerenciado em vez de k3s de nó único |
+| [ADR-0005](https://github.com/Xikin/oficina-infra-k8s/blob/main/docs/adr/0005-restricoes-aws-academy.md) | Restrições do AWS Academy (LabRole, credenciais de 4h, sem NAT) |
+| [ADR-0006](https://github.com/Xikin/oficina-auth-lambda/blob/main/docs/adr/0006-segredos-da-lambda.md) | Segredos injetados no deploy em vez de lidos em runtime |
+| [ADR-0007](https://github.com/Xikin/oficina-infra-k8s/blob/main/docs/adr/0007-eks-em-vez-de-k3s.md) | EKS gerenciado em vez de k3s de nó único |
 | [ADR-0008](adr/0008-autorizacao-do-papel-cliente.md) | Autorização do papel CLIENTE |
 | [ADR-0009](adr/0009-api-gateway-entrada-unica.md) | API Gateway como ponto único de entrada |
 | [ADR-0010](adr/0010-observabilidade-new-relic.md) | New Relic como stack de observabilidade |

@@ -38,7 +38,7 @@ Para o cluster Kubernetes, propomos **não usar EKS** (custo fixo de control pla
 1. ~~Aprovação do grupo sobre a escolha de AWS.~~ **Feito.**
 2. ~~Criar conta AWS dedicada.~~ **Feito** — AWS Academy Learner Lab, com as
    restrições registradas no
-   [ADR-0005](../../../oficina-infra-k8s/docs/adr/0005-restricoes-aws-academy.md).
+   [ADR-0005](https://github.com/Xikin/oficina-infra-k8s/blob/main/docs/adr/0005-restricoes-aws-academy.md).
 3. ~~Trocar o provider Terraform de `kind` para `aws`.~~ **Feito** em
    `oficina-infra-k8s`.
 

@@ -10,9 +10,9 @@ Execução → Finalizada → Entregue.
 
 | Repositório | Papel |
 | --- | --- |
-| [oficina-auth-lambda](../oficina-auth-lambda) | Function serverless de autenticação por CPF + API Gateway |
-| [oficina-infra-k8s](../oficina-infra-k8s) | VPC + cluster EKS + metrics-server |
-| [oficina-infra-db](../oficina-infra-db) | RDS PostgreSQL gerenciado |
+| [oficina-auth-lambda](https://github.com/Xikin/oficina-auth-lambda) | Function serverless de autenticação por CPF + API Gateway |
+| [oficina-infra-k8s](https://github.com/Xikin/oficina-infra-k8s) | VPC + cluster EKS + metrics-server |
+| [oficina-infra-db](https://github.com/Xikin/oficina-infra-db) | RDS PostgreSQL gerenciado |
 | **oficina-mvp** (este) | Aplicação principal executando no cluster |
 
 ---
@@ -90,7 +90,7 @@ Dois emissores de token, um único validador.
 | Quem | Como autentica | Onde | Papel |
 | --- | --- | --- | --- |
 | Funcionário / Admin | e-mail + senha | `POST /auth/login` nesta API | `FUNCIONARIO`, `ADMIN` |
-| Cliente final | CPF | `POST /auth/cpf` na [Lambda](../oficina-auth-lambda) | `CLIENTE` |
+| Cliente final | CPF | `POST /auth/cpf` na [Lambda](https://github.com/Xikin/oficina-auth-lambda) | `CLIENTE` |
 
 Ambos os tokens são assinados com o **mesmo `JWT_SECRET`**. Esta API apenas valida.
 

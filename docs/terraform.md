@@ -16,9 +16,9 @@
 
 | Repositório | Provisiona | Estado remoto |
 | --- | --- | --- |
-| [`oficina-infra-k8s`](../../oficina-infra-k8s) | VPC, subnets, IGW, cluster EKS, managed node group, metrics-server | `s3://<bucket>/infra-k8s/<env>/terraform.tfstate` |
-| [`oficina-infra-db`](../../oficina-infra-db) | RDS PostgreSQL, subnet group, parameter group, security groups | `s3://<bucket>/infra-db/<env>/terraform.tfstate` |
-| [`oficina-auth-lambda`](../../oficina-auth-lambda) | Lambda de autenticação, API Gateway, rotas, log groups | `s3://<bucket>/auth-lambda/<env>/terraform.tfstate` |
+| [`oficina-infra-k8s`](https://github.com/Xikin/oficina-infra-k8s) | VPC, subnets, IGW, cluster EKS, managed node group, metrics-server | `s3://<bucket>/infra-k8s/<env>/terraform.tfstate` |
+| [`oficina-infra-db`](https://github.com/Xikin/oficina-infra-db) | RDS PostgreSQL, subnet group, parameter group, security groups | `s3://<bucket>/infra-db/<env>/terraform.tfstate` |
+| [`oficina-auth-lambda`](https://github.com/Xikin/oficina-auth-lambda) | Lambda de autenticação, API Gateway, rotas, log groups | `s3://<bucket>/auth-lambda/<env>/terraform.tfstate` |
 
 Cada um tem pipeline própria: `plan` comentado no PR, `apply` no merge para
 `homolog` e `main`.
@@ -82,9 +82,9 @@ Ver [desenvolvimento.md](desenvolvimento.md).
 
 ## Decisões relacionadas
 
-- [ADR-0005](../../oficina-infra-k8s/docs/adr/0005-restricoes-aws-academy.md) —
+- [ADR-0005](https://github.com/Xikin/oficina-infra-k8s/blob/main/docs/adr/0005-restricoes-aws-academy.md) —
   restrições do AWS Academy: `LabRole`, credenciais de 4h, ausência de NAT Gateway
-- [ADR-0007](../../oficina-infra-k8s/docs/adr/0007-eks-em-vez-de-k3s.md) —
+- [ADR-0007](https://github.com/Xikin/oficina-infra-k8s/blob/main/docs/adr/0007-eks-em-vez-de-k3s.md) —
   por que EKS gerenciado em vez do k3s de nó único que a RFC-0001 recomendava
 - [RFC-0001](rfc/0001-escolha-do-provedor-de-nuvem.md) — escolha da AWS
 - [RFC-0002](rfc/0002-escolha-do-banco-de-dados-gerenciado.md) — escolha do RDS

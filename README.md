@@ -24,7 +24,7 @@ A Fase 1 entregou a API funcional (clientes, veículos, ordens de serviço, peç
 | Vulnerabilidades            | 0                               |
 | Security Hotspots           | 0                               |
 | Cobertura de testes         | 89,8%                           |
-| CORS Misconfiguration (ZAP) | ⚠️ High — corrigível em 1 linha |
+| CORS Misconfiguration (ZAP) | ✅ Corrigido (allowlist explícita via `ALLOWED_ORIGINS`) |
 | SQL Injection / XSS / RCE   | ✅ Nenhuma encontrada           |
 
 > Relatórios completos em [`reports/`](reports/) e [`docs/qualidade-seguranca.md`](docs/qualidade-seguranca.md)
@@ -110,6 +110,17 @@ Cliente HTTP
 - **Infraestrutura provisionada**: cluster Kubernetes (Kind) criado pelo Terraform ([docs/terraform.md](docs/terraform.md)); dentro dele, os manifestos em [`/k8s`](k8s) criam namespace, ConfigMap, Secret, PVC do Postgres, Deployments, Services e o HPA ([docs/kubernetes.md](docs/kubernetes.md)).
 - **Fluxo de deploy**: push em `main` → pipeline roda testes → builda e publica a imagem no GHCR → aplica os manifestos K8s com a nova imagem, incluindo o Postgres e o HPA ([docs/cicd.md](docs/cicd.md)).
 
+### Resumo — deploy e configuração de ambiente
+
+| Etapa               | O que acontece                                              | Onde                        |
+| -------------------- | ------------------------------------------------------------- | ---------------------------- |
+| 1. Push/PR em `main` | Roda testes com Postgres efêmero                              | `job: test` no CI/CD          |
+| 2. Build             | Builda a imagem Docker e publica no GHCR                      | `job: docker` no CI/CD        |
+| 3. Deploy            | Aplica `/k8s` no cluster com a nova imagem (ConfigMap, Secret, Postgres, API, HPA) | `job: deploy` no CI/CD (runner self-hosted) |
+| 4. Configuração      | Variáveis não-sensíveis no ConfigMap, credenciais no Secret, ambos consumidos pelo Deployment | [`k8s/configmap.yaml`](k8s/configmap.yaml), [`k8s/secret.example.yaml`](k8s/secret.example.yaml) |
+
+Tabela completa de variáveis (nome, padrão, onde é definida em local/produção/CI) em [docs/desenvolvimento.md](docs/desenvolvimento.md#variáveis-de-ambiente).
+
 ### Deploy em Kubernetes
 
 ```bash
@@ -148,3 +159,5 @@ Ou use a documentação interativa (Swagger) em `http://localhost:3000/docs` com
 | [Terraform](docs/terraform.md)                       | Provisionamento do cluster e do Secret via IaC                        |
 | [CI/CD](docs/cicd.md)                                | Pipeline do GitHub Actions — jobs, triggers e segredos necessários    |
 | [Qualidade e Segurança](docs/qualidade-seguranca.md) | SonarQube e OWASP ZAP                                                 |
+| [ADRs](docs/adr/README.md)                           | Decisões arquiteturais permanentes já implementadas                   |
+| [RFCs](docs/rfc/README.md)                           | Decisões técnicas da Fase 3 em discussão (nuvem, banco, autenticação) |

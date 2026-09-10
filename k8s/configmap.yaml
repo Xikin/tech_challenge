@@ -13,3 +13,4 @@ data:
   BCRYPT_ROUNDS: "12"
   SMTP_PORT: "587"
   SMTP_FROM: "Oficina Mecânica <noreply@oficina.com>"
+  ALLOWED_ORIGINS: ""

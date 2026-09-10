@@ -71,6 +71,42 @@ jobs:
           path: coverage/
           retention-days: 7
 
+  sonar:
+    name: SonarQube Analysis
+    runs-on: self-hosted
+    needs: test
+    env:
+      SONAR_DB_PASSWORD: ${{ secrets.SONAR_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Baixar cobertura
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+
+      - name: Subir SonarQube
+        run: docker compose up -d sonar_postgres sonarqube
+
+      - name: Aguardar SonarQube ficar pronto
+        run: |
+          timeout 180 bash -c '
+            until docker compose exec -T sonarqube wget -qO- http://localhost:9000/api/system/status 2>/dev/null | grep -q "\"status\":\"UP\""; do
+              sleep 5
+            done
+          '
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
   docker:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest

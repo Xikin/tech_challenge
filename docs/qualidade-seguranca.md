@@ -119,7 +119,7 @@ docker run --rm --network host \
 
 | Risco    | Alerta                               | Observação                                                    |
 | -------- | ------------------------------------ | ------------------------------------------------------------- |
-| 🔴 Alto  | CORS Misconfiguration                | `origin: true` reflete qualquer origem — corrigir em produção |
+| ✅ Corrigido | CORS Misconfiguration                | `origin: true` reflete qualquer origem — resolvido (ver abaixo) |
 | 🟡 Médio | HTTP Only Site                       | Esperado em dev — usar HTTPS em produção                      |
 | ℹ️ Info  | Storable and Cacheable Content       | Adicionar `Cache-Control: no-store` em endpoints sensíveis    |
 | ✅ —     | SQL Injection, XSS, RCE, Auth Bypass | Nenhuma vulnerabilidade encontrada                            |
@@ -127,14 +127,15 @@ docker run --rm --network host \
 **Correção do CORS** (`src/app.ts`):
 
 ```typescript
-// Antes (inseguro para produção)
+// Antes (inseguro — reflete qualquer origem, em qualquer ambiente, com credenciais)
 await app.register(fastifyCors, { origin: true, credentials: true });
 
-// Depois
-await app.register(fastifyCors, {
-  origin: ["https://app.seudominio.com"],
-  credentials: true,
-});
+// Depois — allowlist explícita vinda de ALLOWED_ORIGINS (validada em src/config/env.ts),
+// sem credentials: a API autentica via Authorization: Bearer, não usa cookies.
+const allowedOrigins = env.ALLOWED_ORIGINS.split(',').filter(Boolean);
+await app.register(fastifyCors, { origin: allowedOrigins });
 ```
+
+`ALLOWED_ORIGINS` vem do `ConfigMap` em produção ([`k8s/configmap.yaml`](../k8s/configmap.yaml)) e do `.env` em desenvolvimento. Vazio por padrão — fail-closed: nenhuma origem cross-origin é permitida até ser explicitamente configurada.
 
 Relatório detalhado: [`reports/owasp-zap-report.md`](../reports/owasp-zap-report.md)

@@ -14,6 +14,7 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('Oficina Mecânica <noreply@oficina.com>'),
+  ALLOWED_ORIGINS: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;

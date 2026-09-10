@@ -24,11 +24,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
-  const allowedOrigins =
-    env.NODE_ENV === 'production'
-      ? (process.env.ALLOWED_ORIGINS ?? '').split(',').filter(Boolean)
-      : true;
-  await app.register(fastifyCors, { origin: allowedOrigins, credentials: true });
+  const allowedOrigins = env.ALLOWED_ORIGINS.split(',').filter(Boolean);
+  await app.register(fastifyCors, { origin: allowedOrigins });
   await app.register(fastifyJwt, { secret: env.JWT_SECRET });
 
   if (env.NODE_ENV !== 'production') {

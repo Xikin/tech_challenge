@@ -1,5 +1,21 @@
 # CI/CD
 
+> **Atualizado na Fase 3.** O pipeline descrito aqui rodava `sonar` e `deploy` num
+> **runner self-hosted** apontando para o Kind local. Agora:
+>
+> | | Fase 2 | Fase 3 |
+> | --- | --- | --- |
+> | Runner | self-hosted na máquina do dev | `ubuntu-latest` |
+> | Deploy | `kubectl` contra o Kind local | `aws eks update-kubeconfig` + EKS |
+> | Gatilhos | só `main` | `main` (produção) e `homolog` (homologação) |
+> | Qualidade | SonarQube em Docker local | SonarCloud, e só se `SONAR_TOKEN` existir |
+> | Verificação | nenhuma | smoke test: `/health/ready` = 200 e `/clientes` sem token = 401 |
+>
+> São quatro pipelines, um por repositório — ver
+> [arquitetura-nuvem.md](arquitetura-nuvem.md), seção 4.
+
+---
+
 Pipeline automatizado no GitHub Actions definido em `.github/workflows/ci-cd.yml`. Executa em todo **push** e **pull request** para a branch `main`.
 
 ---

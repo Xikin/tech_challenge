@@ -1,209 +1,90 @@
 # Terraform
 
-Provisionamento declarativo do cluster Kubernetes local usando **Kind** (Kubernetes in Docker). Os arquivos ficam em `/infra/`.
+> **Este documento mudou de escopo na Fase 3.**
+>
+> Na Fase 2, o diretório `infra/` deste repositório provisionava um cluster
+> **Kind local** (provider `tehcyx/kind`), com PostgreSQL rodando como
+> `Deployment` dentro do cluster.
+>
+> Na Fase 3 a infraestrutura foi para a nuvem e, conforme o enunciado exige,
+> **separada em repositórios próprios**. O diretório `infra/` foi removido deste
+> repositório — a aplicação não provisiona mais infraestrutura, apenas consome.
 
 ---
 
-## Visão geral
+## Onde está o Terraform agora
 
-```
-infra/
-├── providers.tf           declaração dos providers e versões
-├── variables.tf           definição de todas as variáveis
-├── main.tf                recursos provisionados
-├── outputs.tf             valores exportados após o apply
-├── terraform.tfvars       valores reais das variáveis (gitignored)
-└── terraform.tfvars.example  template com placeholders
-```
+| Repositório | Provisiona | Estado remoto |
+| --- | --- | --- |
+| [`oficina-infra-k8s`](../../oficina-infra-k8s) | VPC, subnets, IGW, cluster EKS, managed node group, metrics-server | `s3://<bucket>/infra-k8s/<env>/terraform.tfstate` |
+| [`oficina-infra-db`](../../oficina-infra-db) | RDS PostgreSQL, subnet group, parameter group, security groups | `s3://<bucket>/infra-db/<env>/terraform.tfstate` |
+| [`oficina-auth-lambda`](../../oficina-auth-lambda) | Lambda de autenticação, API Gateway, rotas, log groups | `s3://<bucket>/auth-lambda/<env>/terraform.tfstate` |
 
-O Terraform provisiona **3 recursos** em sequência:
+Cada um tem pipeline própria: `plan` comentado no PR, `apply` no merge para
+`homolog` e `main`.
 
-```
-kind_cluster.oficina
-    └── kubernetes_namespace.oficina
-            └── kubernetes_secret.oficina
-```
+## O que mudou, ponto a ponto
 
----
+| | Fase 2 (`infra/` neste repo) | Fase 3 (repositórios próprios) |
+| --- | --- | --- |
+| Cluster | Kind local, 1 control-plane + 1 worker | Amazon EKS 1.31, node group de 2 a 4 nós |
+| Banco | `Deployment` de Postgres + PVC no cluster | Amazon RDS PostgreSQL, subnet privada |
+| Exposição | `NodePort` 30000 + `extra_port_mappings` | Network Load Balancer atrás do API Gateway |
+| State | arquivo local, `terraform.tfstate` no disco | S3 com versionamento, criptografia e lock nativo |
+| Autoscaling | HPA sem metrics-server — nunca escalava | HPA + metrics-server + autoscaling de nós |
+| Segredos | `terraform.tfvars` local | SSM Parameter Store (SecureString) |
+| Aplicação | `terraform apply` manual | GitHub Actions no merge |
 
-## Providers
+## Contrato entre as stacks
 
-**Arquivo:** `infra/providers.tf`
+As três stacks não leem o state uma da outra. O acoplamento é o **SSM Parameter
+Store**, sob `/oficina/<env>/`:
 
-| Provider            | Fonte              | Versão    | Função                                      |
-|---------------------|--------------------|-----------|---------------------------------------------|
-| `tehcyx/kind`       | `tehcyx/kind`      | `~> 0.4.0`| Cria e gerencia clusters Kind via Docker    |
-| `hashicorp/kubernetes` | `hashicorp/kubernetes` | `~> 2.32.0` | Aplica recursos K8s no cluster criado |
-
-O provider `kubernetes` usa o kubeconfig gerado pelo Kind:
-```hcl
-provider "kubernetes" {
-  config_path = kind_cluster.oficina.kubeconfig_path
-}
-```
-
----
-
-## Variáveis
-
-**Arquivo:** `infra/variables.tf`
-
-| Variável             | Tipo     | Padrão    | Sensível | Descrição                              |
-|----------------------|----------|-----------|----------|----------------------------------------|
-| `cluster_name`       | `string` | `oficina` | Não      | Nome do cluster Kind                   |
-| `namespace`          | `string` | `oficina` | Não      | Namespace Kubernetes da aplicação      |
-| `api_node_port`      | `number` | `30000`   | Não      | Porta NodePort da API no host          |
-| `postgres_password`  | `string` | —         | **Sim**  | Senha do PostgreSQL                    |
-| `jwt_secret`         | `string` | —         | **Sim**  | Chave JWT (mínimo 32 caracteres)       |
-| `smtp_host`          | `string` | `""`      | Não      | Host SMTP (opcional)                   |
-| `smtp_user`          | `string` | `""`      | **Sim**  | Usuário SMTP (opcional)                |
-| `smtp_pass`          | `string` | `""`      | **Sim**  | Senha SMTP (opcional)                  |
-
-Variáveis sensíveis têm `sensitive = true` — o Terraform nunca as exibe no output.
-
-**Configuração local** (`infra/terraform.tfvars`, gitignored):
-```hcl
-cluster_name  = "oficina"
-namespace     = "oficina"
-api_node_port = 30000
-
-postgres_password = "sua_senha_segura"
-jwt_secret        = "sua_chave_minimo_32_caracteres"
-
-smtp_host = ""
-smtp_user = ""
-smtp_pass = ""
+```mermaid
+flowchart LR
+    k8s["oficina-infra-k8s"] -->|"vpc_id<br/>private_subnet_ids<br/>node_security_group_id<br/>cluster_name"| ssm[("SSM Parameter Store")]
+    ssm --> db["oficina-infra-db"]
+    db -->|"database_url (SecureString)<br/>client_security_group_id"| ssm
+    ssm --> app["oficina-mvp<br/>(este repositório)"]
+    app -->|"api/endpoint"| ssm
+    ssm --> fn["oficina-auth-lambda"]
 ```
 
----
+Daí a ordem obrigatória de deploy:
 
-## Recursos
-
-**Arquivo:** `infra/main.tf`
-
-### 1. `kind_cluster.oficina`
-
-Cria um cluster Kind com 2 nós (control-plane + worker):
-
-```hcl
-resource "kind_cluster" "oficina" {
-  name           = var.cluster_name
-  wait_for_ready = true
-  kind_config {
-    node { role = "control-plane"
-      extra_port_mappings {
-        container_port = var.api_node_port   # 30000
-        host_port      = var.api_node_port   # expõe no localhost
-      }
-    }
-    node { role = "worker" }
-  }
-}
+```
+oficina-infra-k8s  →  oficina-infra-db  →  oficina-mvp  →  oficina-auth-lambda
 ```
 
-O mapeamento `30000 → 30000` faz com que `http://localhost:30000` chegue ao NodePort da API dentro do cluster.
+Cada pipeline verifica no início se os parâmetros de que depende já existem, e
+falha com mensagem dizendo qual repositório aplicar antes.
 
-### 2. `kubernetes_namespace.oficina`
+## Bootstrap do backend
 
-Cria o namespace isolando todos os recursos da aplicação. Depende do cluster estar pronto (`depends_on = [kind_cluster.oficina]`).
-
-### 3. `kubernetes_secret.oficina`
-
-Cria o Secret `oficina-secret` com as credenciais sensíveis. Os valores vêm das variáveis do Terraform (nunca hardcoded):
-
-```hcl
-data = {
-  POSTGRES_PASSWORD = var.postgres_password
-  JWT_SECRET        = var.jwt_secret
-  SMTP_HOST         = var.smtp_host
-  SMTP_USER         = var.smtp_user
-  SMTP_PASS         = var.smtp_pass
-}
-```
-
----
-
-## Outputs
-
-**Arquivo:** `infra/outputs.tf`
-
-| Output           | Valor                                        | Uso                                      |
-|------------------|----------------------------------------------|------------------------------------------|
-| `cluster_name`   | Nome do cluster Kind criado                  | Referência para `kind load docker-image` |
-| `kubeconfig_path`| Caminho do kubeconfig gerado pelo Kind       | Exportar para `KUBECONFIG`               |
-| `namespace`      | Namespace da aplicação                       | Referência nos comandos `kubectl`        |
-| `api_url`        | `http://localhost:30000`                     | URL base para testar a API               |
+O bucket de state é criado uma única vez, por um script que vive em
+`oficina-infra-k8s`:
 
 ```bash
-terraform output api_url
-terraform output kubeconfig_path
+cd ../oficina-infra-k8s
+./bootstrap/backend.sh
 ```
 
----
+## Ambiente local
 
-## Comandos
-
-### Fluxo completo (primeira vez)
+Para desenvolvimento local não é mais preciso Terraform nem Kind — o
+`docker-compose.yml` deste repositório sobe API e PostgreSQL:
 
 ```bash
-cd infra
-
-# 1. Copiar e preencher variáveis
-cp terraform.tfvars.example terraform.tfvars
-# editar terraform.tfvars com suas credenciais
-
-# 2. Inicializar providers
-terraform init
-
-# 3. Visualizar o que será criado
-terraform plan
-
-# 4. Provisionar cluster + namespace + secret
-terraform apply
-
-# 5. Verificar outputs
-terraform output
+docker compose up -d --build
 ```
 
-### Recriar cluster (após problemas)
+Ver [desenvolvimento.md](desenvolvimento.md).
 
-Se o cluster foi deletado manualmente e o state ficou desatualizado:
+## Decisões relacionadas
 
-```bash
-kind delete cluster --name oficina
-
-terraform state rm kubernetes_secret.oficina
-terraform state rm kubernetes_namespace.oficina
-terraform state rm kind_cluster.oficina
-
-terraform apply
-```
-
-### Destruir tudo
-
-```bash
-terraform destroy
-# se falhar por cluster inexistente, use o fluxo de "recriar" acima
-```
-
----
-
-## Fluxo de segredos
-
-```
-terraform.tfvars (gitignored, local)
-        │
-        ▼
-terraform apply
-        │
-        ▼
-kubernetes_secret "oficina-secret" no cluster K8s
-        │
-        ▼
-api-deployment.yaml lê via secretKeyRef
-        │
-        ▼
-Container recebe as variáveis de ambiente
-```
-
-Os valores sensíveis nunca aparecem em logs do Terraform (`sensitive = true`) e nunca são commitados (`.gitignore` inclui `infra/terraform.tfvars`).
+- [ADR-0005](../../oficina-infra-k8s/docs/adr/0005-restricoes-aws-academy.md) —
+  restrições do AWS Academy: `LabRole`, credenciais de 4h, ausência de NAT Gateway
+- [ADR-0007](../../oficina-infra-k8s/docs/adr/0007-eks-em-vez-de-k3s.md) —
+  por que EKS gerenciado em vez do k3s de nó único que a RFC-0001 recomendava
+- [RFC-0001](rfc/0001-escolha-do-provedor-de-nuvem.md) — escolha da AWS
+- [RFC-0002](rfc/0002-escolha-do-banco-de-dados-gerenciado.md) — escolha do RDS

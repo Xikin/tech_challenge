@@ -114,6 +114,13 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false # o Prisma escreve engines em /tmp
             runAsNonRoot: true
+            # UID/GID numéricos são obrigatórios junto com runAsNonRoot: a imagem
+            # declara `USER appuser` por nome, e sem o número o kubelet não
+            # consegue provar que não é root e recusa o container com
+            # CreateContainerConfigError. 100/101 são os ids que
+            # `adduser -S`/`addgroup -S` atribuem no Dockerfile.
+            runAsUser: 100
+            runAsGroup: 101
             capabilities:
               drop: ["ALL"]
           # Startup: cobre a janela de `prisma migrate deploy` no start.

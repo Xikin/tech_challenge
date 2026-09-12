@@ -26,8 +26,10 @@ spec:
         app: oficina-api
         app.kubernetes.io/name: oficina-api
     spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
+      # Sem imagePullSecrets: a imagem vem do ECR da própria conta e os nós a
+      # puxam com a role deles (AmazonEC2ContainerRegistryReadOnly). O pull
+      # secret do GHCR usado na Fase 2 era criado com o GITHUB_TOKEN, que expira
+      # ao fim do job — pods agendados depois em nós novos falhavam no pull.
       # Dá tempo ao encerramento gracioso do Node (ver src/server.ts) para
       # drenar as requisições em voo antes do SIGKILL.
       terminationGracePeriodSeconds: 45

@@ -41,7 +41,7 @@ flowchart TB
     end
 
     nr[("New Relic<br/>APM · Infra · Logs<br/>Dashboards e Alertas")]
-    ghcr[("GitHub Container Registry")]
+    ecr[("Amazon ECR<br/>oficina-prod-api")]
 
     cliente -->|"POST /auth/cpf"| gw
     cliente -->|"Bearer JWT"| gw
@@ -57,7 +57,7 @@ flowchart TB
 
     ms -.->|"métricas"| hpa
     hpa -.->|"escala"| pods
-    ghcr -.->|"imagem"| pods
+    ecr -.->|"imagem<br/>pull pela role dos nós"| pods
 
     ssm -.-> lambda
     ssm -.-> pods
@@ -270,7 +270,7 @@ sequenceDiagram
     autonumber
     actor Dev
     participant GH as GitHub Actions
-    participant GHCR as Container Registry
+    participant ECR as Amazon ECR
     participant AWS as AWS (STS/SSM/EKS)
     participant K as Cluster EKS
 
@@ -290,7 +290,7 @@ sequenceDiagram
         GH-->>Dev: falha indicando qual repositório aplicar antes
     end
 
-    GH->>GHCR: build e push da imagem (tag sha-<commit>)
+    GH->>ECR: build e push da imagem (tag sha-<commit>)
     GH->>AWS: eks update-kubeconfig
     GH->>K: apply namespace, configmap, secret
     GH->>K: apply deployment, service, hpa

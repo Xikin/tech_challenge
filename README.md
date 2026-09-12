@@ -78,7 +78,7 @@ src/
 | Container | Docker multi-stage, usuário não-root |
 | Orquestração | Kubernetes (Amazon EKS) com HPA |
 | Observabilidade | New Relic APM + logs JSON (pino) com correlação |
-| CI/CD | GitHub Actions — testes, imagem no GHCR, deploy no EKS |
+| CI/CD | GitHub Actions — testes, imagem no Amazon ECR, deploy no EKS |
 | Qualidade | SonarCloud (opcional), Prettier |
 
 ---
@@ -200,7 +200,7 @@ Os testes usam mock do Prisma e não precisam de banco.
 | Gatilho | O que acontece |
 | --- | --- |
 | PR para `main` ou `homolog` | formatação, migrations, build, 137 testes, SonarCloud |
-| Push em `homolog` | tudo acima + imagem no GHCR + deploy no EKS de homologação + smoke test |
+| Push em `homolog` | tudo acima + imagem no ECR + deploy no EKS de homologação + smoke test |
 | Push em `main` | tudo acima + deploy no EKS de produção + smoke test |
 
 O smoke test exige que `/health/ready` responda 200 e que `/clientes` sem token
@@ -226,7 +226,9 @@ kubectl create secret generic oficina-secret -n oficina \
   --from-literal=NEW_RELIC_LICENSE_KEY="<chave>" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-sed "s|DOCKER_IMAGE_PLACEHOLDER|ghcr.io/<owner>/oficina:latest|g" \
+ECR=$(aws ssm get-parameter --name /oficina/prod/ecr/api_repository_url \
+  --query Parameter.Value --output text)
+sed "s|DOCKER_IMAGE_PLACEHOLDER|$ECR:prod|g" \
   k8s/api-deployment.yaml | kubectl apply -f -
 kubectl apply -f k8s/api-service.yaml -f k8s/hpa.yaml
 kubectl rollout status deployment/oficina-api -n oficina

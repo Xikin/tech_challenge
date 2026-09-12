@@ -10,6 +10,11 @@
 > | Gatilhos | só `main` | `main` (produção) e `homolog` (homologação) |
 > | Qualidade | SonarQube em Docker local | SonarCloud, e só se `SONAR_TOKEN` existir |
 > | Verificação | nenhuma | smoke test: `/health/ready` = 200 e `/clientes` sem token = 401 |
+> | Registro | GHCR + pull secret criado com `GITHUB_TOKEN` | Amazon ECR, pull pela role dos nós |
+>
+> A troca de registro corrige um defeito: o `GITHUB_TOKEN` expira ao fim do job, então
+> pods agendados depois em nós novos falhavam com `ImagePullBackOff`. As seções abaixo
+> que mencionam `ghcr.io` descrevem o pipeline da Fase 2.
 >
 > São quatro pipelines, um por repositório — ver
 > [arquitetura-nuvem.md](arquitetura-nuvem.md), seção 4.

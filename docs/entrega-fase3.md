@@ -170,7 +170,11 @@ entrega:
 - [ ] Rodar `oficina-infra-k8s/bootstrap/backend.sh` uma vez
 - [ ] Executar os deploys na ordem: infra-k8s → infra-db → oficina-mvp → auth-lambda
 - [ ] Criar conta New Relic, instalar o `nri-bundle`, importar o dashboard e criar os alertas
-- [ ] Cadastrar um cliente de teste com CPF válido para a demonstração
+- [ ] Rodar o seed no ambiente publicado (`npx prisma db seed` dentro de um pod da API) — cria os clientes de demonstração:
+  - `529.982.247-25` Ana, ativa com e-mail → 200
+  - `111.444.777-35` Bruno, ativo sem e-mail → 200, token sem claim `email`
+  - `123.456.789-09` Carla, **inativa** → 403
+  - Ana e Bruno têm uma OS cada, para mostrar 200 na própria e 403 na do outro
 - [ ] Gravar o vídeo (até 15 min)
 - [ ] Exportar este documento como PDF, com os `<...>` preenchidos
 

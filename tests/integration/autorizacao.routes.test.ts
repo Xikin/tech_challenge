@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../../src/app';
 import { prisma } from '../../src/config/prisma';
+import { EMISSOR_CLIENTE, EMISSOR_INTERNO } from '../../src/domain/auth/emissores';
 
 /**
  * Autorização do papel CLIENTE — o guard introduzido na Fase 3.
@@ -62,20 +63,16 @@ beforeAll(async () => {
   app = await buildApp();
   await app.ready();
 
-  // Mesmo formato de payload emitido pela Lambda (ver src/token.ts em
-  // oficina-auth-lambda): sub é o id do cliente, role é CLIENTE.
-  tokenCliente = app.jwt.sign({
-    sub: CLIENTE_ID,
-    role: 'CLIENTE',
-    cpf: '52998224725',
-    nome: 'Ana',
-  });
-  tokenOutroCliente = app.jwt.sign({
-    sub: OUTRO_CLIENTE_ID,
-    role: 'CLIENTE',
-    cpf: '11144477735',
-    nome: 'Bruno',
-  });
+  // Mesmo formato emitido pela Lambda (ver src/token.ts em oficina-auth-lambda):
+  // assinado com o segredo do emissor de clientes e com iss oficina-auth-lambda.
+  tokenCliente = app.jwt.cliente.sign(
+    { sub: CLIENTE_ID, role: 'CLIENTE', cpf: '52998224725', nome: 'Ana' },
+    { iss: EMISSOR_CLIENTE },
+  );
+  tokenOutroCliente = app.jwt.cliente.sign(
+    { sub: OUTRO_CLIENTE_ID, role: 'CLIENTE', cpf: '11144477735', nome: 'Bruno' },
+    { iss: EMISSOR_CLIENTE },
+  );
   tokenFuncionario = app.jwt.sign({
     sub: 'func-1',
     email: 'func@oficina.com',
@@ -310,5 +307,92 @@ describe('healthchecks', () => {
 
     expect(res.statusCode).toBe(503);
     expect(res.json().dependencias.database).toBe('indisponivel');
+  });
+});
+
+describe('amarração entre emissor e papel (ADR-0011)', () => {
+  const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
+
+  it('recusa token assinado com o segredo de clientes alegando ADMIN', async () => {
+    // Cenário da revisão de segurança: quem obtém o segredo da Lambda tenta
+    // se passar por administrador.
+    const forjado = app.jwt.cliente.sign(
+      { sub: CLIENTE_ID, role: 'ADMIN', email: 'atacante@x.com' },
+      { iss: EMISSOR_CLIENTE },
+    );
+    const res = await app.inject({
+      method: 'GET',
+      url: '/auth/usuarios',
+      headers: bearer(forjado),
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('recusa token do segredo de clientes que alega o emissor interno', async () => {
+    const forjado = app.jwt.cliente.sign(
+      { sub: CLIENTE_ID, role: 'ADMIN', email: 'atacante@x.com' },
+      { iss: EMISSOR_INTERNO },
+    );
+    const res = await app.inject({ method: 'GET', url: '/ordens', headers: bearer(forjado) });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('recusa token do emissor interno alegando o papel CLIENTE', async () => {
+    const token = app.jwt.sign({ sub: CLIENTE_ID, role: 'CLIENTE' }, { iss: EMISSOR_INTERNO });
+    const res = await app.inject({
+      method: 'GET',
+      url: `/ordens/${OS_ID}`,
+      headers: bearer(token),
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('recusa token interno sem iss', async () => {
+    const token = app.jwt.sign({ sub: 'adm', email: 'adm@oficina.com', role: 'ADMIN' }, {});
+    const res = await app.inject({ method: 'GET', url: '/ordens', headers: bearer(token) });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('recusa token de cliente sem iss', async () => {
+    const token = app.jwt.cliente.sign({ sub: CLIENTE_ID, role: 'CLIENTE' }, {});
+    const res = await app.inject({
+      method: 'GET',
+      url: `/ordens/${OS_ID}`,
+      headers: bearer(token),
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('mantém o login interno funcionando com o iss do emissor interno', async () => {
+    vi.mocked(prisma.ordemServico.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.ordemServico.count).mockResolvedValue(0 as never);
+
+    const res = await app.inject({ method: 'GET', url: '/ordens', headers: comoFuncionario() });
+    expect(res.statusCode).toBe(200);
+  });
+});
+
+describe('/auth/me', () => {
+  it('responde 200 para cliente sem e-mail cadastrado (antes respondia 500)', async () => {
+    const semEmail = app.jwt.cliente.sign(
+      { sub: OUTRO_CLIENTE_ID, role: 'CLIENTE', cpf: '11144477735', nome: 'Bruno' },
+      { iss: EMISSOR_CLIENTE },
+    );
+    const res = await app.inject({
+      method: 'GET',
+      url: '/auth/me',
+      headers: { authorization: `Bearer ${semEmail}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ sub: OUTRO_CLIENTE_ID, role: 'CLIENTE', nome: 'Bruno' });
+    expect(res.json()).not.toHaveProperty('email');
+  });
+
+  it('não devolve o CPF do cliente', async () => {
+    const res = await app.inject({ method: 'GET', url: '/auth/me', headers: comoCliente() });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).not.toHaveProperty('cpf');
   });
 });

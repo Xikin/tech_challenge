@@ -55,6 +55,7 @@ Executa em todo push e PR. Garante que nenhum código quebrado chega à `main`.
 |-------------------|----------------------------|
 | `DATABASE_URL`    | Monta com `secrets.POSTGRES_PASSWORD` |
 | `JWT_SECRET`      | `secrets.JWT_SECRET`       |
+| `JWT_CLIENTE_SECRET`      | `secrets.JWT_CLIENTE_SECRET`       |
 | `BCRYPT_ROUNDS`   | `4` (hardcoded — mais rápido em CI) |
 | `NODE_ENV`        | `test`                     |
 
@@ -122,6 +123,7 @@ kubectl apply -f k8s/configmap.yaml
 kubectl create secret generic oficina-secret \
   --from-literal=POSTGRES_PASSWORD="..." \
   --from-literal=JWT_SECRET="..." \
+  --from-literal=JWT_CLIENTE_SECRET="..." \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 O `--dry-run=client -o yaml | kubectl apply -f -` garante que o comando funciona tanto na primeira execução (cria) quanto nas seguintes (atualiza sem erro de conflito).
@@ -154,6 +156,7 @@ Configure em: **Settings → Secrets and variables → Actions**
 |---------------------|----------------------------------------------------------|
 | `POSTGRES_PASSWORD` | Senha do PostgreSQL                                      |
 | `JWT_SECRET`        | Chave JWT (mínimo 32 caracteres aleatórios)             |
+| `JWT_CLIENTE_SECRET`        | Chave JWT (mínimo 32 caracteres aleatórios)             |
 | `SMTP_HOST`         | Host SMTP (pode ser vazio se não usar e-mail)           |
 | `SMTP_USER`         | Usuário SMTP (pode ser vazio)                           |
 | `SMTP_PASS`         | Senha SMTP (pode ser vazio)                             |

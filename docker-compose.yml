@@ -39,6 +39,11 @@ services:
       HOST: 0.0.0.0
       DATABASE_URL: postgresql://${POSTGRES_USER:-oficina}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-oficina_db}
       JWT_SECRET: ${JWT_SECRET}
+      JWT_CLIENTE_SECRET: ${JWT_CLIENTE_SECRET}
+      # Sem opt-in explícito, o seed gera senhas aleatórias para os usuários.
+      SEED_PERMITIR_SENHA_PADRAO: ${SEED_PERMITIR_SENHA_PADRAO:-false}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_FUNCIONARIO_PASSWORD: ${SEED_FUNCIONARIO_PASSWORD:-}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
       SMTP_HOST: ${SMTP_HOST:-}

@@ -8,7 +8,7 @@ Decisão e justificativa da ferramenta:
 | Arquivo | Conteúdo |
 | --- | --- |
 | [`consultas.md`](consultas.md) | Todas as consultas NRQL, em texto, para colar no New Relic |
-| [`alertas.md`](alertas.md) | As 9 condições de alerta, com threshold e justificativa |
+| [`alertas.md`](alertas.md) | As 10 condições de alerta, com threshold e justificativa |
 | [`dashboard.json`](dashboard.json) | Dashboard pronto para importar |
 
 ---
@@ -43,6 +43,7 @@ explícitos, que sobrevivem a mudanças de rota e de status code.
 | `erro_validacao` | `setErrorHandler` | `codigo`, `rota` |
 | `erro_interno` | `setErrorHandler` | `rota`, `err` |
 | `acesso_negado` | `exigirInterno`, `exigirDonoDoRecurso` | `motivo`, `role`, `sub` |
+| `token_emissor_invalido` | `autenticar` | `emissor`, `iss`, `role`, `sub` — assinatura válida com papel incompatível: indica segredo vazado |
 | `readiness_falhou` | `/health/ready` | `dependencia` |
 | `servidor_iniciado` / `encerramento_*` | `server.ts` | `sinal` |
 
@@ -132,7 +133,7 @@ widgets à mão.
 
 ### 6. Alertas e synthetic
 
-Seguir [`alertas.md`](alertas.md). São 8 condições NRQL numa policy mais 1 monitor
+Seguir [`alertas.md`](alertas.md). São 9 condições NRQL numa policy mais 1 monitor
 sintético.
 
 ---

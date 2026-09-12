@@ -339,16 +339,23 @@
                       "type": "string",
                       "format": "uuid"
                     },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "ADMIN",
+                        "FUNCIONARIO",
+                        "CLIENTE"
+                      ]
+                    },
                     "email": {
                       "type": "string"
                     },
-                    "role": {
+                    "nome": {
                       "type": "string"
                     }
                   },
                   "required": [
                     "sub",
-                    "email",
                     "role"
                   ],
                   "additionalProperties": false

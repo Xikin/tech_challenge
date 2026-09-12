@@ -14,7 +14,7 @@ import {
   meResponseSchema,
   errorResponseSchema,
 } from '../schemas/auth.schema';
-import { autenticar, exigirRole } from '../middlewares/auth.middleware';
+import { autenticar, exigirRole, type UsuarioAutenticado } from '../middlewares/auth.middleware';
 
 export const authRoutes: FastifyPluginAsync = async (instance) => {
   const fastify = instance.withTypeProvider<ZodTypeProvider>();
@@ -78,6 +78,6 @@ export const authRoutes: FastifyPluginAsync = async (instance) => {
         response: { 200: meResponseSchema },
       },
     },
-    async (req, rep) => rep.send(req.user as { sub: string; email: string; role: string }),
+    async (req, rep) => rep.send(req.user as UsuarioAutenticado),
   );
 };

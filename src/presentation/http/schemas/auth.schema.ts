@@ -48,8 +48,12 @@ export const listarUsuariosResponseSchema = z.array(
 
 export const meResponseSchema = z.object({
   sub: z.string().uuid(),
-  email: z.string(),
-  role: z.string(),
+  role: z.enum(['ADMIN', 'FUNCIONARIO', 'CLIENTE']),
+  // Opcionais: tokens de CLIENTE podem não ter e-mail (`Cliente.email` é
+  // nullable e a Lambda omite o claim). Exigir o campo fazia /auth/me
+  // responder 500 para esses clientes. O CPF não é devolvido de propósito.
+  email: z.string().optional(),
+  nome: z.string().optional(),
 });
 
 export const errorResponseSchema = z.object({

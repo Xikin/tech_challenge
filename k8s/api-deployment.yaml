@@ -68,6 +68,13 @@ spec:
                 secretKeyRef:
                   name: oficina-secret
                   key: JWT_SECRET
+            # Segredo do emissor de clientes (Lambda de autenticação por CPF).
+            # Diferente do JWT_SECRET de propósito — ver docs/adr/0011.
+            - name: JWT_CLIENTE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-secret
+                  key: JWT_CLIENTE_SECRET
             - name: SMTP_HOST
               valueFrom:
                 secretKeyRef:
@@ -93,10 +100,10 @@ spec:
                   name: oficina-secret
                   key: NEW_RELIC_LICENSE_KEY
                   optional: true
+            # Substituído pelo pipeline pelo SHA do commit. Antes lia um label
+            # que não existia no pod e saía vazio em todas as linhas de log.
             - name: APP_VERSION
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.labels['app.kubernetes.io/version']
+              value: "APP_VERSION_PLACEHOLDER"
             - name: POD_NAME
               valueFrom:
                 fieldRef:

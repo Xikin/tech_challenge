@@ -23,3 +23,6 @@ Login por e-mail/senha (`bcrypt`, `BCRYPT_ROUNDS` configurável) emite um JWT as
 ## Relacionado
 
 A Fase 3 introduz um segundo emissor de JWT — a função serverless de autenticação por CPF para clientes finais (ver [RFC-0003](../rfc/0003-estrategia-de-autenticacao.md)). Ambos os emissores compartilham o mesmo `JWT_SECRET` e o mesmo middleware de validação; o que muda é quem emite e o `role` embutido no token.
+
+> **Atualização (Fase 3):** com o segundo emissor, o `JWT_SECRET` deixou de ser o único
+> segredo. Ver [ADR-0011](0011-segredos-jwt-por-emissor.md).

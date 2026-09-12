@@ -3,6 +3,7 @@
 **Status:** Aceita
 **Data:** 2026-09-09
 **Deriva de:** [RFC-0003](../rfc/0003-estrategia-de-autenticacao.md)
+**Complementado por:** [ADR-0011](0011-segredos-jwt-por-emissor.md) — o segredo compartilhado descrito abaixo foi substituído por um segredo por emissor
 
 ## Contexto
 

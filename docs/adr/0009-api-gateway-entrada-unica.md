@@ -30,7 +30,7 @@ já é feita com Zod na aplicação e no handler da Lambda.
 ### A validação do JWT fica na aplicação, não no gateway
 
 O API Gateway suporta JWT authorizer nativo, mas apenas para emissores OIDC/JWKS. O
-token aqui é HS256 com segredo compartilhado, que o authorizer nativo não valida.
+token aqui é HS256 com segredo simétrico (um por emissor, ver ADR-0011), que o authorizer nativo não valida.
 As alternativas seriam trocar para RS256 com JWKS público, ou escrever uma Lambda
 authorizer — ambas adicionam um componente e uma cobrança por invocação para
 duplicar uma checagem que a API já faz corretamente.

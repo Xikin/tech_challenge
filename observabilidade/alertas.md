@@ -173,6 +173,27 @@ banco fora, e mediria apenas se o processo Node está vivo.
 
 ---
 
+## 10. Token forjado — segredo JWT vazado
+
+**Por que existe:** a assinatura só confere para quem tem um dos segredos JWT. Um
+token com assinatura válida que alega um papel ou emissor que aquele segredo não pode
+emitir significa **segredo vazado sendo usado para escalar privilégio**
+(ver [ADR-0011](../docs/adr/0011-segredos-jwt-por-emissor.md)). Um único evento já
+justifica rotacionar os dois segredos.
+
+```sql
+SELECT count(*)
+FROM Log
+WHERE service = 'oficina-api' AND evento = 'token_emissor_invalido'
+```
+
+| Parâmetro | Valor |
+| --- | --- |
+| Threshold | acima de `0` em 5 minutos |
+| Prioridade | Critical |
+
+---
+
 ## Verificando os alertas antes da apresentação
 
 Disparar de propósito, para provar que a cadeia funciona:

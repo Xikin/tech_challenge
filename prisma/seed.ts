@@ -1,34 +1,87 @@
+import { randomBytes } from 'node:crypto';
 import { PrismaClient, Role, TipoPessoa, StatusOS } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+// Mesma política de `criarUsuarioSchema` (src/presentation/http/schemas/auth.schema.ts).
+const POLITICA_SENHA = [/.{8,}/, /[A-Z]/, /[0-9]/, /[@$!%*?&]/];
+
+interface SenhaSeed {
+  valor: string;
+  origem: 'variavel' | 'padrao-dev' | 'gerada';
+}
+
+/**
+ * Senha dos usuários internos criados pelo seed.
+ *
+ * Até a revisão de segurança da Fase 3 a senha `Admin@123` era fixa no código,
+ * e o seed chegou a rodar no ambiente publicado: qualquer pessoa com acesso ao
+ * repositório entrava como ADMIN pela URL pública. Agora, por precedência:
+ *
+ *   1. variável de ambiente (SEED_ADMIN_PASSWORD / SEED_FUNCIONARIO_PASSWORD),
+ *      validada contra a política de senha;
+ *   2. a senha de desenvolvimento, SOMENTE com SEED_PERMITIR_SENHA_PADRAO=true
+ *      (ligado no .env.example para o ambiente local e a collection Postman);
+ *   3. senha aleatória forte, exibida uma única vez no terminal.
+ */
+function senhaDoSeed(variavel: string, padraoDesenvolvimento: string): SenhaSeed {
+  const definida = process.env[variavel];
+  if (definida) {
+    if (!POLITICA_SENHA.every((regra) => regra.test(definida))) {
+      throw new Error(
+        `${variavel} não atende à política de senha: 8+ caracteres, maiúscula, número e um de @$!%*?&`,
+      );
+    }
+    return { valor: definida, origem: 'variavel' };
+  }
+
+  if (process.env.SEED_PERMITIR_SENHA_PADRAO === 'true') {
+    return { valor: padraoDesenvolvimento, origem: 'padrao-dev' };
+  }
+
+  // O prefixo garante a política; o restante são 144 bits aleatórios.
+  return { valor: `Aa1@${randomBytes(18).toString('base64url')}`, origem: 'gerada' };
+}
+
+async function garantirUsuario(
+  email: string,
+  nome: string,
+  role: Role,
+  senha: SenhaSeed,
+): Promise<string> {
+  // Usuário existente não tem a senha alterada: exibir uma senha "gerada" que
+  // não foi aplicada seria pior do que não exibir nada.
+  const existente = await prisma.usuario.findUnique({ where: { email } });
+  if (existente) return `👤 ${email}: já existia — senha mantida`;
+
+  await prisma.usuario.create({
+    data: { nome, email, role, senha: await bcrypt.hash(senha.valor, 12) },
+  });
+
+  if (senha.origem === 'variavel') return `👤 ${email}: criado com a senha da variável de ambiente`;
+  if (senha.origem === 'padrao-dev')
+    return `👤 ${email} / ${senha.valor}  ⚠ senha padrão de DESENVOLVIMENTO — nunca use em ambiente publicado`;
+  return `👤 ${email} / ${senha.valor}  (gerada agora — guarde, não será exibida de novo)`;
+}
+
 async function main() {
   console.log('🌱 Seeding...');
 
-  const adminHash = await bcrypt.hash('Admin@123', 12);
-  await prisma.usuario.upsert({
-    where: { email: 'admin@oficina.com' },
-    update: {},
-    create: {
-      nome: 'Administrador',
-      email: 'admin@oficina.com',
-      senha: adminHash,
-      role: Role.ADMIN,
-    },
-  });
-
-  const funcHash = await bcrypt.hash('Func@123', 12);
-  await prisma.usuario.upsert({
-    where: { email: 'funcionario@oficina.com' },
-    update: {},
-    create: {
-      nome: 'João Mecânico',
-      email: 'funcionario@oficina.com',
-      senha: funcHash,
-      role: Role.FUNCIONARIO,
-    },
-  });
+  const usuarios = [
+    await garantirUsuario(
+      'admin@oficina.com',
+      'Administrador',
+      Role.ADMIN,
+      senhaDoSeed('SEED_ADMIN_PASSWORD', 'Admin@123'),
+    ),
+    await garantirUsuario(
+      'funcionario@oficina.com',
+      'João Mecânico',
+      Role.FUNCIONARIO,
+      senhaDoSeed('SEED_FUNCIONARIO_PASSWORD', 'Func@123'),
+    ),
+  ];
 
   const servicos = [
     { nome: 'Troca de Óleo', preco: 89.9, tempoPrevisto: 30 },
@@ -144,8 +197,7 @@ async function main() {
   }
 
   console.log('✅ Seed concluído!');
-  console.log('👤 admin@oficina.com / Admin@123');
-  console.log('👤 funcionario@oficina.com / Func@123');
+  for (const linha of usuarios) console.log(linha);
   console.log('🪪 CPF ativo:   529.982.247-25 (Ana, com e-mail)');
   console.log('🪪 CPF ativo:   111.444.777-35 (Bruno, sem e-mail)');
   console.log('🪪 CPF inativo: 123.456.789-09 (Carla)');

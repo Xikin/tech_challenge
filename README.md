@@ -92,7 +92,7 @@ Dois emissores de token, um único validador.
 | Funcionário / Admin | e-mail + senha | `POST /auth/login` nesta API | `FUNCIONARIO`, `ADMIN` |
 | Cliente final | CPF | `POST /auth/cpf` na [Lambda](https://github.com/Xikin/oficina-auth-lambda) | `CLIENTE` |
 
-Ambos os tokens são assinados com o **mesmo `JWT_SECRET`**. Esta API apenas valida.
+Cada emissor tem **segredo próprio**: `JWT_SECRET` assina o login interno e nunca sai desta API; `JWT_CLIENTE_SECRET` é compartilhado apenas com a Lambda. A API exige que tokens do emissor de clientes carreguem só o papel `CLIENTE` — quem obtiver o segredo da Lambda não consegue forjar um ADMIN ([ADR-0011](docs/adr/0011-segredos-jwt-por-emissor.md)).
 
 O papel determina o que se pode acessar:
 
@@ -154,7 +154,7 @@ do RDS reiniciaria todos os pods em cascata sem resolver nada.
 
 ```bash
 git clone <url> && cd oficina-mvp
-cp .env.example .env      # ajuste JWT_SECRET (mínimo 32 caracteres)
+cp .env.example .env      # ajuste JWT_SECRET e JWT_CLIENTE_SECRET (32+ caracteres, diferentes)
 
 docker compose up -d --build
 docker compose exec api npx prisma migrate deploy
@@ -222,7 +222,8 @@ DATABASE_URL=$(aws ssm get-parameter --name /oficina/prod/db/database_url \
 kubectl apply -f k8s/namespace.yaml -f k8s/configmap.yaml
 kubectl create secret generic oficina-secret -n oficina \
   --from-literal=DATABASE_URL="$DATABASE_URL" \
-  --from-literal=JWT_SECRET="<o MESMO da Lambda>" \
+  --from-literal=JWT_SECRET="<segredo do login interno>" \
+  --from-literal=JWT_CLIENTE_SECRET="<o MESMO da Lambda>" \
   --from-literal=NEW_RELIC_LICENSE_KEY="<chave>" \
   --dry-run=client -o yaml | kubectl apply -f -
 
@@ -241,7 +242,8 @@ kubectl rollout status deployment/oficina-api -n oficina
 | `AWS_ACCESS_KEY_ID` | Learner Lab → AWS Details → AWS CLI |
 | `AWS_SECRET_ACCESS_KEY` | idem |
 | `AWS_SESSION_TOKEN` | idem — **expira a cada 4h** |
-| `JWT_SECRET` | **o mesmo** configurado na Lambda de autenticação |
+| `JWT_SECRET` | segredo do login interno — **nunca** vai para a Lambda |
+| `JWT_CLIENTE_SECRET` | **o mesmo** configurado na Lambda; diferente do `JWT_SECRET` |
 | `NEW_RELIC_LICENSE_KEY` | New Relic → Administration → API keys |
 | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | opcionais |
 | `SONAR_TOKEN` | opcional — sem ele o job de qualidade é ignorado |

@@ -11,6 +11,11 @@ concurrency:
   group: api-${{ github.ref_name }}
   cancel-in-progress: false
 
+# Menor privilégio por padrão: o GITHUB_TOKEN só lê o repositório. Jobs que
+# precisarem de mais declaram explicitamente.
+permissions:
+  contents: read
+
 env:
   AWS_REGION: us-east-1
   NODE_VERSION: "20"
@@ -41,6 +46,7 @@ jobs:
       NODE_ENV: test
       DATABASE_URL: postgresql://oficina:oficina_ci@localhost:5432/oficina_db
       JWT_SECRET: chave-apenas-para-ci-com-mais-de-32-caracteres
+      JWT_CLIENTE_SECRET: chave-de-cliente-apenas-para-ci-diferente-32
       JWT_EXPIRES_IN: 8h
       BCRYPT_ROUNDS: 4
       PORT: 3000
@@ -271,6 +277,7 @@ jobs:
             --namespace=oficina \
             --from-literal=DATABASE_URL="$DATABASE_URL" \
             --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=JWT_CLIENTE_SECRET="${{ secrets.JWT_CLIENTE_SECRET }}" \
             --from-literal=SMTP_HOST="${{ secrets.SMTP_HOST }}" \
             --from-literal=SMTP_USER="${{ secrets.SMTP_USER }}" \
             --from-literal=SMTP_PASS="${{ secrets.SMTP_PASS }}" \
@@ -279,7 +286,9 @@ jobs:
 
       - name: Deploy da API
         run: |
-          sed "s|DOCKER_IMAGE_PLACEHOLDER|$IMAGE_REF|g" k8s/api-deployment.yaml | kubectl apply -f -
+          sed -e "s|DOCKER_IMAGE_PLACEHOLDER|$IMAGE_REF|g" \
+              -e "s|APP_VERSION_PLACEHOLDER|$GITHUB_SHA|g" \
+              k8s/api-deployment.yaml | kubectl apply -f -
           kubectl apply -f k8s/api-service.yaml
           kubectl apply -f k8s/hpa.yaml
           kubectl rollout status deployment/oficina-api -n oficina --timeout=300s

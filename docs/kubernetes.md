@@ -85,6 +85,7 @@ Armazena credenciais sensíveis em Base64. **Nunca é criado pelo `kubectl apply
 |---------------------|------------------------------------|
 | `POSTGRES_PASSWORD` | Senha do PostgreSQL                |
 | `JWT_SECRET`        | Chave de assinatura dos tokens JWT |
+| `JWT_CLIENTE_SECRET`        | Chave de assinatura dos tokens JWT |
 | `SMTP_HOST`         | Host do servidor SMTP (opcional)   |
 | `SMTP_USER`         | Usuário SMTP (opcional)            |
 | `SMTP_PASS`         | Senha SMTP (opcional)              |
@@ -95,6 +96,7 @@ kubectl create secret generic oficina-secret \
   --namespace=oficina \
   --from-literal=POSTGRES_PASSWORD="sua_senha" \
   --from-literal=JWT_SECRET="sua_chave_jwt_minimo_32_chars" \
+  --from-literal=JWT_CLIENTE_SECRET="sua_chave_jwt_minimo_32_chars" \
   --from-literal=SMTP_HOST="" \
   --from-literal=SMTP_USER="" \
   --from-literal=SMTP_PASS=""

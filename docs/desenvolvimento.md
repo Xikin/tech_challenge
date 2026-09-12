@@ -45,6 +45,7 @@ Onde cada variável é definida em cada ambiente — local (`.env`), produção 
 | `HOST`                 | `0.0.0.0`                      | ConfigMap                                         | —                                  |
 | `DATABASE_URL`         | — (obrigatória)                | Montada no Deployment a partir de `POSTGRES_*`    | Secret `POSTGRES_PASSWORD` + literais |
 | `JWT_SECRET`           | — (obrigatória, ≥32 chars)     | **Secret** `oficina-secret`                       | Secret `JWT_SECRET`               |
+| `JWT_CLIENTE_SECRET`           | — (obrigatória, ≥32 chars)     | **Secret** `oficina-secret`                       | Secret `JWT_CLIENTE_SECRET`               |
 | `JWT_EXPIRES_IN`       | `8h`                           | ConfigMap                                         | —                                  |
 | `BCRYPT_ROUNDS`        | `12`                           | ConfigMap                                         | `4` (mais rápido em CI)           |
 | `SMTP_HOST/USER/PASS`  | vazio (e-mail desabilitado)    | **Secret** `oficina-secret` (opcionais)           | —                                  |

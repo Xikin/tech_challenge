@@ -62,6 +62,11 @@ emissor" é verdadeira para `jwtVerify()` e **falsa para tudo o mais**:
 
 ### Sobre o segredo compartilhado
 
+> **Superado pelo [ADR-0011](../adr/0011-segredos-jwt-por-emissor.md).** A revisão de
+> segurança mostrou que o segredo compartilhado permitia forjar tokens de ADMIN a partir
+> da configuração da Lambda. Cada emissor passou a ter segredo próprio, e a API recusa
+> tokens do emissor de clientes com qualquer papel além de `CLIENTE`.
+
 O trade-off de dois emissores com o mesmo `JWT_SECRET` foi mantido, mas com uma
 consequência operacional que vale registrar: se o segredo divergir entre a Lambda e
 a API, o token é emitido com sucesso e **rejeitado silenciosamente** na primeira

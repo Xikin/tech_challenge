@@ -12,11 +12,13 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-// A validação de env exige DATABASE_URL e JWT_SECRET; nada aqui toca o banco,
-// então valores sintéticos bastam para instanciar o app e ler o schema.
+// A validação de env exige DATABASE_URL e os dois segredos JWT (distintos);
+// nada aqui toca o banco, então valores sintéticos bastam para instanciar o app
+// e ler o schema.
 process.env.NODE_ENV ??= 'development';
 process.env.DATABASE_URL ??= 'postgresql://localhost:5432/placeholder';
 process.env.JWT_SECRET ??= 'placeholder-para-exportar-openapi-32-chars';
+process.env.JWT_CLIENTE_SECRET ??= 'placeholder-cliente-para-exportar-openapi-32';
 process.env.SWAGGER_ENABLED = 'true';
 
 async function exportar() {

@@ -13,6 +13,8 @@ import { ZodError } from 'zod';
 import { env } from './config/env';
 import { prisma } from './config/prisma';
 import { AppError } from './shared/errors';
+import { mascararDocumentos } from './shared/utils/mascarar-documentos';
+import { EMISSOR_INTERNO } from './domain/auth/emissores';
 import { authRoutes } from './presentation/http/routes/auth.routes';
 import { clientesRoutes } from './presentation/http/routes/clientes.routes';
 import { veiculosRoutes } from './presentation/http/routes/veiculos.routes';
@@ -43,6 +45,27 @@ export async function buildApp(): Promise<FastifyInstance> {
                 'res.headers["set-cookie"]',
               ],
               censor: '[REDACTED]',
+            },
+            serializers: {
+              // Substitui o serializer padrão do Fastify, que grava a URL crua —
+              // e com ela o CPF/CNPJ de /clientes/cpf-cnpj/:documento e da
+              // querystring da consulta pública. Os demais campos replicam o
+              // serializer padrão.
+              req(request: {
+                method?: string;
+                url?: string;
+                hostname?: string;
+                ip?: string;
+                socket?: { remotePort?: number };
+              }) {
+                return {
+                  method: request.method,
+                  url: request.url ? mascararDocumentos(request.url) : request.url,
+                  hostname: request.hostname,
+                  remoteAddress: request.ip,
+                  remotePort: request.socket?.remotePort,
+                };
+              },
             },
           },
     // Correlação entre requisições: honra o x-request-id propagado pelo API
@@ -75,7 +98,13 @@ export async function buildApp(): Promise<FastifyInstance> {
     credentials: true,
     exposedHeaders: ['x-request-id'],
   });
-  await app.register(fastifyJwt, { secret: env.JWT_SECRET });
+
+  // Dois emissores de token, cada um com o seu segredo (ver ADR-0011).
+  // O registro padrão assina e valida o login interno. O namespace `cliente`
+  // apenas valida os tokens da Lambda de autenticação por CPF. A amarração entre
+  // emissor (`iss`) e papel é conferida em código, no middleware `autenticar`.
+  await app.register(fastifyJwt, { secret: env.JWT_SECRET, sign: { iss: EMISSOR_INTERNO } });
+  await app.register(fastifyJwt, { secret: env.JWT_CLIENTE_SECRET, namespace: 'cliente' });
 
   // O entregável da Fase 3 exige "link para o Swagger das APIs". Manter /docs
   // desabilitado em produção — como na Fase 2 — tornaria esse link impossível.

@@ -86,6 +86,10 @@ exports.config = {
       'request.parameters.password',
       'request.parameters.cpf',
       'request.parameters.cpfCnpj',
+      // A URI crua carrega o documento em /clientes/cpf-cnpj/:documento. O nome
+      // da transação continua com o padrão da rota, que é o que importa nos
+      // painéis de latência.
+      'request.uri',
     ],
   },
 

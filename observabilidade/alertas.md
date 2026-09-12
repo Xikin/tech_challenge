@@ -194,6 +194,26 @@ WHERE service = 'oficina-api' AND evento = 'token_emissor_invalido'
 
 ---
 
+## 11. Pico de bloqueios por limite de tentativas
+
+**Por que existe:** alguns bloqueios por hora são usuários errando a senha. Um pico
+indica força bruta contra contas ou varredura da consulta pública
+(ver [ADR-0012](../docs/adr/0012-limites-de-tentativa.md)). O `rota` mostra qual das duas.
+
+```sql
+SELECT count(*)
+FROM Log
+WHERE service = 'oficina-api' AND evento = 'erro_negocio' AND codigo = 'RATE_LIMITED'
+FACET rota
+```
+
+| Parâmetro | Valor |
+| --- | --- |
+| Threshold | acima de `20` em 5 minutos |
+| Prioridade | Warning |
+
+---
+
 ## Verificando os alertas antes da apresentação
 
 Disparar de propósito, para provar que a cadeia funciona:

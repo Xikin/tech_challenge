@@ -15,6 +15,7 @@ Decisões arquiteturais permanentes já tomadas e refletidas no código. Formato
 | [0009](0009-api-gateway-entrada-unica.md) | API Gateway como ponto único de entrada | Aceita |
 | [0010](0010-observabilidade-new-relic.md) | New Relic como stack de observabilidade | Aceita |
 | [0011](0011-segredos-jwt-por-emissor.md) | Um segredo JWT por emissor, com papel amarrado ao emissor | Aceita |
+| [0012](0012-limites-de-tentativa.md) | Limites de tentativa por alvo e login em tempo constante | Aceita |
 
 Os ADRs 0005, 0006 e 0007 vivem nos repositórios de infraestrutura, porque
 descrevem decisões daquelas stacks — os links acima apontam para lá.

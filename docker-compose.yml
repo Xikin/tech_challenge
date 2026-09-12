@@ -28,6 +28,10 @@ services:
   api:
     build: { context: ., dockerfile: Dockerfile, target: runner }
     container_name: oficina_api
+    # Mesma postura do Kubernetes: filesystem só-leitura, escrita apenas em /tmp.
+    read_only: true
+    tmpfs:
+      - /tmp
     restart: unless-stopped
     networks:
       - oficina_net

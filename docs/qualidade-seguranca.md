@@ -139,3 +139,36 @@ await app.register(fastifyCors, { origin: allowedOrigins });
 `ALLOWED_ORIGINS` vem do `ConfigMap` em produção ([`k8s/configmap.yaml`](../k8s/configmap.yaml)) e do `.env` em desenvolvimento. Vazio por padrão — fail-closed: nenhuma origem cross-origin é permitida até ser explicitamente configurada.
 
 Relatório detalhado: [`reports/owasp-zap-report.md`](../reports/owasp-zap-report.md)
+
+---
+
+## Endurecimento da revisão de segurança (Fase 3)
+
+Correções aplicadas depois de uma revisão dos quatro repositórios. Cada item foi
+verificado com teste automatizado ou execução real, não só por leitura de código.
+
+| Achado | Correção | Registro |
+| --- | --- | --- |
+| Token ADMIN forjável com o segredo da Lambda | Um segredo por emissor e papel amarrado ao emissor | [ADR-0011](adr/0011-segredos-jwt-por-emissor.md) |
+| Senha fixa `Admin@123` no seed, aplicada no ambiente publicado | Senha por variável, gerada ou com opt-in de desenvolvimento | `prisma/seed.ts` |
+| CPF em claro nos logs e no New Relic | Máscara no serializer de requisição; `path` fora do access log do gateway | `src/shared/utils/mascarar-documentos.ts` |
+| Força bruta no login e na consulta pública | Limite por e-mail e por número de OS | [ADR-0012](adr/0012-limites-de-tentativa.md) |
+| Enumeração de contas pelo tempo de resposta do login | bcrypt sempre executado, contra hash fictício | [ADR-0012](adr/0012-limites-de-tentativa.md) |
+| Processo podia reescrever o próprio código | Arquivos com dono root, `readOnlyRootFilesystem`, escrita só em `/tmp`. Efeito colateral: a imagem caiu de 672 MB para 397 MB, porque o `chown -R` antigo duplicava `/app` inteiro numa camada | `Dockerfile`, `k8s/api-deployment.yaml` |
+| Lambda sem teto podia esgotar as conexões do RDS | `reserved_concurrent_executions` | `oficina-auth-lambda` |
+| Actions referenciadas por tag móvel | Pin por SHA de commit, atualizado pelo Dependabot | `.github/dependabot.yml` |
+| `GITHUB_TOKEN` com permissão padrão do repositório | `permissions: contents: read` no topo dos workflows | workflows |
+| `/auth/me` respondia 500 para cliente sem e-mail | Schema corrigido | `auth.schema.ts` |
+
+### Pendências conhecidas
+
+| Achado | Por que ficou | Próximo passo |
+| --- | --- | --- |
+| 22 vulnerabilidades em dependências de produção (1 crítica no `fast-jwt`) | Correção exige upgrades major: fastify 5, @fastify/jwt 10, nodemailer 10 | PRs do Dependabot, um major por vez |
+| API e Lambda usam o usuário master do RDS | Criar roles no banco exige o ambiente AWS no ar | Roles `oficina_app` (DML) e `oficina_auth_ro` (SELECT) |
+| Autenticação só por CPF permite enumerar clientes | Exigência do enunciado; a mitigação completa pede segundo fator | Resposta uniforme e código por e-mail |
+| Tokens não revogáveis por 8h | Exige estado no servidor | TTL curto com refresh, ou versão de token no usuário |
+| TLS com o banco sem verificar certificado | `rejectUnauthorized: false` na Lambda; `sslmode` ausente | Empacotar o bundle CA do RDS e usar `verify-full` |
+| Imagem com dependências de desenvolvimento e migrations no start | Separar migração exige um Job no pipeline | `npm prune --omit=dev` e Job de migração |
+| Endpoint do EKS público e nós com IP público | Custo de NAT no AWS Academy ([ADR-0005](../../oficina-infra-k8s/docs/adr/0005-restricoes-aws-academy.md)) | `public_access_cidrs` e nós em subnet privada |
+| `terraform plan` com credenciais AWS em `pull_request` | Plano em PR é parte do fluxo exigido | Environment protegido com aprovação para jobs com credencial |

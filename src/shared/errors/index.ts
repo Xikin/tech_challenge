@@ -39,3 +39,15 @@ export class StockError extends AppError {
     super(msg, 400, 'STOCK_ERROR');
   }
 }
+
+/**
+ * Limite de tentativas excedido. Devolvido pelo `errorResponseBuilder` do
+ * @fastify/rate-limit, que lança o objeto construído: sendo um AppError, o
+ * setErrorHandler responde 429 no mesmo formato das demais falhas, em vez de
+ * tratá-lo como erro interno.
+ */
+export class TooManyRequestsError extends AppError {
+  constructor(msg: string) {
+    super(msg, 429, 'RATE_LIMITED');
+  }
+}

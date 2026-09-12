@@ -4,6 +4,7 @@ import fastifyJwt from '@fastify/jwt';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
+import fastifyRateLimit from '@fastify/rate-limit';
 import {
   jsonSchemaTransform,
   serializerCompiler,
@@ -12,7 +13,7 @@ import {
 import { ZodError } from 'zod';
 import { env } from './config/env';
 import { prisma } from './config/prisma';
-import { AppError } from './shared/errors';
+import { AppError, TooManyRequestsError } from './shared/errors';
 import { mascararDocumentos } from './shared/utils/mascarar-documentos';
 import { EMISSOR_INTERNO } from './domain/auth/emissores';
 import { authRoutes } from './presentation/http/routes/auth.routes';
@@ -105,6 +106,20 @@ export async function buildApp(): Promise<FastifyInstance> {
   // emissor (`iss`) e papel é conferida em código, no middleware `autenticar`.
   await app.register(fastifyJwt, { secret: env.JWT_SECRET, sign: { iss: EMISSOR_INTERNO } });
   await app.register(fastifyJwt, { secret: env.JWT_CLIENTE_SECRET, namespace: 'cliente' });
+
+  // Limites de tentativa por rota, e não globais (ver ADR-0012). A chave de cada
+  // limite é o alvo do ataque — o e-mail no login, o número da OS na consulta
+  // pública — e não o IP: atrás do API Gateway e do NLB as requisições chegam com
+  // o IP do gateway ou do nó, e limitar por ele travaria todos os clientes juntos.
+  await app.register(fastifyRateLimit, {
+    global: false,
+    errorResponseBuilder: (_req, contexto) =>
+      // `contexto.after` vem em inglês ("15 minutes"); o ttl em milissegundos
+      // permite montar a mensagem no idioma da API.
+      new TooManyRequestsError(
+        `Muitas tentativas. Tente novamente em ${Math.max(1, Math.ceil(contexto.ttl / 60_000))} minuto(s).`,
+      ),
+  });
 
   // O entregável da Fase 3 exige "link para o Swagger das APIs". Manter /docs
   // desabilitado em produção — como na Fase 2 — tornaria esse link impossível.

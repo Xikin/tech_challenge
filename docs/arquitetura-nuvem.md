@@ -339,6 +339,7 @@ importar no New Relic.
 | [ADR-0009](adr/0009-api-gateway-entrada-unica.md) | API Gateway como ponto único de entrada |
 | [ADR-0010](adr/0010-observabilidade-new-relic.md) | New Relic como stack de observabilidade |
 | [ADR-0011](adr/0011-segredos-jwt-por-emissor.md) | Um segredo JWT por emissor, com papel amarrado ao emissor |
+| [ADR-0012](adr/0012-limites-de-tentativa.md) | Limites de tentativa por alvo e login em tempo constante |
 | [RFC-0001](rfc/0001-escolha-do-provedor-de-nuvem.md) | Escolha do provedor de nuvem |
 | [RFC-0002](rfc/0002-escolha-do-banco-de-dados-gerenciado.md) | Escolha do banco gerenciado |
 | [RFC-0003](rfc/0003-estrategia-de-autenticacao.md) | Estratégia de autenticação por CPF |

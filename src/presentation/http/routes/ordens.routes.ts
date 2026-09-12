@@ -74,6 +74,17 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/consulta-publica',
     {
+      // Rota sem autenticação: limita as tentativas por número de OS, para que não
+      // se descubra por tentativa e erro o CPF dono de uma ordem (ver ADR-0012).
+      config: {
+        rateLimit: {
+          max: 10,
+          timeWindow: '15 minutes',
+          hook: 'preHandler',
+          keyGenerator: (req) =>
+            `consulta-publica:${String((req.query as { numero?: unknown } | undefined)?.numero ?? '')}`,
+        },
+      },
       schema: {
         tags,
         summary: 'Consultar status da OS (sem login)',

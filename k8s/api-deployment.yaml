@@ -42,6 +42,12 @@ spec:
           labelSelector:
             matchLabels:
               app: oficina-api
+      volumes:
+        # Única área gravável do pod. Limitada, para que um processo
+        # comprometido não consiga encher o disco do nó.
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
       containers:
         - name: oficina-api
           image: DOCKER_IMAGE_PLACEHOLDER
@@ -119,7 +125,10 @@ spec:
               cpu: "500m"
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false # o Prisma escreve engines em /tmp
+            # Sistema de arquivos só-leitura: o código e as dependências não
+            # podem ser alterados pelo processo. A escrita fica restrita ao
+            # volume /tmp abaixo.
+            readOnlyRootFilesystem: true
             runAsNonRoot: true
             # UID/GID numéricos são obrigatórios junto com runAsNonRoot: a imagem
             # declara `USER appuser` por nome, e sem o número o kubelet não
@@ -130,6 +139,9 @@ spec:
             runAsGroup: 101
             capabilities:
               drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           # Startup: cobre a janela de `prisma migrate deploy` no start.
           startupProbe:
             httpGet:

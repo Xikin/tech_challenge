@@ -1,0 +1,29 @@
+# As actions são fixadas por SHA de commit (supply chain: uma tag como @v4
+# pode ser movida para código malicioso). O Dependabot mantém esses SHAs
+# atualizados, abrindo PRs com a versão nova — sem ele, o pin congelaria as
+# actions para sempre.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Patches e minors juntos; majors (fastify 5, nodemailer 10...) em PRs
+      # separados, porque exigem migração de código.
+      minor-e-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly

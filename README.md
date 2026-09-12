@@ -94,6 +94,10 @@ Dois emissores de token, um único validador.
 
 Cada emissor tem **segredo próprio**: `JWT_SECRET` assina o login interno e nunca sai desta API; `JWT_CLIENTE_SECRET` é compartilhado apenas com a Lambda. A API exige que tokens do emissor de clientes carreguem só o papel `CLIENTE` — quem obtiver o segredo da Lambda não consegue forjar um ADMIN ([ADR-0011](docs/adr/0011-segredos-jwt-por-emissor.md)).
 
+O login aceita 5 tentativas por e-mail e a consulta pública 10 por número de OS, a cada
+15 minutos. O login leva o mesmo tempo para e-mail existente ou não, para que não se
+descubra quem tem conta cronometrando a resposta ([ADR-0012](docs/adr/0012-limites-de-tentativa.md)).
+
 O papel determina o que se pode acessar:
 
 | Guard | Aplicado em | Regra |

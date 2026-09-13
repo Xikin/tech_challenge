@@ -10,6 +10,7 @@ Decisão e justificativa da ferramenta:
 | [`consultas.md`](consultas.md) | Todas as consultas NRQL, em texto, para colar no New Relic |
 | [`alertas.md`](alertas.md) | As 11 condições de alerta, com threshold e justificativa |
 | [`dashboard.json`](dashboard.json) | Dashboard pronto para importar |
+| [`provisionar-newrelic.mjs`](provisionar-newrelic.mjs) | Aplica o dashboard e os alertas na conta via NerdGraph, de forma idempotente |
 
 ---
 
@@ -80,6 +81,9 @@ aplicação funciona normalmente sem telemetria.
 
 ### 3. Infraestrutura do Kubernetes
 
+O pipeline de `oficina-infra-k8s` instala a integração automaticamente depois do
+`apply`, quando o secret `NEW_RELIC_LICENSE_KEY` está configurado. Para instalar à mão:
+
 ```bash
 helm repo add newrelic https://helm-charts.newrelic.com
 helm repo update
@@ -117,25 +121,37 @@ Em *Infrastructure → AWS → Add AWS account*, escolher **metric streams** ou
 > consultar os logs no CloudWatch para esses três componentes. Os painéis de OS,
 > latência e Kubernetes — que são os exigidos — não dependem desta etapa.
 
-### 5. Dashboard
+### 5. Dashboard e alertas
 
-*Dashboards → Import dashboard* e colar o conteúdo de
-[`dashboard.json`](dashboard.json), **substituindo `ACCOUNT_ID_AQUI` pelo seu
-Account ID numérico**:
+Aplicados na conta por script, a partir dos arquivos deste diretório — sem clicar
+em nada na interface. O script é idempotente: rodar de novo atualiza o dashboard e
+as condições existentes em vez de duplicá-los.
 
 ```bash
-sed "s/ACCOUNT_ID_AQUI/1234567/g" observabilidade/dashboard.json > /tmp/dashboard.json
+NEW_RELIC_API_KEY='NRAK-...' \
+NEW_RELIC_ACCOUNT_ID='1234567' \
+node observabilidade/provisionar-newrelic.mjs
 ```
 
-Se a importação falhar por diferença de versão do schema, use
-[`consultas.md`](consultas.md) — todas as consultas estão em texto para montar os
-widgets à mão.
+Cria o dashboard **Oficina Mecânica — Operação** e a policy `oficina-producao` com as
+condições de [`alertas.md`](alertas.md). A *User key* (`NRAK-...`) fica em
+*Administration → API keys* e **não** é a license key de ingestão.
 
-### 6. Alertas e synthetic
+Duas coisas ficam de fora por dependerem do ambiente no ar:
 
-Seguir [`alertas.md`](alertas.md). São 10 condições NRQL numa policy mais 1 monitor
-sintético.
+- **Monitor sintético de uptime** (seção 9 de `alertas.md`): precisa da URL pública do
+  API Gateway, que muda a cada recriação.
+- **Destino das notificações**: sem ele, os incidentes são abertos e ficam visíveis em
+  *Alerts*, mas ninguém é avisado. Configure em *Alerts → Destinations* e
+  *Workflows*, apontando para a policy `oficina-producao`.
 
+### 6. Marcadores de deploy
+
+O job de deploy registra cada versão publicada no New Relic (*change tracking*), e ela
+aparece como linha vertical nos gráficos da aplicação. Precisa dos secrets
+`NEW_RELIC_API_KEY` e `NEW_RELIC_ACCOUNT_ID` no repositório. O passo é ignorado até a
+aplicação reportar dados pela primeira vez, porque só então a entidade `oficina-api`
+existe.
 ---
 
 ## Diagnóstico rápido

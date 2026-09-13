@@ -138,7 +138,7 @@
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT count(*) FROM Log WHERE aws.logGroup LIKE '/aws/apigateway/oficina%' FACET cases(WHERE status < 300 AS '2xx', WHERE status < 400 AS '3xx', WHERE status < 500 AS '4xx', WHERE status >= 500 AS '5xx') TIMESERIES SINCE 6 hours ago"
+                "query": "SELECT count(*) FROM Log WHERE aws.logGroup LIKE '/aws/apigateway/oficina%' FACET cases(WHERE numeric(status) < 300 AS '2xx', WHERE numeric(status) < 400 AS '3xx', WHERE numeric(status) < 500 AS '4xx', WHERE numeric(status) >= 500 AS '5xx') TIMESERIES SINCE 6 hours ago"
               }
             ]
           }
@@ -164,7 +164,7 @@
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT average(latenciaMs), percentile(latenciaMs, 95) FROM Log WHERE aws.logGroup LIKE '/aws/apigateway/oficina%' FACET routeKey TIMESERIES SINCE 6 hours ago"
+                "query": "SELECT average(numeric(latenciaMs)), percentile(numeric(latenciaMs), 95) FROM Log WHERE aws.logGroup LIKE '/aws/apigateway/oficina%' FACET routeKey TIMESERIES SINCE 6 hours ago"
               }
             ]
           }

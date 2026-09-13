@@ -12,6 +12,10 @@ em [`alertas.md`](alertas.md).
 > (`os_criada`, `os_status_alterado`, `falha_integracao`) são emitidos
 > explicitamente pelos casos de uso — não são inferidos de status HTTP.
 
+> **Atenção aos tipos.** O access log do API Gateway grava todos os valores como texto
+> (`"status": "200"`, `"latenciaMs": "42"`). Comparações e agregações numéricas sobre
+> esses campos precisam de `numeric()`; sem ele, `status >= 500` nunca é verdadeiro.
+
 ---
 
 ## 1. Volume diário de ordens de serviço
@@ -163,7 +167,7 @@ SINCE 24 hours ago LIMIT 20
 Latência do API Gateway, incluindo o salto até o cluster:
 
 ```sql
-SELECT average(latenciaMs), percentile(latenciaMs, 95)
+SELECT average(numeric(latenciaMs)), percentile(numeric(latenciaMs), 95)
 FROM Log
 WHERE aws.logGroup LIKE '/aws/apigateway/oficina%'
 FACET routeKey
@@ -186,10 +190,10 @@ SELECT count(*)
 FROM Log
 WHERE aws.logGroup LIKE '/aws/apigateway/oficina%'
 FACET cases(
-  WHERE status < 300 AS '2xx',
-  WHERE status < 400 AS '3xx',
-  WHERE status < 500 AS '4xx',
-  WHERE status >= 500 AS '5xx'
+  WHERE numeric(status) < 300 AS '2xx',
+  WHERE numeric(status) < 400 AS '3xx',
+  WHERE numeric(status) < 500 AS '4xx',
+  WHERE numeric(status) >= 500 AS '5xx'
 )
 TIMESERIES SINCE 6 hours ago
 ```

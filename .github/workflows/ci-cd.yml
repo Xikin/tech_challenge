@@ -344,6 +344,42 @@ jobs:
             exit 1
           fi
 
+      # Registra o deploy no New Relic (change tracking): a versão aparece como
+      # marcador nos gráficos, ligando uma mudança de comportamento ao commit que
+      # a causou. Não bloqueia o deploy: ignora se os secrets não existirem ou se
+      # a aplicação ainda não tiver reportado dados (a entidade só existe depois).
+      - name: Registrar deploy no New Relic
+        continue-on-error: true
+        env:
+          NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+          NEW_RELIC_ACCOUNT_ID: ${{ secrets.NEW_RELIC_ACCOUNT_ID }}
+        run: |
+          if [ -z "$NEW_RELIC_API_KEY" ] || [ -z "$NEW_RELIC_ACCOUNT_ID" ]; then
+            echo "::notice::NEW_RELIC_API_KEY ou NEW_RELIC_ACCOUNT_ID não configurados — marcador de deploy ignorado."
+            exit 0
+          fi
+          nerdgraph() {
+            curl -sS https://api.newrelic.com/graphql \
+              -H 'Content-Type: application/json' -H "API-Key: $NEW_RELIC_API_KEY" --data-binary @-
+          }
+          GUID=$(jq -n --arg q "accountId = $NEW_RELIC_ACCOUNT_ID AND domain = 'APM' AND name = 'oficina-api'" \
+            '{query: "query($q: String!) { actor { entitySearch(query: $q) { results { entities { guid } } } } }", variables: {q: $q}}' \
+            | nerdgraph | jq -r '.data.actor.entitySearch.results.entities[0].guid // empty')
+          if [ -z "$GUID" ]; then
+            echo "::notice::A entidade oficina-api ainda não existe no New Relic (a aplicação não reportou dados) — marcador ignorado."
+            exit 0
+          fi
+          jq -n --arg guid "$GUID" --arg versao "$GITHUB_SHA" --arg usuario "$GITHUB_ACTOR" \
+            --arg descricao "Deploy ${APP_ENV} pelo GitHub Actions (run ${GITHUB_RUN_ID})" \
+            '{query: "mutation($d: ChangeTrackingDeploymentInput!) { changeTrackingCreateDeployment(deployment: $d) { deploymentId } }",
+              variables: {d: {entityGuid: $guid, version: $versao, commit: $versao, user: $usuario, description: $descricao, deploymentType: "ROLLING"}}}' \
+            | nerdgraph > nr-deploy.json
+          if jq -e '.data.changeTrackingCreateDeployment.deploymentId' nr-deploy.json >/dev/null; then
+            echo "Marcador de deploy registrado para ${GITHUB_SHA}."
+          else
+            echo "::warning::O New Relic não registrou o marcador de deploy:"; cat nr-deploy.json
+          fi
+
       - name: Resumo do deploy
         run: |
           {

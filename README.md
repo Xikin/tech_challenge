@@ -248,7 +248,9 @@ kubectl rollout status deployment/oficina-api -n oficina
 | `AWS_SESSION_TOKEN` | idem — **expira a cada 4h** |
 | `JWT_SECRET` | segredo do login interno — **nunca** vai para a Lambda |
 | `JWT_CLIENTE_SECRET` | **o mesmo** configurado na Lambda; diferente do `JWT_SECRET` |
-| `NEW_RELIC_LICENSE_KEY` | New Relic → Administration → API keys |
+| `NEW_RELIC_LICENSE_KEY` | New Relic → Administration → API keys (tipo *INGEST - LICENSE*) |
+| `NEW_RELIC_API_KEY` | *User key* (`NRAK-...`) — marcador de deploy; opcional |
+| `NEW_RELIC_ACCOUNT_ID` | Account ID numérico — marcador de deploy; opcional |
 | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | opcionais |
 | `SONAR_TOKEN` | opcional — sem ele o job de qualidade é ignorado |
 

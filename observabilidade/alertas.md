@@ -107,7 +107,7 @@ WHERE appName = 'oficina-api'
 ## 6. Taxa de erro 5xx no gateway
 
 ```sql
-SELECT percentage(count(*), WHERE status >= 500)
+SELECT percentage(count(*), WHERE numeric(status) >= 500)
 FROM Log
 WHERE aws.logGroup LIKE '/aws/apigateway/oficina%'
 ```

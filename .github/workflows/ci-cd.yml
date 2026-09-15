@@ -51,8 +51,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -95,41 +93,6 @@ jobs:
           name: openapi
           path: docs/openapi.json
           retention-days: 30
-
-  sonar:
-    name: Análise SonarCloud
-    runs-on: ubuntu-latest
-    needs: test
-    if: ${{ !cancelled() }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          fetch-depth: 0
-
-      - name: Baixar cobertura
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: coverage
-          path: coverage
-
-      - name: Verificar se o Sonar está configurado
-        id: check
-        run: |
-          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
-            echo "configurado=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configurado=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::SONAR_TOKEN não configurado — análise de qualidade ignorada."
-          fi
-
-      - name: SonarCloud Scan
-        if: steps.check.outputs.configurado == 'true'
-        uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402 # v4.2.2
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
 
   docker:
     name: Build & Push da imagem (ECR)

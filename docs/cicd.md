@@ -8,7 +8,7 @@
 > | Runner | self-hosted na máquina do dev | `ubuntu-latest` |
 > | Deploy | `kubectl` contra o Kind local | `aws eks update-kubeconfig` + EKS |
 > | Gatilhos | só `main` | `main` (produção) e `homolog` (homologação) |
-> | Qualidade | SonarQube em Docker local | SonarCloud, e só se `SONAR_TOKEN` existir |
+> | Qualidade | SonarQube em Docker local | SonarQube em Docker local, fora do pipeline (`npm run sonar`) |
 > | Verificação | nenhuma | smoke test: `/health/ready` = 200 e `/clientes` sem token = 401 |
 > | Registro | GHCR + pull secret criado com `GITHUB_TOKEN` | Amazon ECR, pull pela role dos nós |
 >

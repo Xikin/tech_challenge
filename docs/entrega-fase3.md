@@ -67,7 +67,7 @@ Roteiro sugerido (checklist dos 6 itens exigidos):
 | Diagrama de sequência — abertura de OS | [`docs/arquitetura-nuvem.md`](arquitetura-nuvem.md#3-diagrama-de-sequência--abertura-de-ordem-de-serviço) |
 | Justificativa do banco + diagrama ER + relacionamentos | [`docs/modelo-de-dados.md`](modelo-de-dados.md) |
 | RFCs (nuvem, banco, autenticação) | [`docs/rfc/`](rfc/README.md) |
-| ADRs (10, incluindo HPA e padrão de comunicação) | [`docs/adr/`](adr/README.md) |
+| ADRs (12 nos 4 repositórios, 9 neste; incluindo HPA e padrão de comunicação) | [`docs/adr/`](adr/README.md) |
 | Observabilidade (dashboards, consultas, alertas) | [`observabilidade/`](../observabilidade/) |
 | Swagger / OpenAPI | `<API_GATEWAY_URL>/docs` e [`docs/openapi.json`](openapi.json) |
 | Collection Postman | [`postman/`](../postman) |
@@ -107,7 +107,7 @@ cd oficina-auth-lambda/terraform && terraform output -raw api_gateway_url
 | Proteger rotas sensíveis com autenticação via CPF | `exigirInterno` e `exigirDonoDoRecurso` — `src/presentation/http/middlewares/auth.middleware.ts` |
 | Function serverless: validar CPF | `src/cpf.ts` (dígito verificador, sem ramo de CNPJ) |
 | Function serverless: consultar existência e status | `src/db.ts` — 404 para inexistente, 403 para inativo |
-| Function serverless: gerar e devolver JWT | `src/token.ts` — `role: CLIENTE`, mesmo segredo da API |
+| Function serverless: gerar e devolver JWT | `src/token.ts` — `role: CLIENTE`, assinado com o segredo próprio do emissor de clientes ([ADR-0011](adr/0011-segredos-jwt-por-emissor.md)) |
 
 ### Estrutura de repositórios e CI/CD
 
@@ -151,7 +151,7 @@ cd oficina-auth-lambda/terraform && terraform output -raw api_gateway_url
 | Diagrama de componentes | `docs/arquitetura-nuvem.md` |
 | Diagrama de sequência (autenticação e abertura de OS) | `docs/arquitetura-nuvem.md` |
 | RFCs para decisões técnicas | 3 RFCs, todas com status atualizado |
-| ADRs para decisões permanentes | 10 ADRs, incluindo HPA e padrão de comunicação |
+| ADRs para decisões permanentes | 12 ADRs nos 4 repositórios (9 neste), incluindo HPA e padrão de comunicação |
 | Justificativa do banco + ER + relacionamentos | `docs/modelo-de-dados.md` |
 | Ajustes no modelo relacional | migration `20260909120000_indices_fase3` — 15 índices |
 

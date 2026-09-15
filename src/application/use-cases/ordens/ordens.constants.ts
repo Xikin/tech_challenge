@@ -27,8 +27,17 @@ export const CANCELAVEIS: StatusOS[] = [
   'EM_EXECUCAO',
 ];
 
-export const TIMESTAMP_CAMPO: Partial<Record<StatusOS, object>> = {
-  EM_EXECUCAO: { aprovadoEm: new Date(), iniciadoEm: new Date() },
-  FINALIZADA: { finalizadoEm: new Date() },
-  ENTREGUE: { entregueEm: new Date() },
-};
+export function timestampsParaStatus(status: StatusOS): Record<string, Date> {
+  const agora = new Date();
+
+  switch (status) {
+    case 'EM_EXECUCAO':
+      return { aprovadoEm: agora, iniciadoEm: agora };
+    case 'FINALIZADA':
+      return { finalizadoEm: agora };
+    case 'ENTREGUE':
+      return { entregueEm: agora };
+    default:
+      return {};
+  }
+}

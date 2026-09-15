@@ -1,5 +1,6 @@
 import { NotFoundError, StockError } from '../../../shared/errors';
 import type { IOrdemRepository } from '../../../domain/repositories/ordens.repository.interface';
+import { loggerSilencioso, type ILogger } from '../../../domain/services/logger.service.interface';
 
 export interface CriarOrdemInput {
   clienteId: string;
@@ -11,7 +12,10 @@ export interface CriarOrdemInput {
 }
 
 export class CriarOrdemUseCase {
-  constructor(private readonly repo: IOrdemRepository) {}
+  constructor(
+    private readonly repo: IOrdemRepository,
+    private readonly logger: ILogger = loggerSilencioso,
+  ) {}
 
   async execute(data: CriarOrdemInput) {
     const cliente = await this.repo.buscarCliente(data.clienteId);
@@ -46,7 +50,7 @@ export class CriarOrdemUseCase {
       0,
     );
 
-    return this.repo.criar({
+    const ordem = await this.repo.criar({
       clienteId: data.clienteId,
       veiculoId: data.veiculoId,
       descricao: data.descricao,
@@ -59,5 +63,21 @@ export class CriarOrdemUseCase {
         preco: Number(peca.preco),
       })),
     });
+
+    this.logger.info(
+      {
+        evento: 'os_criada',
+        ordemId: ordem.id,
+        numeroOS: ordem.numero,
+        clienteId: data.clienteId,
+        veiculoId: data.veiculoId,
+        qtdServicos: servicos.length,
+        qtdPecas: pecas.length,
+        valorTotal: totalServicos + totalPecas,
+      },
+      'ordem de serviço criada',
+    );
+
+    return ordem;
   }
 }

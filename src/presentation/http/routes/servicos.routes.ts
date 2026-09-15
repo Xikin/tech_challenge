@@ -17,7 +17,7 @@ import {
   servicoResponseSchema,
   listarServicosResponseSchema,
 } from '../schemas/servicos.schema';
-import { autenticar } from '../middlewares/auth.middleware';
+import { exigirInterno } from '../middlewares/auth.middleware';
 
 export const servicosRoutes: FastifyPluginAsync = async (instance) => {
   const fastify = instance.withTypeProvider<ZodTypeProvider>();
@@ -35,7 +35,7 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
   fastify.post(
     '/',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -50,7 +50,7 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -65,7 +65,7 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -80,7 +80,7 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/:id/tempo-medio',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -95,7 +95,7 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
   fastify.put(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -111,7 +111,7 @@ export const servicosRoutes: FastifyPluginAsync = async (instance) => {
   fastify.delete(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,

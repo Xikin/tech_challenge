@@ -34,6 +34,8 @@ model Cliente {
   veiculos     Veiculo[]
   ordens       OrdemServico[]
 
+  @@index([nome])
+  @@index([ativo])
   @@map("clientes")
 }
 
@@ -51,6 +53,7 @@ model Veiculo {
   cliente      Cliente        @relation(fields: [clienteId], references: [id])
   ordens       OrdemServico[]
 
+  @@index([clienteId])
   @@map("veiculos")
 }
 
@@ -65,6 +68,7 @@ model Servico {
   atualizadoEm  DateTime        @updatedAt @map("atualizado_em")
   itensOS       ItemServicoOS[]
 
+  @@index([ativo])
   @@map("servicos")
 }
 
@@ -81,6 +85,7 @@ model Peca {
   atualizadoEm DateTime     @updatedAt @map("atualizado_em")
   itensPecaOS  ItemPecaOS[]
 
+  @@index([ativo])
   @@map("pecas")
 }
 
@@ -105,6 +110,10 @@ model OrdemServico {
   pecas        ItemPecaOS[]
   historico    HistoricoOS[]
 
+  @@index([status])
+  @@index([clienteId])
+  @@index([veiculoId])
+  @@index([status, criadoEm])
   @@map("ordens_servico")
 }
 
@@ -117,6 +126,8 @@ model ItemServicoOS {
   ordem     OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
   servico   Servico      @relation(fields: [servicoId], references: [id])
 
+  @@index([ordemId])
+  @@index([servicoId])
   @@map("itens_servico_os")
 }
 
@@ -129,6 +140,8 @@ model ItemPecaOS {
   ordem      OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
   peca       Peca         @relation(fields: [pecaId], references: [id])
 
+  @@index([ordemId])
+  @@index([pecaId])
   @@map("itens_peca_os")
 }
 
@@ -141,6 +154,8 @@ model HistoricoOS {
   criadoEm       DateTime     @default(now()) @map("criado_em")
   ordem          OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
 
+  @@index([ordemId, criadoEm])
+  @@index([statusNovo, criadoEm])
   @@map("historico_os")
 }
 

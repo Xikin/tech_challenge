@@ -26,11 +26,16 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/newrelic.cjs ./
 
-RUN chown -R appuser:appgroup /app
+ENV HOME=/tmp \
+    NPM_CONFIG_CACHE=/tmp/.npm \
+    CHECKPOINT_DISABLE=1
 
 USER appuser
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+ENV NODE_OPTIONS="-r newrelic"
+
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && exec node dist/server.js"]

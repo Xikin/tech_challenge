@@ -1,5 +1,24 @@
 # Kubernetes
 
+> **Atualizado na Fase 3.** Este documento descrevia a operação sobre um cluster
+> **Kind local**. A plataforma agora roda em **Amazon EKS**, com o PostgreSQL fora
+> do cluster (Amazon RDS) e exposição por Network Load Balancer atrás do API
+> Gateway. O que mudou:
+>
+> | | Fase 2 | Fase 3 |
+> | --- | --- | --- |
+> | Cluster | Kind local | Amazon EKS 1.31, 2 a 4 nós |
+> | Banco | `Deployment` + PVC no cluster | Amazon RDS (manifestos removidos) |
+> | Exposição | `NodePort` 30000 | `Service type: LoadBalancer` (NLB) |
+> | Réplicas | `spec.replicas: 2` no Deployment | removido — quem manda é o HPA |
+> | Readiness | `/health` (raso) | `/health/ready` (verifica o banco) |
+> | Autoscaling | HPA sem metrics-server, nunca escalava | HPA + metrics-server + autoscaling de nós |
+>
+> Ver [arquitetura-nuvem.md](arquitetura-nuvem.md) para o desenho atual e
+> [terraform.md](terraform.md) para onde a infraestrutura é provisionada.
+
+---
+
 Manifests declarativos em `/k8s/` que descrevem o estado desejado da aplicação no cluster. Aplicados manualmente (local) ou pelo job de deploy do CI/CD (produção).
 
 ---
@@ -66,6 +85,7 @@ Armazena credenciais sensíveis em Base64. **Nunca é criado pelo `kubectl apply
 |---------------------|------------------------------------|
 | `POSTGRES_PASSWORD` | Senha do PostgreSQL                |
 | `JWT_SECRET`        | Chave de assinatura dos tokens JWT |
+| `JWT_CLIENTE_SECRET`        | Chave de assinatura dos tokens JWT |
 | `SMTP_HOST`         | Host do servidor SMTP (opcional)   |
 | `SMTP_USER`         | Usuário SMTP (opcional)            |
 | `SMTP_PASS`         | Senha SMTP (opcional)              |
@@ -76,6 +96,7 @@ kubectl create secret generic oficina-secret \
   --namespace=oficina \
   --from-literal=POSTGRES_PASSWORD="sua_senha" \
   --from-literal=JWT_SECRET="sua_chave_jwt_minimo_32_chars" \
+  --from-literal=JWT_CLIENTE_SECRET="sua_chave_jwt_minimo_32_chars" \
   --from-literal=SMTP_HOST="" \
   --from-literal=SMTP_USER="" \
   --from-literal=SMTP_PASS=""

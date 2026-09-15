@@ -1,0 +1,184 @@
+# Observabilidade
+
+Como a plataforma é monitorada e como reproduzir os painéis do zero.
+
+Decisão e justificativa da ferramenta:
+[ADR-0010](../docs/adr/0010-observabilidade-new-relic.md).
+
+| Arquivo | Conteúdo |
+| --- | --- |
+| [`consultas.md`](consultas.md) | Todas as consultas NRQL, em texto, para colar no New Relic |
+| [`alertas.md`](alertas.md) | As 11 condições de alerta, com threshold e justificativa |
+| [`dashboard.json`](dashboard.json) | Dashboard pronto para importar |
+| [`provisionar-newrelic.mjs`](provisionar-newrelic.mjs) | Aplica o dashboard e os alertas na conta via NerdGraph, de forma idempotente |
+
+---
+
+## Requisitos da Fase 3 e onde cada um é atendido
+
+| Requisito | Sinal | Origem |
+| --- | --- | --- |
+| Latência das APIs | `Transaction.duration`, `latenciaMs` do gateway | agente APM + access log |
+| CPU e memória do Kubernetes | `K8sContainerSample`, `K8sNodeSample` | `nri-bundle` |
+| Healthchecks e uptime | `SyntheticCheck`, `evento = 'readiness_falhou'` | synthetic + aplicação |
+| Alertas de falha no processamento de OS | `evento = 'falha_integracao'` | casos de uso |
+| Logs estruturados JSON | todas as linhas | pino, JSON manual na Lambda, access log |
+| Correlação entre requisições | `reqId` / `correlationId` | `x-request-id` propagado |
+| Volume diário de OS | `evento = 'os_criada'` | `CriarOrdemUseCase` |
+| Tempo médio por status | `duracaoNoStatusAnteriorMs` | `AvancarStatusUseCase` |
+| Erros e falhas nas integrações | `evento = 'falha_integracao'`, `erro_interno` | error handler e casos de uso |
+
+---
+
+## Eventos de negócio emitidos pela aplicação
+
+Os painéis não inferem nada de status HTTP: os casos de uso publicam eventos
+explícitos, que sobrevivem a mudanças de rota e de status code.
+
+| `evento` | Emitido por | Campos relevantes |
+| --- | --- | --- |
+| `os_criada` | `CriarOrdemUseCase` | `numeroOS`, `clienteId`, `qtdServicos`, `qtdPecas`, `valorTotal` |
+| `os_status_alterado` | `AvancarStatusUseCase` | `statusAnterior`, `statusNovo`, `duracaoNoStatusAnteriorMs` |
+| `falha_integracao` | `AvancarStatusUseCase`, `AprovarOrcamentoUseCase` | `integracao`, `operacao`, `numeroOS`, `erro` |
+| `erro_negocio` | `setErrorHandler` | `codigo`, `statusCode`, `rota` |
+| `erro_validacao` | `setErrorHandler` | `codigo`, `rota` |
+| `erro_interno` | `setErrorHandler` | `rota`, `err` |
+| `acesso_negado` | `exigirInterno`, `exigirDonoDoRecurso` | `motivo`, `role`, `sub` |
+| `token_emissor_invalido` | `autenticar` | `emissor`, `iss`, `role`, `sub` — assinatura válida com papel incompatível: indica segredo vazado |
+| `readiness_falhou` | `/health/ready` | `dependencia` |
+| `servidor_iniciado` / `encerramento_*` | `server.ts` | `sinal` |
+
+`duracaoNoStatusAnteriorMs` vem de `historico_os.criado_em` (timestamp gerado pelo
+banco), e não das colunas de cache da OS — ver
+[modelo-de-dados.md](../docs/modelo-de-dados.md), seção 6.
+
+---
+
+## Configuração, do zero
+
+### 1. Conta e chave
+
+1. Criar conta gratuita em <https://newrelic.com/signup> — 100 GB/mês, sem cartão.
+2. Copiar a **license key** (ingest key) em *Administration → API keys*.
+3. Anotar o **Account ID** (aparece na URL da conta).
+
+### 2. APM da aplicação
+
+Já está no código. Basta a chave chegar ao pod:
+
+```bash
+kubectl create secret generic oficina-secret -n oficina \
+  --from-literal=NEW_RELIC_LICENSE_KEY='<sua-chave>' \
+  ... (demais chaves) \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+No pipeline, é o secret `NEW_RELIC_LICENSE_KEY` do repositório.
+
+O agente é carregado por `NODE_OPTIONS="-r newrelic"` no `Dockerfile` e configurado
+em [`newrelic.cjs`](../newrelic.cjs). **Sem a chave, o agente não sobe** e a
+aplicação funciona normalmente sem telemetria.
+
+### 3. Infraestrutura do Kubernetes
+
+O pipeline de `oficina-infra-k8s` instala a integração automaticamente depois do
+`apply`, quando o secret `NEW_RELIC_LICENSE_KEY` está configurado. Para instalar à mão:
+
+```bash
+helm repo add newrelic https://helm-charts.newrelic.com
+helm repo update
+
+helm upgrade --install newrelic-bundle newrelic/nri-bundle \
+  --namespace newrelic --create-namespace \
+  --set global.licenseKey='<sua-chave>' \
+  --set global.cluster='oficina-prod' \
+  --set newrelic-infrastructure.privileged=true \
+  --set kube-state-metrics.enabled=true \
+  --set nri-kube-events.enabled=true \
+  --set newrelic-logging.enabled=false \
+  --set global.lowDataMode=true
+```
+
+`lowDataMode=true` reduz bastante a ingestão — relevante para não estourar os
+100 GB gratuitos com um cluster de laboratório.
+
+`newrelic-logging.enabled=false` porque os logs da API já chegam pelo agente New Relic de dentro da
+aplicação, com contexto de trace. Com o coletor do cluster ligado, cada linha seria enviada duas vezes, e
+os painéis que contam eventos poderiam mostrar o dobro.
+
+Conferir:
+
+```bash
+kubectl get pods -n newrelic
+```
+
+### 4. Métricas da AWS (RDS, Lambda, API Gateway)
+
+Em *Infrastructure → AWS → Add AWS account*, escolher **metric streams** ou
+**API polling**.
+
+> No AWS Academy Learner Lab a integração por role costuma falhar, porque não é
+> possível criar a IAM role que o New Relic pede (ver
+> [ADR-0005](https://github.com/Xikin/oficina-infra-k8s/blob/main/docs/adr/0005-restricoes-aws-academy.md)).
+> Os **logs** da Lambda de autenticação e do API Gateway não dependem dessa
+> integração: o repositório [oficina-auth-lambda](https://github.com/Xikin/oficina-auth-lambda)
+> cria uma função que encaminha os dois log groups do CloudWatch à Log API do New
+> Relic, desde que o secret `NEW_RELIC_LICENSE_KEY` esteja cadastrado nele. Sem a
+> integração por role, ficam de fora apenas as métricas nativas da AWS (RDS, Lambda
+> e API Gateway), que continuam no CloudWatch.
+
+### 5. Dashboard e alertas
+
+Aplicados na conta por script, a partir dos arquivos deste diretório — sem clicar
+em nada na interface. O script é idempotente: rodar de novo atualiza o dashboard e
+as condições existentes em vez de duplicá-los.
+
+```bash
+NEW_RELIC_API_KEY='NRAK-...' \
+NEW_RELIC_ACCOUNT_ID='1234567' \
+node observabilidade/provisionar-newrelic.mjs
+```
+
+Cria o dashboard **Oficina Mecânica — Operação** e a policy `oficina-producao` com as
+condições de [`alertas.md`](alertas.md). A *User key* (`NRAK-...`) fica em
+*Administration → API keys* e **não** é a license key de ingestão.
+
+Duas coisas ficam de fora por dependerem do ambiente no ar:
+
+- **Monitor sintético de uptime** (seção 9 de `alertas.md`): precisa da URL pública do
+  API Gateway, que muda a cada recriação.
+- **Destino das notificações**: sem ele, os incidentes são abertos e ficam visíveis em
+  *Alerts*, mas ninguém é avisado. Configure em *Alerts → Destinations* e
+  *Workflows*, apontando para a policy `oficina-producao`.
+
+### 6. Marcadores de deploy
+
+O job de deploy registra cada versão publicada no New Relic (*change tracking*), e ela
+aparece como linha vertical nos gráficos da aplicação. Precisa dos secrets
+`NEW_RELIC_API_KEY` e `NEW_RELIC_ACCOUNT_ID` no repositório. O passo é ignorado até a
+aplicação reportar dados pela primeira vez, porque só então a entidade `oficina-api`
+existe.
+---
+
+## Diagnóstico rápido
+
+```bash
+# O agente subiu?
+kubectl logs -n oficina -l app=oficina-api | grep -i "newrelic"
+
+# Logs estruturados saindo em JSON?
+kubectl logs -n oficina -l app=oficina-api --tail=20
+
+# Seguir uma requisição específica ponta a ponta
+curl -s -D- http://<URL>/health -H 'x-request-id: teste-123' | grep -i x-request-id
+kubectl logs -n oficina -l app=oficina-api | grep teste-123
+
+# Logs da Lambda
+aws logs tail /aws/lambda/oficina-prod-auth --follow --format short
+
+# Access log do gateway
+aws logs tail /aws/apigateway/oficina-prod --follow --format short
+```
+
+Se o agente não aparecer nos logs, quase sempre é a `NEW_RELIC_LICENSE_KEY` ausente
+ou vazia no Secret — é o comportamento projetado, não uma falha.

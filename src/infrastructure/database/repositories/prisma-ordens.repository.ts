@@ -68,7 +68,10 @@ export class PrismaOrdemRepository implements IOrdemRepository {
   }
 
   async buscarPorNumero(numero: number) {
-    const ordem = await prisma.ordemServico.findUnique({ where: { numero }, include: includeCompleto });
+    const ordem = await prisma.ordemServico.findUnique({
+      where: { numero },
+      include: includeCompleto,
+    });
     return ordem ? mapOrdemCompleta(ordem) : null;
   }
 
@@ -175,7 +178,11 @@ export class PrismaOrdemRepository implements IOrdemRepository {
   }
 
   async atualizar(id: string, data: { descricao?: string; observacoes?: string }) {
-    const ordem = await prisma.ordemServico.update({ where: { id }, data, include: includeCompleto });
+    const ordem = await prisma.ordemServico.update({
+      where: { id },
+      data,
+      include: includeCompleto,
+    });
     return mapOrdemCompleta(ordem);
   }
 

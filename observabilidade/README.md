@@ -95,12 +95,16 @@ helm upgrade --install newrelic-bundle newrelic/nri-bundle \
   --set newrelic-infrastructure.privileged=true \
   --set kube-state-metrics.enabled=true \
   --set nri-kube-events.enabled=true \
-  --set newrelic-logging.enabled=true \
+  --set newrelic-logging.enabled=false \
   --set global.lowDataMode=true
 ```
 
 `lowDataMode=true` reduz bastante a ingestão — relevante para não estourar os
 100 GB gratuitos com um cluster de laboratório.
+
+`newrelic-logging.enabled=false` porque os logs da API já chegam pelo agente New Relic de dentro da
+aplicação, com contexto de trace. Com o coletor do cluster ligado, cada linha seria enviada duas vezes, e
+os painéis que contam eventos poderiam mostrar o dobro.
 
 Conferir:
 
@@ -116,10 +120,12 @@ Em *Infrastructure → AWS → Add AWS account*, escolher **metric streams** ou
 > No AWS Academy Learner Lab a integração por role costuma falhar, porque não é
 > possível criar a IAM role que o New Relic pede (ver
 > [ADR-0005](https://github.com/Xikin/oficina-infra-k8s/blob/main/docs/adr/0005-restricoes-aws-academy.md)).
-> Alternativa que funciona: encaminhar os log groups do CloudWatch por uma
-> subscription filter para a Lambda `newrelic-log-ingestion`, ou simplesmente
-> consultar os logs no CloudWatch para esses três componentes. Os painéis de OS,
-> latência e Kubernetes — que são os exigidos — não dependem desta etapa.
+> Os **logs** da Lambda de autenticação e do API Gateway não dependem dessa
+> integração: o repositório [oficina-auth-lambda](https://github.com/Xikin/oficina-auth-lambda)
+> cria uma função que encaminha os dois log groups do CloudWatch à Log API do New
+> Relic, desde que o secret `NEW_RELIC_LICENSE_KEY` esteja cadastrado nele. Sem a
+> integração por role, ficam de fora apenas as métricas nativas da AWS (RDS, Lambda
+> e API Gateway), que continuam no CloudWatch.
 
 ### 5. Dashboard e alertas
 

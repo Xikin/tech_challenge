@@ -74,12 +74,12 @@ src/
 | Banco | PostgreSQL 16 (Amazon RDS) via Prisma 5 |
 | Autenticação | JWT (`@fastify/jwt`), HS256 |
 | Validação | Zod |
-| Testes | Vitest — 137 testes, unitários e de integração |
+| Testes | Vitest — 160 testes, unitários e de integração |
 | Container | Docker multi-stage, usuário não-root |
 | Orquestração | Kubernetes (Amazon EKS) com HPA |
 | Observabilidade | New Relic APM + logs JSON (pino) com correlação |
 | CI/CD | GitHub Actions — testes, imagem no Amazon ECR, deploy no EKS |
-| Qualidade | SonarCloud (opcional), Prettier |
+| Qualidade | Prettier no pipeline; SonarQube local (`npm run sonar`) |
 
 ---
 
@@ -203,7 +203,7 @@ Os testes usam mock do Prisma e não precisam de banco.
 
 | Gatilho | O que acontece |
 | --- | --- |
-| PR para `main` ou `homolog` | formatação, migrations, build, 137 testes, SonarCloud |
+| PR para `main` ou `homolog` | formatação, migrations, build, 160 testes |
 | Push em `homolog` | tudo acima + imagem no ECR + deploy no EKS de homologação + smoke test |
 | Push em `main` | tudo acima + deploy no EKS de produção + smoke test |
 
@@ -252,7 +252,6 @@ kubectl rollout status deployment/oficina-api -n oficina
 | `NEW_RELIC_API_KEY` | *User key* (`NRAK-...`) — marcador de deploy; opcional |
 | `NEW_RELIC_ACCOUNT_ID` | Account ID numérico — marcador de deploy; opcional |
 | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | opcionais |
-| `SONAR_TOKEN` | opcional — sem ele o job de qualidade é ignorado |
 
 ---
 

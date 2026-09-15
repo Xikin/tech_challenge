@@ -23,7 +23,7 @@ Copie para `.env` para rodar localmente.
 | `SWAGGER_ENABLED` | Ligado por padrão inclusive em produção, para que o link do Swagger funcione. Desligue com `false` se a API for exposta a um público não confiável. |
 | `SEED_ADMIN_PASSWORD`, `SEED_FUNCIONARIO_PASSWORD` | Senhas dos usuários internos criados pelo seed. Sem elas, o seed gera senhas aleatórias e as exibe uma vez. |
 | `SEED_PERMITIR_SENHA_PADRAO` | `true` usa `Admin@123` / `Func@123` — apenas para o ambiente local e a collection Postman. **Nunca** ligue em ambiente publicado. No `docker-compose.yml` o padrão é `false`. |
-| `SONAR_TOKEN` | Opcional; análise de qualidade no CI. |
+| `SONAR_TOKEN` | Opcional; token do SonarQube local, usado por `npm run sonar` (fora do pipeline). |
 
 ### `.gitignore` e `.dockerignore`
 
@@ -346,7 +346,6 @@ kubectl create secret generic oficina-secret --namespace=oficina \
 
 ## CI/CD — `.github/workflows/ci-cd.yml`
 
-- `fetch-depth: 0` no checkout do job de testes: o Sonar precisa do histórico para atribuir autoria.
 - "Publicar endereço da API no SSM" fecha o contrato com oficina-auth-lambda: é esse valor que a rota
   `ANY /{proxy+}` do API Gateway usa como backend.
 - O smoke test confere `/health/ready` e, em seguida, que `/clientes` sem token responde 401 — prova de que a

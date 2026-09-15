@@ -34,7 +34,6 @@ model Cliente {
   veiculos     Veiculo[]
   ordens       OrdemServico[]
 
-  // Busca por nome na tela de atendimento; `ativo` filtra a listagem padrão.
   @@index([nome])
   @@index([ativo])
   @@map("clientes")
@@ -54,7 +53,6 @@ model Veiculo {
   cliente      Cliente        @relation(fields: [clienteId], references: [id])
   ordens       OrdemServico[]
 
-  // FK sem índice: "veículos do cliente X" fazia seq scan.
   @@index([clienteId])
   @@map("veiculos")
 }
@@ -112,13 +110,9 @@ model OrdemServico {
   pecas        ItemPecaOS[]
   historico    HistoricoOS[]
 
-  // `status` é a coluna dos painéis (volume diário, tempo médio por status) e
-  // o filtro mais usado na listagem — sem índice, todo dashboard faz seq scan.
   @@index([status])
   @@index([clienteId])
   @@index([veiculoId])
-  // Índice composto para "OS abertas, mais recentes primeiro", que é a consulta
-  // da tela inicial e do painel de volume diário.
   @@index([status, criadoEm])
   @@map("ordens_servico")
 }
@@ -160,8 +154,6 @@ model HistoricoOS {
   criadoEm       DateTime     @default(now()) @map("criado_em")
   ordem          OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
 
-  // Fonte de verdade do "tempo médio por status": a consulta é sempre
-  // por ordem, em ordem cronológica.
   @@index([ordemId, criadoEm])
   @@index([statusNovo, criadoEm])
   @@map("historico_os")

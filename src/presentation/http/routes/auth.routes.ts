@@ -28,9 +28,6 @@ export const authRoutes: FastifyPluginAsync = async (instance) => {
   fastify.post(
     '/login',
     {
-      // Força bruta por conta: 5 tentativas a cada 15 minutos por e-mail,
-      // independentemente do IP de origem (ver ADR-0012). Roda em preHandler
-      // porque a chave vem do corpo, disponível só depois do parse e da validação.
       config: {
         rateLimit: {
           max: 5,

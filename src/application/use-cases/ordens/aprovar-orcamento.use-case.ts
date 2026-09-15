@@ -57,9 +57,6 @@ export class AprovarOrcamentoUseCase {
           observacao: input.observacao,
         })
         .catch((erro: unknown) => {
-          // Ver comentário equivalente em avancar-status.use-case.ts: a falha de
-          // e-mail não derruba a aprovação do orçamento, mas precisa ser emitida
-          // para alimentar o alerta de falha de integração.
           this.logger.error(
             {
               evento: 'falha_integracao',

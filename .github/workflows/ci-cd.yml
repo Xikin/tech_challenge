@@ -11,15 +11,12 @@ concurrency:
   group: api-${{ github.ref_name }}
   cancel-in-progress: false
 
-# Menor privilégio por padrão: o GITHUB_TOKEN só lê o repositório. Jobs que
-# precisarem de mais declaram explicitamente.
 permissions:
   contents: read
 
 env:
   AWS_REGION: us-east-1
   NODE_VERSION: "20"
-  # main -> prod, homolog -> homolog
   APP_ENV: ${{ github.ref_name == 'main' && 'prod' || 'homolog' }}
 
 jobs:
@@ -55,7 +52,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          fetch-depth: 0 # o Sonar precisa do histórico para atribuir autoria
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -81,8 +78,6 @@ jobs:
       - name: Testes
         run: npm test
 
-      # O entregável exige "link para o Swagger". Exportar o openapi.json como
-      # artefato garante que a especificação exista mesmo sem ambiente no ar.
       - name: Exportar especificação OpenAPI
         run: npm run openapi:export
 
@@ -105,8 +100,6 @@ jobs:
     name: Análise SonarCloud
     runs-on: ubuntu-latest
     needs: test
-    # Roda apenas se o token estiver configurado. Na Fase 2 este job dependia de
-    # um SonarQube local num runner self-hosted, que não existe mais.
     if: ${{ !cancelled() }}
 
     steps:
@@ -169,10 +162,6 @@ jobs:
             exit 1
           fi
 
-      # O repositório é criado pelo Terraform de oficina-infra-k8s. Registro na
-      # própria conta: os nós puxam com a role deles, sem imagePullSecret. Na
-      # Fase 2 o pull secret do GHCR usava o GITHUB_TOKEN, que expira ao fim do
-      # job — pods agendados depois em nós novos falhavam com ImagePullBackOff.
       - name: Descobrir repositório ECR
         id: ecr
         run: |
@@ -267,8 +256,6 @@ jobs:
 
       - name: Criar/atualizar Secret
         run: |
-          # A DATABASE_URL vem do SSM (escrita pelo Terraform do repositório
-          # oficina-infra-db) — nunca é digitada nem versionada em lugar nenhum.
           DATABASE_URL=$(aws ssm get-parameter \
             --name "/oficina/${APP_ENV}/db/database_url" \
             --with-decryption --query Parameter.Value --output text)
@@ -312,8 +299,6 @@ jobs:
           echo "host=$HOST" >> "$GITHUB_OUTPUT"
           echo "url=http://$HOST" >> "$GITHUB_OUTPUT"
 
-      # Fecha o contrato com o repositório do API Gateway: é este valor que a
-      # rota ANY /{proxy+} usa como backend.
       - name: Publicar endereço da API no SSM
         run: |
           aws ssm put-parameter \
@@ -337,17 +322,12 @@ jobs:
             kubectl logs -n oficina -l app=oficina-api --tail=50
             exit 1
           fi
-          # Prova que a autorização está ativa: rota interna sem token = 401.
           codigo=$(curl -sS -o /dev/null -w '%{http_code}' "$url/clientes" --max-time 10)
           if [ "$codigo" != "401" ]; then
             echo "::error::Esperado 401 em /clientes sem token, recebido $codigo"
             exit 1
           fi
 
-      # Registra o deploy no New Relic (change tracking): a versão aparece como
-      # marcador nos gráficos, ligando uma mudança de comportamento ao commit que
-      # a causou. Não bloqueia o deploy: ignora se os secrets não existirem ou se
-      # a aplicação ainda não tiver reportado dados (a entidade só existe depois).
       - name: Registrar deploy no New Relic
         continue-on-error: true
         env:

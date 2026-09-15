@@ -73,7 +73,6 @@ vi.mock('../src/config/prisma', () => ({
         peca: { update: vi.fn() },
       }),
     ),
-    // Usado pela readinessProbe (/health/ready) para provar que o banco responde.
     $queryRaw: vi.fn(),
     $connect: vi.fn(),
     $disconnect: vi.fn(),

@@ -3,12 +3,10 @@ import { UnauthorizedError, ForbiddenError } from '../../../shared/errors';
 import { ROLES_INTERNOS, type RoleToken } from '../../../domain/enums/role.enum';
 import { EMISSOR_CLIENTE, EMISSOR_INTERNO } from '../../../domain/auth/emissores';
 
-/** Claims que esta API espera encontrar em qualquer token que valide. */
 export interface UsuarioAutenticado {
   sub: string;
   role: RoleToken;
   iss?: string;
-  /** Presentes apenas em tokens emitidos pela Lambda de autenticação por CPF. */
   cpf?: string;
   nome?: string;
   email?: string;
@@ -20,15 +18,6 @@ function usuarioDe(req: FastifyRequest): UsuarioAutenticado {
   return req.user as unknown as UsuarioAutenticado;
 }
 
-/**
- * Verifica o token contra o segredo de um emissor e confere se `iss` e `role`
- * são compatíveis com ele.
- *
- * Devolve `false` quando a assinatura não é desse emissor (ou o token expirou,
- * ou está malformado) — o chamador tenta o outro emissor. Lança quando a
- * assinatura é válida mas os claims não batem: isso não é token vencido nem
- * lixo, é tentativa de forjar papel com um segredo obtido indevidamente.
- */
 async function verificarComo(req: FastifyRequest, emissor: Emissor): Promise<boolean> {
   try {
     if (emissor === 'interno') await req.jwtVerify();
@@ -53,20 +42,6 @@ async function verificarComo(req: FastifyRequest, emissor: Emissor): Promise<boo
   return true;
 }
 
-/**
- * Autenticação com amarração entre emissor e papel (ADR-0011).
- *
- *   oficina-api          assinado com JWT_SECRET          -> só ADMIN e FUNCIONARIO
- *   oficina-auth-lambda  assinado com JWT_CLIENTE_SECRET  -> só CLIENTE
- *
- * Com isso, vazar o segredo da Lambda permite no máximo forjar um CLIENTE —
- * nunca um ADMIN. Antes havia um único segredo, e qualquer vazamento dele na
- * Lambda, no state do Terraform ou nos secrets do GitHub dava acesso
- * administrativo.
- *
- * O `iss` é conferido aqui, em código, e não com `allowedIss` do fast-jwt: a
- * versão em uso tem uma CVE justamente na validação desse claim.
- */
 export async function autenticar(req: FastifyRequest, _rep: FastifyReply) {
   if (await verificarComo(req, 'interno')) return;
   if (await verificarComo(req, 'cliente')) return;
@@ -81,13 +56,6 @@ export function exigirRole(...roles: RoleToken[]) {
   };
 }
 
-/**
- * Exige pessoal interno da oficina (ADMIN ou FUNCIONARIO).
- *
- * Sem este guard, um JWT com `role: CLIENTE`, emitido legitimamente pela Lambda,
- * daria acesso a TODAS as rotas autenticadas: listar todos os clientes, listar
- * todas as ordens de serviço, alterar OS de terceiros (ver ADR-0008).
- */
 export async function exigirInterno(req: FastifyRequest, rep: FastifyReply) {
   await autenticar(req, rep);
   const user = usuarioDe(req);
@@ -100,14 +68,6 @@ export async function exigirInterno(req: FastifyRequest, rep: FastifyReply) {
   }
 }
 
-/**
- * Permite pessoal interno OU o próprio cliente dono do recurso.
- *
- * `extrairDonoId` recebe a requisição já autenticada e devolve o id do cliente
- * a quem o recurso pertence — normalmente consultando o repositório. Devolver
- * `null` significa "recurso não encontrado", e o guard deixa a rota responder
- * 404 no fluxo normal em vez de vazar existência por meio de um 403.
- */
 export function exigirDonoDoRecurso(
   extrairDonoId: (req: FastifyRequest) => Promise<string | null>,
 ) {

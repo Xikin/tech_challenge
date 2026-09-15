@@ -8,17 +8,13 @@ metadata:
     app.kubernetes.io/name: oficina-api
     app.kubernetes.io/part-of: oficina
 spec:
-  # `replicas` foi REMOVIDO de propósito. Quem é dono da escala é o HPA
-  # (k8s/hpa.yaml). Se este campo existisse, todo `kubectl apply` devolveria a
-  # contagem para o valor do manifesto, desfazendo o autoscaling — era o que
-  # acontecia na Fase 2.
   selector:
     matchLabels:
       app: oficina-api
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 0 # nenhuma janela sem capacidade durante o deploy
+      maxUnavailable: 0
       maxSurge: 1
   template:
     metadata:
@@ -26,15 +22,7 @@ spec:
         app: oficina-api
         app.kubernetes.io/name: oficina-api
     spec:
-      # Sem imagePullSecrets: a imagem vem do ECR da própria conta e os nós a
-      # puxam com a role deles (AmazonEC2ContainerRegistryReadOnly). O pull
-      # secret do GHCR usado na Fase 2 era criado com o GITHUB_TOKEN, que expira
-      # ao fim do job — pods agendados depois em nós novos falhavam no pull.
-      # Dá tempo ao encerramento gracioso do Node (ver src/server.ts) para
-      # drenar as requisições em voo antes do SIGKILL.
       terminationGracePeriodSeconds: 45
-      # Espalha as réplicas entre nós: duas réplicas no mesmo nó não sobrevivem
-      # à perda dele.
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
@@ -43,8 +31,6 @@ spec:
             matchLabels:
               app: oficina-api
       volumes:
-        # Única área gravável do pod. Limitada, para que um processo
-        # comprometido não consiga encher o disco do nó.
         - name: tmp
           emptyDir:
             sizeLimit: 64Mi
@@ -59,11 +45,6 @@ spec:
             - configMapRef:
                 name: oficina-config
           env:
-            # --- Segredos ---
-            # DATABASE_URL agora aponta para o RDS gerenciado e vem inteira do
-            # Secret, escrita pelo pipeline a partir do SSM. Na Fase 2 ela era
-            # montada a partir de POSTGRES_USER/PASSWORD apontando para o
-            # Service `postgres` dentro do cluster.
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
@@ -74,8 +55,6 @@ spec:
                 secretKeyRef:
                   name: oficina-secret
                   key: JWT_SECRET
-            # Segredo do emissor de clientes (Lambda de autenticação por CPF).
-            # Diferente do JWT_SECRET de propósito — ver docs/adr/0011.
             - name: JWT_CLIENTE_SECRET
               valueFrom:
                 secretKeyRef:
@@ -99,15 +78,12 @@ spec:
                   name: oficina-secret
                   key: SMTP_PASS
                   optional: true
-            # --- Observabilidade ---
             - name: NEW_RELIC_LICENSE_KEY
               valueFrom:
                 secretKeyRef:
                   name: oficina-secret
                   key: NEW_RELIC_LICENSE_KEY
                   optional: true
-            # Substituído pelo pipeline pelo SHA do commit. Antes lia um label
-            # que não existia no pod e saía vazio em todas as linhas de log.
             - name: APP_VERSION
               value: "APP_VERSION_PLACEHOLDER"
             - name: POD_NAME
@@ -115,26 +91,16 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
           resources:
-            # `requests` não é opcional: o HPA calcula utilização como
-            # uso/request. Sem request definido, o HPA de CPU não funciona.
             requests:
-              memory: "256Mi" # o agente New Relic sozinho ocupa ~30MB
+              memory: "256Mi"
               cpu: "100m"
             limits:
               memory: "512Mi"
               cpu: "500m"
           securityContext:
             allowPrivilegeEscalation: false
-            # Sistema de arquivos só-leitura: o código e as dependências não
-            # podem ser alterados pelo processo. A escrita fica restrita ao
-            # volume /tmp abaixo.
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-            # UID/GID numéricos são obrigatórios junto com runAsNonRoot: a imagem
-            # declara `USER appuser` por nome, e sem o número o kubelet não
-            # consegue provar que não é root e recusa o container com
-            # CreateContainerConfigError. 100/101 são os ids que
-            # `adduser -S`/`addgroup -S` atribuem no Dockerfile.
             runAsUser: 100
             runAsGroup: 101
             capabilities:
@@ -142,7 +108,6 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
-          # Startup: cobre a janela de `prisma migrate deploy` no start.
           startupProbe:
             httpGet:
               path: /health
@@ -150,8 +115,6 @@ spec:
             failureThreshold: 30
             periodSeconds: 5
             timeoutSeconds: 3
-          # Readiness usa o healthcheck PROFUNDO: se o RDS ficar inacessível,
-          # o pod sai do balanceamento em vez de responder 500 ao usuário.
           readinessProbe:
             httpGet:
               path: /health/ready
@@ -160,9 +123,6 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
             successThreshold: 1
-          # Liveness usa o healthcheck RASO, de propósito: se apontasse para o
-          # /health/ready, uma indisponibilidade do banco reiniciaria todos os
-          # pods em cascata sem resolver nada.
           livenessProbe:
             httpGet:
               path: /health

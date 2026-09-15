@@ -4,19 +4,12 @@ metadata:
   name: oficina-api
   namespace: oficina
   annotations:
-    # NLB em vez do Classic Load Balancer legado: mais barato, mais rápido e
-    # preserva o IP de origem.
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-    # O health check do balanceador usa o endpoint PROFUNDO, para tirar do
-    # rotacionamento um pod cujo banco esteja inacessível.
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "HTTP"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/health/ready"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "3000"
 spec:
-  # LoadBalancer, e não mais NodePort: o NodePort da Fase 2 só fazia sentido
-  # com o Kind local e port-forward. O DNS que a AWS atribui a este Service é
-  # publicado no SSM pelo pipeline e vira o backend do API Gateway.
   type: LoadBalancer
   selector:
     app: oficina-api

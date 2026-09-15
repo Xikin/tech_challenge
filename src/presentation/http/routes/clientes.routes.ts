@@ -81,8 +81,6 @@ export const clientesRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/:id',
     {
-      // O próprio cliente pode consultar o seu cadastro: o `sub` do token
-      // emitido pela Lambda de autenticação É o id do cliente.
       onRequest: [exigirDonoDoRecurso(async (req) => (req.params as { id: string }).id)],
       schema: {
         tags,

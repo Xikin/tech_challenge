@@ -28,7 +28,6 @@ services:
   api:
     build: { context: ., dockerfile: Dockerfile, target: runner }
     container_name: oficina_api
-    # Mesma postura do Kubernetes: filesystem só-leitura, escrita apenas em /tmp.
     read_only: true
     tmpfs:
       - /tmp
@@ -44,7 +43,6 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-oficina}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-oficina_db}
       JWT_SECRET: ${JWT_SECRET}
       JWT_CLIENTE_SECRET: ${JWT_CLIENTE_SECRET}
-      # Sem opt-in explícito, o seed gera senhas aleatórias para os usuários.
       SEED_PERMITIR_SENHA_PADRAO: ${SEED_PERMITIR_SENHA_PADRAO:-false}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
       SEED_FUNCIONARIO_PASSWORD: ${SEED_FUNCIONARIO_PASSWORD:-}

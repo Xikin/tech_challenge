@@ -279,6 +279,7 @@ access log do gateway até a linha de log da aplicação.
 | [modelo-de-dados.md](docs/modelo-de-dados.md) | Justificativa do banco, diagrama ER, relacionamentos e ajustes da Fase 3 |
 | [dominio.md](docs/dominio.md) | Glossário e regras de negócio |
 | [desenvolvimento.md](docs/desenvolvimento.md) | Ambiente local, padrões, testes |
+| [notas-de-implementacao.md](docs/notas-de-implementacao.md) | O porquê das escolhas do código e da configuração, por arquivo |
 | [kubernetes.md](docs/kubernetes.md) | Manifestos e operação do cluster |
 | [cicd.md](docs/cicd.md) | Pipeline |
 | [qualidade-seguranca.md](docs/qualidade-seguranca.md) | Sonar, OWASP ZAP |

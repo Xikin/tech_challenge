@@ -12,17 +12,8 @@ data:
   SMTP_PORT: "587"
   SMTP_FROM: "Oficina Mecânica <noreply@oficina.com>"
 
-  # Origens do front. Vazio = sem restrição em desenvolvimento; em produção,
-  # preencha com o domínio do cliente.
   ALLOWED_ORIGINS: ""
 
-  # Observabilidade
   LOG_LEVEL: "info"
   NEW_RELIC_APP_NAME: "oficina-api"
-
-  # O entregável da Fase 3 exige link para o Swagger; por isso fica ligado
-  # também em produção.
   SWAGGER_ENABLED: "true"
-# POSTGRES_DB e POSTGRES_USER saíram: a conexão com o banco agora vem inteira
-# na DATABASE_URL do Secret, apontando para o RDS gerenciado
-# (repositório oficina-infra-db).

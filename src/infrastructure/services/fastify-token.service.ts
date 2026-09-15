@@ -6,9 +6,6 @@ export class FastifyTokenService implements ITokenService {
   constructor(private readonly fastify: FastifyInstance) {}
 
   sign(payload: TokenPayload, expiresIn: string): string {
-    // `iss` explícito: o `sign` do @fastify/jwt só aplica as opções padrão do
-    // plugin quando nenhuma opção é passada. Com { expiresIn } elas seriam
-    // descartadas, o token sairia sem emissor e seria recusado na verificação.
     return this.fastify.jwt.sign(payload, { expiresIn, iss: EMISSOR_INTERNO });
   }
 }

@@ -47,18 +47,12 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   const buscarPorId = new BuscarOrdemPorIdUseCase(repo);
   const atualizar = new AtualizarOrdemUseCase(repo);
   const adicionarItens = new AdicionarItensUseCase(repo);
-  // Estes dois disparam e-mail e, portanto, registram falhas de integração.
-  // São construídos por requisição para receber o `req.log` — o child logger
-  // do Fastify que já carrega o reqId, dando correlação à linha de erro.
   const avancarStatus = (logger: ILogger) => new AvancarStatusUseCase(repo, emailService, logger);
   const aprovarOrcamento = (logger: ILogger) =>
     new AprovarOrcamentoUseCase(repo, emailService, logger);
   const reprovarOrcamento = new ReprovarOrcamentoUseCase(repo);
   const cancelar = new CancelarOrdemUseCase(repo);
 
-  // O cliente final (role CLIENTE, autenticado por CPF na Lambda) pode LER a
-  // própria OS — e só a própria. Todas as demais rotas continuam restritas ao
-  // pessoal da oficina.
   const donoPorId = exigirDonoDoRecurso(async (req) => {
     const { id } = req.params as { id: string };
     const os = await repo.buscarPorId(id);
@@ -74,8 +68,6 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/consulta-publica',
     {
-      // Rota sem autenticação: limita as tentativas por número de OS, para que não
-      // se descubra por tentativa e erro o CPF dono de uma ordem (ver ADR-0012).
       config: {
         rateLimit: {
           max: 10,

@@ -1,22 +1,4 @@
 #!/usr/bin/env node
-// ---------------------------------------------------------------------------
-// Provisiona no New Relic o dashboard e as condições de alerta da oficina.
-//
-// Observabilidade como código: o que está em observabilidade/ é a fonte da
-// verdade, e este script aplica isso na conta. Idempotente — rodar de novo
-// atualiza o dashboard e as condições existentes em vez de duplicá-los.
-//
-//   NEW_RELIC_API_KEY=NRAK-... NEW_RELIC_ACCOUNT_ID=1234567 \
-//     node observabilidade/provisionar-newrelic.mjs
-//
-// Variáveis:
-//   NEW_RELIC_API_KEY     User key (NRAK-...), não a license key de ingestão
-//   NEW_RELIC_ACCOUNT_ID  Account ID numérico
-//   NEW_RELIC_REGION      US (padrão) ou EU
-//
-// O monitor sintético de uptime (alertas.md, seção 9) não é criado aqui: ele
-// precisa da URL pública do API Gateway, que muda a cada recriação do ambiente.
-// ---------------------------------------------------------------------------
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,10 +28,6 @@ async function nerdgraph(query, variables = {}) {
   }
   return corpo.data;
 }
-
-// ---------------------------------------------------------------------------
-// Dashboard
-// ---------------------------------------------------------------------------
 
 async function provisionarDashboard() {
   const bruto = readFileSync(join(AQUI, 'dashboard.json'), 'utf8');
@@ -82,12 +60,6 @@ async function provisionarDashboard() {
   return { acao: 'criado', guid: r.dashboardCreate.entityResult.guid, nome: dashboard.name };
 }
 
-// ---------------------------------------------------------------------------
-// Alertas — espelham observabilidade/alertas.md
-// ---------------------------------------------------------------------------
-
-// Eventos de log chegam esparsos: EVENT_TIMER fecha a janela depois de 60s sem
-// dados, em vez de esperar o próximo evento (EVENT_FLOW), que pode demorar horas.
 const sinalDeLog = (janela = 300) => ({ aggregationWindow: janela, aggregationMethod: 'EVENT_TIMER', aggregationTimer: 60 });
 const sinalContinuo = (janela = 300) => ({ aggregationWindow: janela, aggregationMethod: 'EVENT_FLOW', aggregationDelay: 120 });
 const termo = (priority, operator, threshold, thresholdDuration) => ({
@@ -98,8 +70,6 @@ const termo = (priority, operator, threshold, thresholdDuration) => ({
   thresholdOccurrences: 'AT_LEAST_ONCE',
 });
 
-// O New Relic exige um termo CRITICAL em toda condição. As condições de nível
-// "Warning" em alertas.md ganham um CRITICAL num patamar mais severo.
 const CONDICOES = [
   {
     name: '01 Falha no processamento de ordens de serviço',
@@ -234,8 +204,6 @@ async function provisionarAlertas() {
   }
   return { policy, resultado };
 }
-
-// ---------------------------------------------------------------------------
 
 const dash = await provisionarDashboard();
 console.log(`dashboard ${dash.acao}: ${dash.nome}`);

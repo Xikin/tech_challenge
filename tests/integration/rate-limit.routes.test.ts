@@ -3,11 +3,6 @@ import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../../src/app';
 import { prisma } from '../../src/config/prisma';
 
-/**
- * Limites de tentativa (ADR-0012). Os testes compartilham a mesma instância da
- * app — e portanto o mesmo contador em memória —, então a ordem importa.
- */
-
 let app: FastifyInstance;
 
 beforeAll(async () => {

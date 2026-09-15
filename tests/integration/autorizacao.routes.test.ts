@@ -4,15 +4,6 @@ import { buildApp } from '../../src/app';
 import { prisma } from '../../src/config/prisma';
 import { EMISSOR_CLIENTE, EMISSOR_INTERNO } from '../../src/domain/auth/emissores';
 
-/**
- * Autorização do papel CLIENTE — o guard introduzido na Fase 3.
- *
- * A Lambda de autenticação por CPF emite um JWT com `role: CLIENTE`, assinado
- * com o mesmo segredo da API. Antes deste guard, `autenticar` só verificava a
- * assinatura: um token de cliente legítimo abriria TODAS as rotas autenticadas.
- * Estes testes existem para que essa regressão não volte silenciosamente.
- */
-
 let app: FastifyInstance;
 
 const CLIENTE_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
@@ -63,8 +54,6 @@ beforeAll(async () => {
   app = await buildApp();
   await app.ready();
 
-  // Mesmo formato emitido pela Lambda (ver src/token.ts em oficina-auth-lambda):
-  // assinado com o segredo do emissor de clientes e com iss oficina-auth-lambda.
   tokenCliente = app.jwt.cliente.sign(
     { sub: CLIENTE_ID, role: 'CLIENTE', cpf: '52998224725', nome: 'Ana' },
     { iss: EMISSOR_CLIENTE },
@@ -314,8 +303,6 @@ describe('amarração entre emissor e papel (ADR-0011)', () => {
   const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
 
   it('recusa token assinado com o segredo de clientes alegando ADMIN', async () => {
-    // Cenário da revisão de segurança: quem obtém o segredo da Lambda tenta
-    // se passar por administrador.
     const forjado = app.jwt.cliente.sign(
       { sub: CLIENTE_ID, role: 'ADMIN', email: 'atacante@x.com' },
       { iss: EMISSOR_CLIENTE },

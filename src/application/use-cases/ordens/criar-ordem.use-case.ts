@@ -64,9 +64,6 @@ export class CriarOrdemUseCase {
       })),
     });
 
-    // Evento de negócio que alimenta o painel de volume diário de OS.
-    // Emitir um evento explícito é mais confiável do que contar transações
-    // HTTP 201 no APM: sobrevive a mudanças de rota e de status code.
     this.logger.info(
       {
         evento: 'os_criada',

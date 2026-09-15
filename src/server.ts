@@ -16,12 +16,6 @@ async function start() {
     app.log.info({ evento: 'swagger_disponivel' }, `documentação em /docs`);
   }
 
-  // Encerramento gracioso.
-  //
-  // O Kubernetes manda SIGTERM e só depois (terminationGracePeriodSeconds)
-  // manda SIGKILL. Antes, o handler chamava process.exit() imediatamente e as
-  // requisições em voo eram cortadas no meio — o que aparecia como erro 502
-  // esporádico a cada deploy e contaminaria a métrica de uptime.
   let encerrando = false;
   const encerrar = async (sinal: string) => {
     if (encerrando) return;
@@ -29,7 +23,6 @@ async function start() {
 
     app.log.info({ evento: 'encerramento_iniciado', sinal }, 'encerrando graciosamente');
     try {
-      // Para de aceitar novas conexões e aguarda as que estão em andamento.
       await app.close();
       await prisma.$disconnect();
       app.log.info({ evento: 'encerramento_concluido' }, 'encerrado');
@@ -45,8 +38,6 @@ async function start() {
 }
 
 start().catch((err) => {
-  // Ainda não existe logger do Fastify aqui; emite JSON à mão para manter o
-  // formato de log consistente mesmo numa falha de inicialização.
   console.error(
     JSON.stringify({
       level: 'fatal',

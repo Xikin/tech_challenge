@@ -30,8 +30,6 @@ export async function buildApp(): Promise<FastifyInstance> {
         ? false
         : {
             level: env.LOG_LEVEL,
-            // Campos fixos em toda linha: é o que permite filtrar por serviço e
-            // ambiente no New Relic sem depender do nome do pod.
             base: {
               service: 'oficina-api',
               env: env.NODE_ENV,
@@ -48,10 +46,6 @@ export async function buildApp(): Promise<FastifyInstance> {
               censor: '[REDACTED]',
             },
             serializers: {
-              // Substitui o serializer padrão do Fastify, que grava a URL crua —
-              // e com ela o CPF/CNPJ de /clientes/cpf-cnpj/:documento e da
-              // querystring da consulta pública. Os demais campos replicam o
-              // serializer padrão.
               req(request: {
                 method?: string;
                 url?: string;
@@ -69,9 +63,6 @@ export async function buildApp(): Promise<FastifyInstance> {
               },
             },
           },
-    // Correlação entre requisições: honra o x-request-id propagado pelo API
-    // Gateway e pela Lambda de autenticação; na ausência dele, gera um UUID.
-    // O padrão do Fastify seria um contador por processo, que colide entre pods.
     genReqId(req) {
       const header = req.headers['x-request-id'];
       if (typeof header === 'string' && header.length > 0 && header.length <= 200) return header;
@@ -83,8 +74,6 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
-  // Devolve o id de correlação ao chamador, para que ele consiga citá-lo ao
-  // reportar um problema e para o New Relic ligar resposta e log.
   app.addHook('onSend', async (req, reply, payload) => {
     reply.header('x-request-id', req.id);
     return payload;
@@ -92,38 +81,22 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   const allowedOrigins = env.ALLOWED_ORIGINS.split(',').filter(Boolean);
   await app.register(fastifyCors, {
-    // Lista vazia em desenvolvimento significa "sem restrição"; em produção,
-    // uma lista vazia bloquearia tudo — o que seria um erro de configuração
-    // silencioso e difícil de diagnosticar.
     origin: allowedOrigins.length > 0 ? allowedOrigins : env.NODE_ENV !== 'production',
     credentials: true,
     exposedHeaders: ['x-request-id'],
   });
 
-  // Dois emissores de token, cada um com o seu segredo (ver ADR-0011).
-  // O registro padrão assina e valida o login interno. O namespace `cliente`
-  // apenas valida os tokens da Lambda de autenticação por CPF. A amarração entre
-  // emissor (`iss`) e papel é conferida em código, no middleware `autenticar`.
   await app.register(fastifyJwt, { secret: env.JWT_SECRET, sign: { iss: EMISSOR_INTERNO } });
   await app.register(fastifyJwt, { secret: env.JWT_CLIENTE_SECRET, namespace: 'cliente' });
 
-  // Limites de tentativa por rota, e não globais (ver ADR-0012). A chave de cada
-  // limite é o alvo do ataque — o e-mail no login, o número da OS na consulta
-  // pública — e não o IP: atrás do API Gateway e do NLB as requisições chegam com
-  // o IP do gateway ou do nó, e limitar por ele travaria todos os clientes juntos.
   await app.register(fastifyRateLimit, {
     global: false,
     errorResponseBuilder: (_req, contexto) =>
-      // `contexto.after` vem em inglês ("15 minutes"); o ttl em milissegundos
-      // permite montar a mensagem no idioma da API.
       new TooManyRequestsError(
         `Muitas tentativas. Tente novamente em ${Math.max(1, Math.ceil(contexto.ttl / 60_000))} minuto(s).`,
       ),
   });
 
-  // O entregável da Fase 3 exige "link para o Swagger das APIs". Manter /docs
-  // desabilitado em produção — como na Fase 2 — tornaria esse link impossível.
-  // A exposição é controlada por variável, com default ligado.
   if (env.SWAGGER_ENABLED) {
     await app.register(fastifySwagger, {
       transform: jsonSchemaTransform,
@@ -151,10 +124,6 @@ export async function buildApp(): Promise<FastifyInstance> {
     await app.register(fastifySwaggerUi, { routePrefix: '/docs' });
   }
 
-  // Todo erro tratado passa a emitir uma linha de log correlacionada.
-  // Antes, apenas o ramo 500 logava — erros de negócio e de validação eram
-  // invisíveis, e nenhum alerta sobre eles seria possível porque o sinal
-  // simplesmente não existia.
   app.setErrorHandler((error, req, reply) => {
     if (error.validation) {
       req.log.warn(
@@ -181,7 +150,6 @@ export async function buildApp(): Promise<FastifyInstance> {
       });
     }
     if (error instanceof AppError) {
-      // 4xx é comportamento esperado (warn), não falha do servidor (error).
       req.log.warn(
         {
           evento: 'erro_negocio',
@@ -215,17 +183,12 @@ export async function buildApp(): Promise<FastifyInstance> {
       .send({ statusCode: 500, code: 'INTERNAL_ERROR', message: 'Erro interno do servidor' });
   });
 
-  // Liveness: o processo está vivo? Deliberadamente raso — se tocasse o banco,
-  // uma indisponibilidade do RDS reiniciaria todos os pods em cascata.
   app.get(
     '/health',
     { schema: { tags: ['Saúde'], summary: 'Liveness — o processo está de pé' } },
     async (_req, rep) => rep.send({ status: 'ok', timestamp: new Date().toISOString() }),
   );
 
-  // Readiness: o pod consegue atender? Verifica o banco de fato, para que o
-  // Kubernetes tire o pod do balanceamento quando o RDS estiver inacessível —
-  // atravessando a rede da VPC, isso deixa de ser hipotético.
   app.get(
     '/health/ready',
     { schema: { tags: ['Saúde'], summary: 'Readiness — dependências acessíveis' } },

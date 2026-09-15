@@ -39,8 +39,6 @@ echo "✔  SonarQube disponível em http://localhost:9000"
 
 echo ""
 echo "▶ 3/3  Executando análise..."
-# Se o token foi passado via argumento ou shell env, repassa explicitamente.
-# Caso contrário, deixa o docker compose ler SONAR_TOKEN direto do .env.
 if [ -n "$TOKEN" ]; then
   SONAR_TOKEN="${TOKEN}" docker compose --profile scan run --rm sonar_scanner
 else

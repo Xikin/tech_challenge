@@ -5,6 +5,7 @@ export default defineConfig({
     globals: true,
     environment: "node",
     setupFiles: ["./tests/setup.ts"],
+    exclude: ["**/node_modules/**", "**/dist/**", "actions-runner/**"],
     reporters: ["default", "junit"],
     outputFile: { junit: "./coverage/test-results.xml" },
     coverage: {

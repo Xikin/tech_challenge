@@ -39,3 +39,9 @@ export class StockError extends AppError {
     super(msg, 400, 'STOCK_ERROR');
   }
 }
+
+export class TooManyRequestsError extends AppError {
+  constructor(msg: string) {
+    super(msg, 429, 'RATE_LIMITED');
+  }
+}

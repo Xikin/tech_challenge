@@ -1,5 +1,26 @@
 # CI/CD
 
+> **Atualizado na Fase 3.** O pipeline descrito aqui rodava `sonar` e `deploy` num
+> **runner self-hosted** apontando para o Kind local. Agora:
+>
+> | | Fase 2 | Fase 3 |
+> | --- | --- | --- |
+> | Runner | self-hosted na máquina do dev | `ubuntu-latest` |
+> | Deploy | `kubectl` contra o Kind local | `aws eks update-kubeconfig` + EKS |
+> | Gatilhos | só `main` | `main` (produção) e `homolog` (homologação) |
+> | Qualidade | SonarQube em Docker local | SonarCloud, e só se `SONAR_TOKEN` existir |
+> | Verificação | nenhuma | smoke test: `/health/ready` = 200 e `/clientes` sem token = 401 |
+> | Registro | GHCR + pull secret criado com `GITHUB_TOKEN` | Amazon ECR, pull pela role dos nós |
+>
+> A troca de registro corrige um defeito: o `GITHUB_TOKEN` expira ao fim do job, então
+> pods agendados depois em nós novos falhavam com `ImagePullBackOff`. As seções abaixo
+> que mencionam `ghcr.io` descrevem o pipeline da Fase 2.
+>
+> São quatro pipelines, um por repositório — ver
+> [arquitetura-nuvem.md](arquitetura-nuvem.md), seção 4.
+
+---
+
 Pipeline automatizado no GitHub Actions definido em `.github/workflows/ci-cd.yml`. Executa em todo **push** e **pull request** para a branch `main`.
 
 ---
@@ -34,6 +55,7 @@ Executa em todo push e PR. Garante que nenhum código quebrado chega à `main`.
 |-------------------|----------------------------|
 | `DATABASE_URL`    | Monta com `secrets.POSTGRES_PASSWORD` |
 | `JWT_SECRET`      | `secrets.JWT_SECRET`       |
+| `JWT_CLIENTE_SECRET`      | `secrets.JWT_CLIENTE_SECRET`       |
 | `BCRYPT_ROUNDS`   | `4` (hardcoded — mais rápido em CI) |
 | `NODE_ENV`        | `test`                     |
 
@@ -101,6 +123,7 @@ kubectl apply -f k8s/configmap.yaml
 kubectl create secret generic oficina-secret \
   --from-literal=POSTGRES_PASSWORD="..." \
   --from-literal=JWT_SECRET="..." \
+  --from-literal=JWT_CLIENTE_SECRET="..." \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 O `--dry-run=client -o yaml | kubectl apply -f -` garante que o comando funciona tanto na primeira execução (cria) quanto nas seguintes (atualiza sem erro de conflito).
@@ -133,6 +156,7 @@ Configure em: **Settings → Secrets and variables → Actions**
 |---------------------|----------------------------------------------------------|
 | `POSTGRES_PASSWORD` | Senha do PostgreSQL                                      |
 | `JWT_SECRET`        | Chave JWT (mínimo 32 caracteres aleatórios)             |
+| `JWT_CLIENTE_SECRET`        | Chave JWT (mínimo 32 caracteres aleatórios)             |
 | `SMTP_HOST`         | Host SMTP (pode ser vazio se não usar e-mail)           |
 | `SMTP_USER`         | Usuário SMTP (pode ser vazio)                           |
 | `SMTP_PASS`         | Senha SMTP (pode ser vazio)                             |

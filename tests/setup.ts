@@ -1,6 +1,7 @@
 import { vi, beforeEach } from 'vitest';
 
 process.env.JWT_SECRET = 'test-secret-key-min-32-chars-long!!';
+process.env.JWT_CLIENTE_SECRET = 'test-cliente-secret-min-32-chars-long!!';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 process.env.NODE_ENV = 'test';
 process.env.BCRYPT_ROUNDS = '1';
@@ -72,6 +73,7 @@ vi.mock('../src/config/prisma', () => ({
         peca: { update: vi.fn() },
       }),
     ),
+    $queryRaw: vi.fn(),
     $connect: vi.fn(),
     $disconnect: vi.fn(),
   },

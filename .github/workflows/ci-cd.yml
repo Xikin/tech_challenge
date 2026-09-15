@@ -1,14 +1,23 @@
 name: CI/CD
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, homolog]
+  push:
+    branches: [main, homolog]
+  workflow_dispatch:
+
+concurrency:
+  group: api-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/oficina
+  AWS_REGION: us-east-1
+  NODE_VERSION: "20"
+  APP_ENV: ${{ github.ref_name == 'main' && 'prod' || 'homolog' }}
 
 jobs:
   test:
@@ -20,7 +29,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: oficina
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_PASSWORD: oficina_ci
           POSTGRES_DB: oficina_db
         ports:
           - 5432:5432
@@ -32,157 +41,340 @@ jobs:
 
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://oficina:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/oficina_db
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      DATABASE_URL: postgresql://oficina:oficina_ci@localhost:5432/oficina_db
+      JWT_SECRET: chave-apenas-para-ci-com-mais-de-32-caracteres
+      JWT_CLIENTE_SECRET: chave-de-cliente-apenas-para-ci-diferente-32
       JWT_EXPIRES_IN: 8h
       BCRYPT_ROUNDS: 4
       PORT: 3000
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-      - name: Install dependencies
-        run: npm ci --frozen-lockfile
+      - name: Instalar dependências
+        run: npm ci
 
-      - name: Generate Prisma client
+      - name: Verificar formatação
+        run: npm run format:check
+
+      - name: Gerar Prisma Client
         run: npx prisma generate
 
-      - name: Run migrations
+      - name: Aplicar migrations
         run: npx prisma migrate deploy
 
-      - name: Build TypeScript
+      - name: Compilar TypeScript
         run: npm run build
 
-      - name: Run tests
+      - name: Testes
         run: npm test
 
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
+      - name: Exportar especificação OpenAPI
+        run: npm run openapi:export
+
+      - name: Publicar cobertura
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: coverage
           path: coverage/
           retention-days: 7
 
-  docker:
-    name: Build & Push Docker Image
+      - name: Publicar OpenAPI
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: openapi
+          path: docs/openapi.json
+          retention-days: 30
+
+  sonar:
+    name: Análise SonarCloud
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    permissions:
-      contents: read
-      packages: write
-
-    outputs:
-      image: ${{ steps.meta.outputs.tags }}
-      image_ref: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.name_lc }}:sha-${{ github.sha }}
+    if: ${{ !cancelled() }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
 
-      - name: Normalizar nome da imagem (minúsculas)
-        id: image_name
-        run: echo "name_lc=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+      - name: Baixar cobertura
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: coverage
+          path: coverage
+
+      - name: Verificar se o Sonar está configurado
+        id: check
+        run: |
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "configurado=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configurado=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SONAR_TOKEN não configurado — análise de qualidade ignorada."
+          fi
+
+      - name: SonarCloud Scan
+        if: steps.check.outputs.configurado == 'true'
+        uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402 # v4.2.2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+
+  docker:
+    name: Build & Push da imagem (ECR)
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name != 'pull_request'
+
+    permissions:
+      contents: read
+
+    outputs:
+      image_ref: ${{ steps.ref.outputs.image }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verificar se as credenciais do lab ainda são válidas
+        run: |
+          if ! aws sts get-caller-identity; then
+            echo "::error::Credenciais AWS expiradas. Atualize os secrets a partir de AWS Details -> AWS CLI no Learner Lab."
+            exit 1
+          fi
+
+      - name: Descobrir repositório ECR
+        id: ecr
+        run: |
+          if ! URL=$(aws ssm get-parameter --name "/oficina/${APP_ENV}/ecr/api_repository_url" --query Parameter.Value --output text 2>/dev/null); then
+            echo "::error::Repositório ECR não encontrado. Aplique oficina-infra-k8s antes deste pipeline."
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Login no Amazon ECR
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
 
       - name: Configurar Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login no GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extrair metadados da imagem
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.name_lc }}
-          tags: |
-            type=sha,format=long
-            type=raw,value=latest
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Build e push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
         with:
           context: .
           target: runner
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ steps.ecr.outputs.url }}:sha-${{ github.sha }}
+            ${{ steps.ecr.outputs.url }}:${{ env.APP_ENV }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Expor referência imutável da imagem
+        id: ref
+        run: echo "image=${{ steps.ecr.outputs.url }}:sha-${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
   deploy:
-    name: Deploy Kubernetes
-    runs-on: self-hosted
+    name: Deploy no EKS (${{ github.ref_name == 'main' && 'prod' || 'homolog' }})
+    runs-on: ubuntu-latest
     needs: docker
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name != 'pull_request'
+
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'homolog' }}
+      url: ${{ steps.endpoint.outputs.url }}
+
     env:
       IMAGE_REF: ${{ needs.docker.outputs.image_ref }}
 
-    permissions:
-      contents: read
-      packages: read
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verificar se as credenciais do lab ainda são válidas
+        run: |
+          if ! aws sts get-caller-identity; then
+            echo "::error::Credenciais AWS expiradas. Atualize os secrets a partir de AWS Details -> AWS CLI no Learner Lab."
+            exit 1
+          fi
+
+      - name: Verificar dependências entre stacks
+        run: |
+          faltando=""
+          for p in \
+            "/oficina/${APP_ENV}/eks/cluster_name" \
+            "/oficina/${APP_ENV}/db/database_url"
+          do
+            aws ssm get-parameter --name "$p" >/dev/null 2>&1 || faltando="$faltando\n  - $p"
+          done
+          if [ -n "$faltando" ]; then
+            echo -e "::error::Parâmetros ausentes no SSM:$faltando\n\nAplique oficina-infra-k8s e oficina-infra-db antes deste deploy."
+            exit 1
+          fi
 
       - name: Configurar kubectl
-        uses: azure/setup-kubectl@v4
+        run: |
+          CLUSTER=$(aws ssm get-parameter --name "/oficina/${APP_ENV}/eks/cluster_name" --query Parameter.Value --output text)
+          echo "CLUSTER=$CLUSTER" >> "$GITHUB_ENV"
+          aws eks update-kubeconfig --region "${AWS_REGION}" --name "$CLUSTER"
+          kubectl cluster-info
 
-      - name: Verificar acesso ao cluster
-        run: kubectl cluster-info
-
-      - name: Aplicar namespace e configmap
+      - name: Aplicar namespace e configuração
         run: |
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
 
-      - name: Criar/atualizar Secret com credenciais
+      - name: Criar/atualizar Secret
         run: |
+          DATABASE_URL=$(aws ssm get-parameter \
+            --name "/oficina/${APP_ENV}/db/database_url" \
+            --with-decryption --query Parameter.Value --output text)
+
           kubectl create secret generic oficina-secret \
             --namespace=oficina \
-            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=DATABASE_URL="$DATABASE_URL" \
             --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=JWT_CLIENTE_SECRET="${{ secrets.JWT_CLIENTE_SECRET }}" \
             --from-literal=SMTP_HOST="${{ secrets.SMTP_HOST }}" \
             --from-literal=SMTP_USER="${{ secrets.SMTP_USER }}" \
             --from-literal=SMTP_PASS="${{ secrets.SMTP_PASS }}" \
+            --from-literal=NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Criar/atualizar Secret de pull do GHCR
-        run: |
-          kubectl create secret docker-registry ghcr-pull-secret \
-            --namespace=oficina \
-            --docker-server=${{ env.REGISTRY }} \
-            --docker-username="${{ github.actor }}" \
-            --docker-password="${{ secrets.GITHUB_TOKEN }}" \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Deploy banco de dados (PostgreSQL)
-        run: |
-          kubectl apply -f k8s/postgres-pvc.yaml
-          kubectl apply -f k8s/postgres-deployment.yaml
-          kubectl apply -f k8s/postgres-service.yaml
-          kubectl rollout status deployment/postgres -n oficina --timeout=120s
 
       - name: Deploy da API
         run: |
-          sed "s|DOCKER_IMAGE_PLACEHOLDER|$IMAGE_REF|g" k8s/api-deployment.yaml \
-            | kubectl apply -f -
+          sed -e "s|DOCKER_IMAGE_PLACEHOLDER|$IMAGE_REF|g" \
+              -e "s|APP_VERSION_PLACEHOLDER|$GITHUB_SHA|g" \
+              k8s/api-deployment.yaml | kubectl apply -f -
           kubectl apply -f k8s/api-service.yaml
           kubectl apply -f k8s/hpa.yaml
-          kubectl rollout status deployment/oficina-api -n oficina --timeout=180s
+          kubectl rollout status deployment/oficina-api -n oficina --timeout=300s
 
-      - name: Verificar pods em execução
-        run: kubectl get pods -n oficina
+      - name: Aguardar o Load Balancer receber endereço
+        id: endpoint
+        run: |
+          echo "Aguardando o provisionamento do NLB (pode levar ~3 min)..."
+          for i in $(seq 1 60); do
+            HOST=$(kubectl get svc oficina-api -n oficina \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            [ -n "$HOST" ] && break
+            sleep 10
+          done
+          if [ -z "$HOST" ]; then
+            echo "::error::O Service não recebeu endereço externo em 10 minutos."
+            kubectl describe svc oficina-api -n oficina
+            exit 1
+          fi
+          echo "NLB: $HOST"
+          echo "host=$HOST" >> "$GITHUB_OUTPUT"
+          echo "url=http://$HOST" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar endereço da API no SSM
+        run: |
+          aws ssm put-parameter \
+            --name "/oficina/${APP_ENV}/api/endpoint" \
+            --value "${{ steps.endpoint.outputs.host }}" \
+            --type String --overwrite
+
+      - name: Smoke test do ambiente publicado
+        run: |
+          url="${{ steps.endpoint.outputs.url }}"
+          echo "Aguardando o NLB registrar os targets..."
+          for i in $(seq 1 30); do
+            codigo=$(curl -sS -o /tmp/ready.json -w '%{http_code}' "$url/health/ready" --max-time 10 || echo 000)
+            [ "$codigo" = "200" ] && break
+            sleep 10
+          done
+          cat /tmp/ready.json || true
+          if [ "$codigo" != "200" ]; then
+            echo "::error::/health/ready não respondeu 200 (recebido $codigo). O pod provavelmente não alcança o RDS."
+            kubectl get pods -n oficina
+            kubectl logs -n oficina -l app=oficina-api --tail=50
+            exit 1
+          fi
+          codigo=$(curl -sS -o /dev/null -w '%{http_code}' "$url/clientes" --max-time 10)
+          if [ "$codigo" != "401" ]; then
+            echo "::error::Esperado 401 em /clientes sem token, recebido $codigo"
+            exit 1
+          fi
+
+      - name: Registrar deploy no New Relic
+        continue-on-error: true
+        env:
+          NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+          NEW_RELIC_ACCOUNT_ID: ${{ secrets.NEW_RELIC_ACCOUNT_ID }}
+        run: |
+          if [ -z "$NEW_RELIC_API_KEY" ] || [ -z "$NEW_RELIC_ACCOUNT_ID" ]; then
+            echo "::notice::NEW_RELIC_API_KEY ou NEW_RELIC_ACCOUNT_ID não configurados — marcador de deploy ignorado."
+            exit 0
+          fi
+          nerdgraph() {
+            curl -sS https://api.newrelic.com/graphql \
+              -H 'Content-Type: application/json' -H "API-Key: $NEW_RELIC_API_KEY" --data-binary @-
+          }
+          GUID=$(jq -n --arg q "accountId = $NEW_RELIC_ACCOUNT_ID AND domain = 'APM' AND name = 'oficina-api'" \
+            '{query: "query($q: String!) { actor { entitySearch(query: $q) { results { entities { guid } } } } }", variables: {q: $q}}' \
+            | nerdgraph | jq -r '.data.actor.entitySearch.results.entities[0].guid // empty')
+          if [ -z "$GUID" ]; then
+            echo "::notice::A entidade oficina-api ainda não existe no New Relic (a aplicação não reportou dados) — marcador ignorado."
+            exit 0
+          fi
+          jq -n --arg guid "$GUID" --arg versao "$GITHUB_SHA" --arg usuario "$GITHUB_ACTOR" \
+            --arg descricao "Deploy ${APP_ENV} pelo GitHub Actions (run ${GITHUB_RUN_ID})" \
+            '{query: "mutation($d: ChangeTrackingDeploymentInput!) { changeTrackingCreateDeployment(deployment: $d) { deploymentId } }",
+              variables: {d: {entityGuid: $guid, version: $versao, commit: $versao, user: $usuario, description: $descricao, deploymentType: "ROLLING"}}}' \
+            | nerdgraph > nr-deploy.json
+          if jq -e '.data.changeTrackingCreateDeployment.deploymentId' nr-deploy.json >/dev/null; then
+            echo "Marcador de deploy registrado para ${GITHUB_SHA}."
+          else
+            echo "::warning::O New Relic não registrou o marcador de deploy:"; cat nr-deploy.json
+          fi
+
+      - name: Resumo do deploy
+        run: |
+          {
+            echo "## API publicada no EKS"
+            echo ""
+            echo "| Item | Valor |"
+            echo "| --- | --- |"
+            echo "| Ambiente | \`${APP_ENV}\` |"
+            echo "| Cluster | \`${CLUSTER}\` |"
+            echo "| Imagem | \`${IMAGE_REF}\` |"
+            echo "| Load Balancer | ${{ steps.endpoint.outputs.url }} |"
+            echo "| Swagger | ${{ steps.endpoint.outputs.url }}/docs |"
+            echo ""
+            echo "### Estado do cluster"
+            echo '```'
+            kubectl get pods,hpa,svc -n oficina
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -20,7 +20,7 @@ import {
   pecaResponseSchema,
   listarPecasResponseSchema,
 } from '../schemas/pecas.schema';
-import { autenticar } from '../middlewares/auth.middleware';
+import { exigirInterno } from '../middlewares/auth.middleware';
 
 export const pecasRoutes: FastifyPluginAsync = async (instance) => {
   const fastify = instance.withTypeProvider<ZodTypeProvider>();
@@ -39,7 +39,7 @@ export const pecasRoutes: FastifyPluginAsync = async (instance) => {
   fastify.post(
     '/',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -54,7 +54,7 @@ export const pecasRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -69,7 +69,7 @@ export const pecasRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/alertas-estoque',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -83,7 +83,7 @@ export const pecasRoutes: FastifyPluginAsync = async (instance) => {
   fastify.get(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -98,7 +98,7 @@ export const pecasRoutes: FastifyPluginAsync = async (instance) => {
   fastify.put(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -119,7 +119,7 @@ export const pecasRoutes: FastifyPluginAsync = async (instance) => {
   fastify.patch(
     '/:id/estoque',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,
@@ -141,7 +141,7 @@ export const pecasRoutes: FastifyPluginAsync = async (instance) => {
   fastify.delete(
     '/:id',
     {
-      onRequest: [autenticar],
+      onRequest: [exigirInterno],
       schema: {
         tags,
         security,

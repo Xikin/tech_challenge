@@ -48,8 +48,9 @@ export const listarUsuariosResponseSchema = z.array(
 
 export const meResponseSchema = z.object({
   sub: z.string().uuid(),
-  email: z.string(),
-  role: z.string(),
+  role: z.enum(['ADMIN', 'FUNCIONARIO', 'CLIENTE']),
+  email: z.string().optional(),
+  nome: z.string().optional(),
 });
 
 export const errorResponseSchema = z.object({

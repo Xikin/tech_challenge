@@ -35,7 +35,7 @@
     "fastify-plugin": "^4.5.1",
     "fastify-type-provider-zod": "^2.0.0",
     "newrelic": "^12.25.1",
-    "nodemailer": "^8.0.9",
+    "nodemailer": "^10.0.9",
     "zod": "^3.23.8"
   },
   "devDependencies": {

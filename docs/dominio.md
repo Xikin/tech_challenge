@@ -50,10 +50,12 @@
 | **Recebida**             | `RECEBIDA`             | OS criada. Veículo chegou à oficina. Aguarda início do diagnóstico.                                    |
 | **Em Diagnóstico**       | `EM_DIAGNOSTICO`       | Mecânico está diagnosticando o problema e montando o orçamento (serviços e peças).                     |
 | **Aguardando Aprovação** | `AGUARDANDO_APROVACAO` | Orçamento concluído e enviado ao cliente. Execução bloqueada até aprovação.                            |
-| **Em Execução**          | `EM_EXECUCAO`          | Cliente aprovou. Serviços e troca de peças em andamento.                                               |
+| **Aguardando Pagamento** | `AGUARDANDO_PAGAMENTO` | Cliente aprovou; cobrança criada no Mercado Pago e link enviado por e-mail.                            |
+| **Aguardando Execução**  | `AGUARDANDO_EXECUCAO`  | Pagamento confirmado; OS liberada na fila de reparo do mecânico.                                       |
+| **Em Execução**          | `EM_EXECUCAO`          | Mecânico iniciou o reparo; peças reservadas foram consumidas.                                          |
 | **Finalizada**           | `FINALIZADA`           | Todos os serviços concluídos. Veículo pronto para retirada.                                            |
 | **Entregue**             | `ENTREGUE`             | Veículo retirado pelo cliente. Estado terminal positivo.                                               |
-| **Cancelada**            | `CANCELADA`            | OS encerrada antes da conclusão. Peças reservadas são devolvidas ao estoque. Estado terminal negativo. |
+| **Cancelada**            | `CANCELADA`            | Saga compensada: peças reservadas devolvidas e pagamento estornado, se houver. Estado terminal negativo. |
 
 ---
 
@@ -61,11 +63,12 @@
 
 | Termo                | Onde                       | Definição                                                                                                                                                                 |
 | -------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Avançar Status**   | `avancarStatus()`          | Progride a OS para o único próximo status válido na máquina de estados. Não é possível pular etapas.                                                                      |
-| **Reprovar OS**      | `reprovarOS()`             | Ação exclusiva do status `AGUARDANDO_APROVACAO`. O cliente rejeita o orçamento; todas as peças reservadas são devolvidas ao estoque e a OS retorna para `EM_DIAGNOSTICO`. |
-| **Cancelar OS**      | `cancelarOS()`             | Encerra a OS prematuramente. Permitido apenas nos status `RECEBIDA`, `EM_DIAGNOSTICO`, `AGUARDANDO_APROVACAO` e `EM_EXECUCAO`. Devolve peças ao estoque.                  |
+| **Saga de atendimento** | `decidir()` em `saga-os.ts` | A OS avança pelos eventos dos serviços de Execução e Billing; não há ação manual de "avançar". Ver [saga.md](saga.md). |
+| **Reprovar orçamento** | Billing (`POST /orcamentos/:id/reprovar`) | O cliente rejeita o orçamento; a saga compensa: peças reservadas voltam ao estoque (Execução) e a OS vai para `CANCELADA`. |
+| **Cancelar OS**      | `CancelarOrdemUseCase`     | Inicia a compensação em qualquer etapa antes de `FINALIZADA`: devolve peças reservadas e estorna o pagamento, se houver. A OS fica `CANCELADA` quando todos os serviços confirmam. |
+| **Entregar**         | `EntregarOrdemUseCase`     | `FINALIZADA` → `ENTREGUE`, depois do fim da saga. |
 | **Consulta Pública** | `consultarStatusPublico()` | Endpoint sem autenticação que permite ao cliente final verificar o status da OS informando número da OS + CPF/CNPJ.                                                       |
-| **Adicionar Itens**  | `adicionarItens()`         | Inclui serviços e/ou peças em uma OS ainda nas fases iniciais (`RECEBIDA`, `EM_DIAGNOSTICO`, `AGUARDANDO_APROVACAO`).                                                     |
+| **Itens orçados**    | Execução → OS              | Definidos pelo mecânico ao concluir o diagnóstico no serviço de Execução; a OS guarda uma cópia (nome, quantidade, preço do momento). |
 
 ---
 

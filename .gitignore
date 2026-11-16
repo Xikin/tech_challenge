@@ -18,3 +18,5 @@ k8s/secret.yaml
 .secrets
 
 actions-runner/
+
+reports/bdd/

@@ -25,7 +25,7 @@ Painel exigido: *"volume diário de ordens de serviço"*.
 ```sql
 SELECT count(*)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'os_criada'
+WHERE service = 'oficina-os' AND evento = 'os_criada'
 TIMESERIES 1 day
 SINCE 30 days ago
 ```
@@ -35,7 +35,7 @@ Total do período, para o número grande:
 ```sql
 SELECT count(*)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'os_criada'
+WHERE service = 'oficina-os' AND evento = 'os_criada'
 SINCE 7 days ago COMPARE WITH 7 days ago
 ```
 
@@ -44,7 +44,7 @@ Faturamento das OS abertas por dia:
 ```sql
 SELECT sum(valorTotal)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'os_criada'
+WHERE service = 'oficina-os' AND evento = 'os_criada'
 TIMESERIES 1 day SINCE 30 days ago
 ```
 
@@ -62,7 +62,7 @@ colunas de cache da OS, que podem divergir (ver `docs/modelo-de-dados.md`, seç�
 ```sql
 SELECT average(duracaoNoStatusAnteriorMs) / 3600000 AS 'Horas em média'
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'os_status_alterado'
+WHERE service = 'oficina-os' AND evento = 'os_status_alterado'
 FACET statusAnterior
 SINCE 30 days ago
 ```
@@ -72,7 +72,7 @@ Evolução ao longo do tempo, só nos três status que o enunciado cita:
 ```sql
 SELECT average(duracaoNoStatusAnteriorMs) / 3600000
 FROM Log
-WHERE service = 'oficina-api'
+WHERE service = 'oficina-os'
   AND evento = 'os_status_alterado'
   AND statusAnterior IN ('EM_DIAGNOSTICO', 'EM_EXECUCAO', 'FINALIZADA')
 FACET statusAnterior
@@ -84,7 +84,7 @@ Percentis, que revelam a cauda que a média esconde:
 ```sql
 SELECT percentile(duracaoNoStatusAnteriorMs / 3600000, 50, 90, 99)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'os_status_alterado'
+WHERE service = 'oficina-os' AND evento = 'os_status_alterado'
 FACET statusAnterior
 SINCE 30 days ago
 ```
@@ -94,7 +94,7 @@ Funil — quantas OS passaram por cada transição:
 ```sql
 SELECT count(*)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'os_status_alterado'
+WHERE service = 'oficina-os' AND evento = 'os_status_alterado'
 FACET statusAnterior, statusNovo
 SINCE 30 days ago
 ```
@@ -108,7 +108,7 @@ Painel exigido: *"erros e falhas nas integrações"*.
 ```sql
 SELECT count(*)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'falha_integracao'
+WHERE service = 'oficina-os' AND evento = 'falha_integracao'
 FACET integracao, operacao
 TIMESERIES 1 hour SINCE 24 hours ago
 ```
@@ -118,7 +118,7 @@ Detalhe das últimas falhas, com o id de correlação para investigar:
 ```sql
 SELECT timestamp, integracao, operacao, numeroOS, erro, reqId
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'falha_integracao'
+WHERE service = 'oficina-os' AND evento = 'falha_integracao'
 SINCE 24 hours ago LIMIT 100
 ```
 
@@ -127,7 +127,7 @@ Erros não tratados (5xx) da aplicação:
 ```sql
 SELECT count(*)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'erro_interno'
+WHERE service = 'oficina-os' AND evento = 'erro_interno'
 FACET rota
 TIMESERIES SINCE 24 hours ago
 ```
@@ -150,7 +150,7 @@ Requisito: *"latência das APIs"*.
 ```sql
 SELECT percentile(duration, 50, 95, 99) * 1000 AS 'ms'
 FROM Transaction
-WHERE appName = 'oficina-api'
+WHERE appName = 'oficina-os'
 TIMESERIES SINCE 6 hours ago
 ```
 
@@ -159,7 +159,7 @@ Rotas mais lentas:
 ```sql
 SELECT average(duration) * 1000 AS 'ms médio', count(*) AS 'chamadas'
 FROM Transaction
-WHERE appName = 'oficina-api'
+WHERE appName = 'oficina-os'
 FACET name
 SINCE 24 hours ago LIMIT 20
 ```
@@ -208,14 +208,14 @@ Dados vindos do `nri-bundle` (ver [README](README.md)).
 ```sql
 SELECT average(cpuUsedCores / cpuLimitCores) * 100 AS 'CPU %'
 FROM K8sContainerSample
-WHERE containerName = 'oficina-api'
+WHERE containerName = 'oficina-os'
 TIMESERIES SINCE 3 hours ago
 ```
 
 ```sql
 SELECT average(memoryWorkingSetBytes) / 1048576 AS 'MB'
 FROM K8sContainerSample
-WHERE containerName = 'oficina-api'
+WHERE containerName = 'oficina-os'
 FACET podName
 TIMESERIES SINCE 3 hours ago
 ```
@@ -225,7 +225,7 @@ Réplicas em execução — é este gráfico que prova o HPA funcionando no víd
 ```sql
 SELECT latest(podsDesired), latest(podsReady)
 FROM K8sReplicasetSample
-WHERE deploymentName = 'oficina-api'
+WHERE deploymentName = 'oficina-os'
 TIMESERIES SINCE 3 hours ago
 ```
 
@@ -243,7 +243,7 @@ Pods reiniciando (sintoma de crashloop ou OOM):
 ```sql
 SELECT latest(restartCount)
 FROM K8sContainerSample
-WHERE containerName = 'oficina-api'
+WHERE containerName = 'oficina-os'
 FACET podName
 SINCE 24 hours ago
 ```
@@ -259,7 +259,7 @@ Disponibilidade medida pelo synthetic check externo:
 ```sql
 SELECT percentage(count(*), WHERE result = 'SUCCESS') AS 'Uptime %'
 FROM SyntheticCheck
-WHERE monitorName = 'oficina-api-health'
+WHERE monitorName = 'oficina-os-health'
 SINCE 7 days ago TIMESERIES 1 hour
 ```
 
@@ -268,7 +268,7 @@ Readiness falhando (o pod não alcança o RDS):
 ```sql
 SELECT count(*)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'readiness_falhou'
+WHERE service = 'oficina-os' AND evento = 'readiness_falhou'
 FACET dependencia
 TIMESERIES SINCE 24 hours ago
 ```
@@ -278,7 +278,7 @@ Reinícios da aplicação:
 ```sql
 SELECT count(*)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'servidor_iniciado'
+WHERE service = 'oficina-os' AND evento = 'servidor_iniciado'
 TIMESERIES 1 hour SINCE 24 hours ago
 ```
 
@@ -291,7 +291,7 @@ Não é exigido, mas é o sinal que mostra o guard do papel CLIENTE em ação:
 ```sql
 SELECT count(*)
 FROM Log
-WHERE service = 'oficina-api' AND evento = 'acesso_negado'
+WHERE service = 'oficina-os' AND evento = 'acesso_negado'
 FACET motivo, role
 TIMESERIES SINCE 24 hours ago
 ```
@@ -322,3 +322,79 @@ SINCE 1 day ago LIMIT 200
 
 O mesmo identificador aparece no access log do gateway, no log da Lambda e no log
 da aplicação — e é devolvido ao chamador no header `x-request-id` de toda resposta.
+
+---
+
+## 9. Saga e mensageria (Fase 4)
+
+Andamento das sagas pelo tipo de evento recebido:
+
+```sql
+SELECT count(*)
+FROM Log
+WHERE service = 'oficina-os' AND evento = 'saga_transicao'
+FACET tipoMensagem
+TIMESERIES SINCE 1 day ago
+```
+
+Tudo o que aconteceu com uma OS nos três serviços, em ordem:
+
+```sql
+SELECT timestamp, service, evento, tipoMensagem, statusNovo, motivo
+FROM Log
+WHERE ordemId = 'COLE-O-ID-DA-OS' OR sagaId = 'COLE-O-ID-DA-SAGA'
+SINCE 7 days ago LIMIT 200
+```
+
+Compensações e o motivo:
+
+```sql
+SELECT count(*)
+FROM Log
+WHERE evento = 'saga_compensacao_iniciada'
+FACET motivo SINCE 7 days ago
+```
+
+Retentativas e fila de mortas por serviço:
+
+```sql
+SELECT count(*)
+FROM Log
+WHERE evento = 'mensagem_falhou'
+FACET service, destino
+TIMESERIES SINCE 1 day ago
+```
+
+Eventos que chegaram antes da hora (concorrência entre réplicas) e conflitos de versão:
+
+```sql
+SELECT count(*)
+FROM Log
+WHERE evento = 'saga_evento_adiado' OR erro LIKE '%alterada por outro processo%'
+FACET evento TIMESERIES SINCE 1 day ago
+```
+
+Consumo de mensagens (transações de background criadas pelo consumidor):
+
+```sql
+SELECT count(*), average(duration) * 1000 AS 'ms'
+FROM Transaction
+WHERE name LIKE 'OtherTransaction/RabbitMQ/%'
+FACET appName, name SINCE 1 day ago
+```
+
+Trace distribuído: em *APM → oficina-os → Distributed tracing*, abra um trace de
+`POST /ordens`. O contexto viaja no cabeçalho da mensagem (gravado junto do outbox)
+e o trace continua na transação `RabbitMQ/execucao.comandos/...` do serviço de
+execução.
+
+Pagamentos:
+
+```sql
+SELECT count(*)
+FROM Log
+WHERE service = 'oficina-billing'
+  AND evento IN ('pagamento_confirmado', 'pagamento_recusado', 'pagamento_estornado', 'pagamento_excedente_estornado')
+FACET evento SINCE 7 days ago
+```
+

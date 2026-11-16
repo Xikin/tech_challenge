@@ -1,5 +1,7 @@
 # Observabilidade
 
+> **Fase 4:** os três microsserviços reportam ao New Relic como `oficina-os`, `oficina-execucao` e `oficina-billing`. O trace distribuído atravessa o RabbitMQ, e a página **Saga e mensageria** do dashboard e os alertas 12 a 15 cobrem o fluxo entre serviços.
+
 Como a plataforma é monitorada e como reproduzir os painéis do zero.
 
 Decisão e justificativa da ferramenta:
@@ -37,9 +39,19 @@ explícitos, que sobrevivem a mudanças de rota e de status code.
 
 | `evento` | Emitido por | Campos relevantes |
 | --- | --- | --- |
-| `os_criada` | `CriarOrdemUseCase` | `numeroOS`, `clienteId`, `qtdServicos`, `qtdPecas`, `valorTotal` |
-| `os_status_alterado` | `AvancarStatusUseCase` | `statusAnterior`, `statusNovo`, `duracaoNoStatusAnteriorMs` |
-| `falha_integracao` | `AvancarStatusUseCase`, `AprovarOrcamentoUseCase` | `integracao`, `operacao`, `numeroOS`, `erro` |
+| `os_criada` | `CriarOrdemUseCase` | `numeroOS`, `clienteId`, `sagaId` |
+| `os_status_alterado` | `ExecutorDeSaga`, `EntregarOrdemUseCase` | `statusAnterior`, `statusNovo`, `duracaoNoStatusAnteriorMs`, `sagaId` |
+| `falha_integracao` | `NotificadorCliente`, `RedisCache`, Billing (Mercado Pago) | `integracao`, `operacao`, `numeroOS`, `erro` |
+| `saga_transicao` / `saga_evento_ignorado` | `ExecutorDeSaga` | `sagaId`, `tipoMensagem`, `etapaAnterior`, `etapa`, `statusSaga`, `comandos` |
+| `saga_compensacao_iniciada` | `ExecutorDeSaga` | `sagaId`, `etapa`, `motivo`, `compensacoes` |
+| `saga_evento_adiado` | `ProcessarEventoSagaUseCase` | `sagaId`, `tipoMensagem`, `etapa` |
+| `mensagem_falhou` | consumidor RabbitMQ (3 serviços) | `fila`, `tipoMensagem`, `tentativa`, `destino` (`.retry` ou `.dlq`), `erro` |
+| `mensagem_duplicada` | consumidores | `mensagemId`, `tipoMensagem` |
+| `outbox_publicacao_adiada` / `outbox_falhou` | relay do outbox (3 serviços) | `mensagemId`, `tipoMensagem`, `erro` |
+| `mensageria_conectada` / `_desconectada` / `_reconexao_falhou` | `RabbitMQ` (3 serviços) | `erro` |
+| `execucao_status_alterado` | Execução | `statusAnterior`, `statusNovo`, `eventoPublicado` |
+| `orcamento_gerado` / `_aprovado` / `_reprovado` / `_cancelado` | Billing | `orcamentoId`, `valorTotal` |
+| `pagamento_confirmado` / `_recusado` / `_estornado` / `_excedente_estornado` | Billing | `pagamentoId`, `valor`, `motivo` |
 | `erro_negocio` | `setErrorHandler` | `codigo`, `statusCode`, `rota` |
 | `erro_validacao` | `setErrorHandler` | `codigo`, `rota` |
 | `erro_interno` | `setErrorHandler` | `rota`, `err` |
@@ -156,7 +168,7 @@ Duas coisas ficam de fora por dependerem do ambiente no ar:
 O job de deploy registra cada versão publicada no New Relic (*change tracking*), e ela
 aparece como linha vertical nos gráficos da aplicação. Precisa dos secrets
 `NEW_RELIC_API_KEY` e `NEW_RELIC_ACCOUNT_ID` no repositório. O passo é ignorado até a
-aplicação reportar dados pela primeira vez, porque só então a entidade `oficina-api`
+aplicação reportar dados pela primeira vez, porque só então a entidade `oficina-os`
 existe.
 ---
 
@@ -164,14 +176,14 @@ existe.
 
 ```bash
 # O agente subiu?
-kubectl logs -n oficina -l app=oficina-api | grep -i "newrelic"
+kubectl logs -n oficina -l app=oficina-os | grep -i "newrelic"
 
 # Logs estruturados saindo em JSON?
-kubectl logs -n oficina -l app=oficina-api --tail=20
+kubectl logs -n oficina -l app=oficina-os --tail=20
 
 # Seguir uma requisição específica ponta a ponta
 curl -s -D- http://<URL>/health -H 'x-request-id: teste-123' | grep -i x-request-id
-kubectl logs -n oficina -l app=oficina-api | grep teste-123
+kubectl logs -n oficina -l app=oficina-os | grep teste-123
 
 # Logs da Lambda
 aws logs tail /aws/lambda/oficina-prod-auth --follow --format short

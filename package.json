@@ -1,14 +1,16 @@
 {
-  "name": "oficina",
+  "name": "oficina-os",
   "version": "1.0.0",
-  "description": "Sistema Integrado de Atendimento — Oficina Mecânica",
+  "description": "OS Service — clientes, veículos, ordens de serviço e orquestração da saga de atendimento",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "start": "node dist/server.js",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage --reporter=verbose",
+    "test:bdd": "cucumber-js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",
@@ -29,18 +31,22 @@
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^4.0.1",
     "@prisma/client": "^5.22.0",
+    "amqplib": "^2.3.1",
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.4.2",
     "fastify": "^4.28.1",
     "fastify-plugin": "^4.5.1",
     "fastify-type-provider-zod": "^2.0.0",
+    "ioredis": "^5.11.1",
     "newrelic": "^12.25.1",
     "nodemailer": "^8.0.9",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^13.3.0",
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^22.0.0",
+    "@types/newrelic": "^9.14.8",
+    "@types/node": "^24.19.2",
     "@types/nodemailer": "^8.0.0",
     "@vitest/coverage-v8": "^2.1.8",
     "prettier": "^3.9.5",
@@ -51,5 +57,8 @@
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

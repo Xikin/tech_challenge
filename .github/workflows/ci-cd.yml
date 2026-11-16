@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: api-${{ github.ref_name }}
+  group: os-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -16,12 +16,12 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  NODE_VERSION: "20"
+  NODE_VERSION: "24"
   APP_ENV: ${{ github.ref_name == 'main' && 'prod' || 'homolog' }}
 
 jobs:
   test:
-    name: Build & Test
+    name: Build & Testes
     runs-on: ubuntu-latest
 
     services:
@@ -70,11 +70,17 @@ jobs:
       - name: Aplicar migrations
         run: npx prisma migrate deploy
 
+      - name: Verificar tipos
+        run: npm run typecheck
+
       - name: Compilar TypeScript
         run: npm run build
 
-      - name: Testes
+      - name: Testes unitários e de integração (cobertura mínima de 80%)
         run: npm test
+
+      - name: Testes BDD da saga
+        run: npm run test:bdd
 
       - name: Exportar especificação OpenAPI
         run: npm run openapi:export
@@ -87,6 +93,14 @@ jobs:
           path: coverage/
           retention-days: 7
 
+      - name: Publicar relatório BDD
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: bdd
+          path: reports/bdd/
+          retention-days: 30
+
       - name: Publicar OpenAPI
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -94,14 +108,55 @@ jobs:
           path: docs/openapi.json
           retention-days: 30
 
+  qualidade:
+    name: Qualidade (SonarQube Cloud)
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Baixar cobertura
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: coverage
+          path: coverage
+
+      - name: Conferir configuração do Sonar
+        id: sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "::error::SONAR_TOKEN não configurado. A verificação de qualidade é obrigatória: crie o projeto no SonarQube Cloud e cadastre o token em Settings → Secrets."
+            exit 1
+          fi
+          org="${SONAR_ORGANIZATION:-$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')}"
+          echo "org=$org" >> "$GITHUB_OUTPUT"
+          echo "chave=${SONAR_PROJECT_KEY:-${org}_${GITHUB_REPOSITORY#*/}}" >> "$GITHUB_OUTPUT"
+
+      - name: Análise e quality gate
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+        with:
+          args: >
+            -Dsonar.organization=${{ steps.sonar.outputs.org }}
+            -Dsonar.projectKey=${{ steps.sonar.outputs.chave }}
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=300
+
   docker:
     name: Build & Push da imagem (ECR)
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, qualidade]
     if: github.event_name != 'pull_request'
-
-    permissions:
-      contents: read
 
     outputs:
       image_ref: ${{ steps.ref.outputs.image }}
@@ -184,19 +239,13 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Verificar se as credenciais do lab ainda são válidas
-        run: |
-          if ! aws sts get-caller-identity; then
-            echo "::error::Credenciais AWS expiradas. Atualize os secrets a partir de AWS Details -> AWS CLI no Learner Lab."
-            exit 1
-          fi
-
       - name: Verificar dependências entre stacks
         run: |
           faltando=""
           for p in \
             "/oficina/${APP_ENV}/eks/cluster_name" \
-            "/oficina/${APP_ENV}/db/database_url"
+            "/oficina/${APP_ENV}/db/database_url" \
+            "/oficina/${APP_ENV}/mensageria/rabbitmq_url"
           do
             aws ssm get-parameter --name "$p" >/dev/null 2>&1 || faltando="$faltando\n  - $p"
           done
@@ -205,84 +254,109 @@ jobs:
             exit 1
           fi
 
+      - name: Publicar segredos compartilhados no SSM
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_CLIENTE_SECRET: ${{ secrets.JWT_CLIENTE_SECRET }}
+        run: |
+          for par in "jwt_secret:$JWT_SECRET" "jwt_cliente_secret:$JWT_CLIENTE_SECRET"; do
+            nome="${par%%:*}"; valor="${par#*:}"
+            if [ ${#valor} -lt 32 ]; then
+              echo "::error::Secret ${nome^^} ausente ou com menos de 32 caracteres."
+              exit 1
+            fi
+            aws ssm put-parameter --name "/oficina/${APP_ENV}/auth/${nome}" --value "$valor" \
+              --type SecureString --overwrite >/dev/null
+          done
+          chave="/oficina/${APP_ENV}/auth/integracao_api_key"
+          if ! aws ssm get-parameter --name "$chave" >/dev/null 2>&1; then
+            aws ssm put-parameter --name "$chave" --value "$(openssl rand -hex 32)" --type SecureString >/dev/null
+            echo "Chave de integração com a Lambda gerada em $chave."
+          fi
+
       - name: Configurar kubectl
         run: |
           CLUSTER=$(aws ssm get-parameter --name "/oficina/${APP_ENV}/eks/cluster_name" --query Parameter.Value --output text)
           echo "CLUSTER=$CLUSTER" >> "$GITHUB_ENV"
           aws eks update-kubeconfig --region "${AWS_REGION}" --name "$CLUSTER"
-          kubectl cluster-info
 
-      - name: Aplicar namespace e configuração
+      - name: Aplicar namespace, configuração e Redis
         run: |
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/redis.yaml
+          kubectl rollout status deployment/oficina-os-redis -n oficina --timeout=120s
 
       - name: Criar/atualizar Secret
         run: |
-          DATABASE_URL=$(aws ssm get-parameter \
-            --name "/oficina/${APP_ENV}/db/database_url" \
-            --with-decryption --query Parameter.Value --output text)
-
-          kubectl create secret generic oficina-secret \
+          ler() { aws ssm get-parameter --name "/oficina/${APP_ENV}/$1" --with-decryption --query Parameter.Value --output text; }
+          kubectl create secret generic oficina-os-secret \
             --namespace=oficina \
-            --from-literal=DATABASE_URL="$DATABASE_URL" \
-            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            --from-literal=JWT_CLIENTE_SECRET="${{ secrets.JWT_CLIENTE_SECRET }}" \
+            --from-literal=DATABASE_URL="$(ler db/database_url)" \
+            --from-literal=RABBITMQ_URL="$(ler mensageria/rabbitmq_url)" \
+            --from-literal=JWT_SECRET="$(ler auth/jwt_secret)" \
+            --from-literal=JWT_CLIENTE_SECRET="$(ler auth/jwt_cliente_secret)" \
+            --from-literal=INTEGRACAO_API_KEY="$(ler auth/integracao_api_key)" \
             --from-literal=SMTP_HOST="${{ secrets.SMTP_HOST }}" \
             --from-literal=SMTP_USER="${{ secrets.SMTP_USER }}" \
             --from-literal=SMTP_PASS="${{ secrets.SMTP_PASS }}" \
             --from-literal=NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Deploy da API
+      - name: Deploy do OS Service
         run: |
           sed -e "s|DOCKER_IMAGE_PLACEHOLDER|$IMAGE_REF|g" \
               -e "s|APP_VERSION_PLACEHOLDER|$GITHUB_SHA|g" \
-              k8s/api-deployment.yaml | kubectl apply -f -
-          kubectl apply -f k8s/api-service.yaml
+              k8s/deployment.yaml | kubectl apply -f -
+          kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/hpa.yaml
-          kubectl rollout status deployment/oficina-api -n oficina --timeout=300s
+          kubectl rollout status deployment/oficina-os -n oficina --timeout=300s
+
+      - name: Remover recursos da Fase 3 (oficina-api)
+        run: |
+          kubectl delete deployment/oficina-api service/oficina-api hpa/oficina-api-hpa \
+            configmap/oficina-config secret/oficina-secret -n oficina --ignore-not-found
 
       - name: Aguardar o Load Balancer receber endereço
         id: endpoint
         run: |
-          echo "Aguardando o provisionamento do NLB (pode levar ~3 min)..."
-          for i in $(seq 1 60); do
-            HOST=$(kubectl get svc oficina-api -n oficina \
+          for _ in $(seq 1 60); do
+            HOST=$(kubectl get svc oficina-os -n oficina \
               -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
             [ -n "$HOST" ] && break
             sleep 10
           done
           if [ -z "$HOST" ]; then
             echo "::error::O Service não recebeu endereço externo em 10 minutos."
-            kubectl describe svc oficina-api -n oficina
+            kubectl describe svc oficina-os -n oficina
             exit 1
           fi
-          echo "NLB: $HOST"
           echo "host=$HOST" >> "$GITHUB_OUTPUT"
           echo "url=http://$HOST" >> "$GITHUB_OUTPUT"
 
-      - name: Publicar endereço da API no SSM
+      - name: Publicar endereço no SSM
         run: |
-          aws ssm put-parameter \
-            --name "/oficina/${APP_ENV}/api/endpoint" \
-            --value "${{ steps.endpoint.outputs.host }}" \
-            --type String --overwrite
+          for p in os/endpoint api/endpoint; do
+            aws ssm put-parameter --name "/oficina/${APP_ENV}/$p" \
+              --value "${{ steps.endpoint.outputs.host }}" --type String --overwrite >/dev/null
+          done
 
       - name: Smoke test do ambiente publicado
         run: |
           url="${{ steps.endpoint.outputs.url }}"
-          echo "Aguardando o NLB registrar os targets..."
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             codigo=$(curl -sS -o /tmp/ready.json -w '%{http_code}' "$url/health/ready" --max-time 10 || echo 000)
             [ "$codigo" = "200" ] && break
             sleep 10
           done
           cat /tmp/ready.json || true
           if [ "$codigo" != "200" ]; then
-            echo "::error::/health/ready não respondeu 200 (recebido $codigo). O pod provavelmente não alcança o RDS."
-            kubectl get pods -n oficina
-            kubectl logs -n oficina -l app=oficina-api --tail=50
+            echo "::error::/health/ready não respondeu 200 (recebido $codigo)."
+            kubectl logs -n oficina -l app=oficina-os --tail=50
+            exit 1
+          fi
+          if ! jq -e '.dependencias.mensageria == "ok"' /tmp/ready.json >/dev/null; then
+            echo "::error::O serviço não se conectou ao RabbitMQ."
             exit 1
           fi
           codigo=$(curl -sS -o /dev/null -w '%{http_code}' "$url/clientes" --max-time 10)
@@ -296,48 +370,22 @@ jobs:
         env:
           NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
           NEW_RELIC_ACCOUNT_ID: ${{ secrets.NEW_RELIC_ACCOUNT_ID }}
-        run: |
-          if [ -z "$NEW_RELIC_API_KEY" ] || [ -z "$NEW_RELIC_ACCOUNT_ID" ]; then
-            echo "::notice::NEW_RELIC_API_KEY ou NEW_RELIC_ACCOUNT_ID não configurados — marcador de deploy ignorado."
-            exit 0
-          fi
-          nerdgraph() {
-            curl -sS https://api.newrelic.com/graphql \
-              -H 'Content-Type: application/json' -H "API-Key: $NEW_RELIC_API_KEY" --data-binary @-
-          }
-          GUID=$(jq -n --arg q "accountId = $NEW_RELIC_ACCOUNT_ID AND domain = 'APM' AND name = 'oficina-api'" \
-            '{query: "query($q: String!) { actor { entitySearch(query: $q) { results { entities { guid } } } } }", variables: {q: $q}}' \
-            | nerdgraph | jq -r '.data.actor.entitySearch.results.entities[0].guid // empty')
-          if [ -z "$GUID" ]; then
-            echo "::notice::A entidade oficina-api ainda não existe no New Relic (a aplicação não reportou dados) — marcador ignorado."
-            exit 0
-          fi
-          jq -n --arg guid "$GUID" --arg versao "$GITHUB_SHA" --arg usuario "$GITHUB_ACTOR" \
-            --arg descricao "Deploy ${APP_ENV} pelo GitHub Actions (run ${GITHUB_RUN_ID})" \
-            '{query: "mutation($d: ChangeTrackingDeploymentInput!) { changeTrackingCreateDeployment(deployment: $d) { deploymentId } }",
-              variables: {d: {entityGuid: $guid, version: $versao, commit: $versao, user: $usuario, description: $descricao, deploymentType: "ROLLING"}}}' \
-            | nerdgraph > nr-deploy.json
-          if jq -e '.data.changeTrackingCreateDeployment.deploymentId' nr-deploy.json >/dev/null; then
-            echo "Marcador de deploy registrado para ${GITHUB_SHA}."
-          else
-            echo "::warning::O New Relic não registrou o marcador de deploy:"; cat nr-deploy.json
-          fi
+          NR_APP: oficina-os
+        run: bash scripts/marcar-deploy-newrelic.sh
 
       - name: Resumo do deploy
         run: |
           {
-            echo "## API publicada no EKS"
+            echo "## OS Service publicado no EKS"
             echo ""
             echo "| Item | Valor |"
             echo "| --- | --- |"
             echo "| Ambiente | \`${APP_ENV}\` |"
             echo "| Cluster | \`${CLUSTER}\` |"
             echo "| Imagem | \`${IMAGE_REF}\` |"
-            echo "| Load Balancer | ${{ steps.endpoint.outputs.url }} |"
             echo "| Swagger | ${{ steps.endpoint.outputs.url }}/docs |"
             echo ""
-            echo "### Estado do cluster"
             echo '```'
-            kubectl get pods,hpa,svc -n oficina
+            kubectl get pods,hpa,svc -n oficina -l 'app in (oficina-os,oficina-os-redis)'
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

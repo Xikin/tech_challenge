@@ -4,6 +4,7 @@ import type {
   IEmailService,
   EnviarEmailStatusInput,
   EnviarEmailAprovacaoInput,
+  EnviarEmailPagamentoInput,
 } from '../../domain/services/email.service.interface';
 
 function escapeHtml(str: string): string {
@@ -58,7 +59,23 @@ export class NodemailerEmailService implements IEmailService {
         <h2>Orçamento aguardando sua aprovação — OS #${dados.numeroOS}</h2>
         <p>Olá, <strong>${escapeHtml(dados.nomeCliente)}</strong>!</p>
         <p>O diagnóstico foi concluído. <strong>Valor total: R$ ${dados.valorTotal.toFixed(2)}</strong></p>
-        <p>Entre em contato com a oficina para aprovar ou recusar o orçamento.</p>
+        <p>Aprove ou recuse o orçamento pelo aplicativo da oficina, entrando com o seu CPF.</p>
+      `,
+    });
+  }
+
+  async enviarPagamentoSolicitado(dados: EnviarEmailPagamentoInput): Promise<void> {
+    if (!this.transporter) return;
+    await this.transporter.sendMail({
+      from: env.SMTP_FROM,
+      to: dados.destinatario,
+      subject: `OS #${dados.numeroOS} — Orçamento aprovado, falta o pagamento`,
+      html: `
+        <h2>Orçamento aprovado — OS #${dados.numeroOS}</h2>
+        <p>Olá, <strong>${escapeHtml(dados.nomeCliente)}</strong>!</p>
+        <p>Recebemos a sua aprovação. <strong>Valor: R$ ${dados.valorTotal.toFixed(2)}</strong></p>
+        <p>O serviço entra na fila de execução assim que o pagamento for confirmado:</p>
+        <p><a href="${escapeHtml(dados.linkPagamento)}">Pagar com Mercado Pago</a></p>
       `,
     });
   }

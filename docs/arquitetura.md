@@ -66,28 +66,32 @@ Cada módulo replica a mesma estrutura de 4 camadas — por exemplo `ordens` tem
 
 ### Ordens de Serviço
 
-| Método | Rota                       | Auth |
-| ------ | -------------------------- | ---- |
-| GET    | `/ordens/consulta-publica`      | ❌   |
-| POST   | `/ordens`                       | ✅   |
-| GET    | `/ordens`                       | ✅   |
-| PATCH  | `/ordens/:id/avancar`           | ✅   |
-| PATCH  | `/ordens/:id/aprovar-orcamento` | ✅   |
-| PATCH  | `/ordens/:id/reprovar`          | ✅   |
-| PATCH  | `/ordens/:id/cancelar`          | ✅   |
+| Método | Rota                            | Auth            |
+| ------ | ------------------------------- | --------------- |
+| GET    | `/ordens/consulta-publica`      | ❌              |
+| POST   | `/ordens`                       | ✅ oficina      |
+| GET    | `/ordens`                       | ✅ oficina      |
+| GET    | `/ordens/:id`                   | ✅ oficina/dono |
+| GET    | `/ordens/:id/saga`              | ✅ oficina      |
+| PATCH  | `/ordens/:id/cancelar`          | ✅ oficina      |
+| PATCH  | `/ordens/:id/entregar`          | ✅ oficina      |
 
-`PATCH /ordens/:id/aprovar-orcamento` é o endpoint de **aprovação de orçamento** que recebe a decisão do cliente (`aprovado: true|false`) — aprovando avança a OS para Em Execução, recusando devolve para Em Diagnóstico. Tanto ele quanto `PATCH /ordens/:id/avancar` disparam e-mail transacional para o cliente via `IEmailService` (ver [dominio.md](dominio.md)).
+Na Fase 4, diagnóstico, itens, orçamento, aprovação e reparo saíram deste serviço:
 
-> Documentação completa e interativa: **http://localhost:3000/docs** · Collection Postman com todos os endpoints: [`postman/oficina-mvp.postman_collection.json`](../postman/oficina-mvp.postman_collection.json)
+- itens e diagnóstico → `/execucoes` no [oficina-execucao](https://github.com/Xikin/oficina-execucao);
+- aprovação e pagamento → `/orcamentos` e `/pagamentos` no [oficina-billing](https://github.com/Xikin/oficina-billing).
+
+A OS avança pelos eventos da saga ([saga.md](saga.md)), e cada mudança dispara e-mail ao cliente via `IEmailService`.
+
+> Documentação interativa: **http://localhost:3000/docs** · Coleção Postman: [`postman/oficina-os.postman_collection.json`](../postman/oficina-os.postman_collection.json)
 
 ---
 
 ## Máquina de estados da OS
 
 ```
-RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → EM_EXECUCAO → FINALIZADA → ENTREGUE
-                                    ↓ (reprovado)
-                             EM_DIAGNOSTICO (peças devolvidas ao estoque)
+RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → AGUARDANDO_PAGAMENTO → AGUARDANDO_EXECUCAO → EM_EXECUCAO → FINALIZADA → ENTREGUE
+      ↘ (compensação da saga em qualquer etapa antes de FINALIZADA) → CANCELADA
 ```
 
 Cada transição é registrada em `HistoricoOS` como trilha de auditoria imutável. Veja o significado de cada status em [dominio.md](dominio.md#ciclo-de-vida-da-os).

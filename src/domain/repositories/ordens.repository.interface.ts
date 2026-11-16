@@ -1,5 +1,7 @@
 import type { StatusOS } from '../enums/status-os.enum';
 import type { DecimalLike } from '../types/decimal-like';
+import type { MensagemSaida } from '../mensageria/mensagem';
+import type { EstadoSaga } from '../saga/saga-os';
 
 export interface ListarOrdensParams {
   page: number;
@@ -16,39 +18,19 @@ export interface CriarOrdemData {
   veiculoId: string;
   descricao?: string;
   observacoes?: string;
-  valorTotal: number;
-  servicos: { servicoId: string; preco: number }[];
-  pecas: { pecaId: string; quantidade: number; preco: number }[];
 }
 
-export interface AvancarStatusData {
-  id: string;
-  statusAtual: StatusOS;
-  novoStatus: StatusOS;
-  observacao?: string;
-  tempoReal?: number;
-  qtdServicos: number;
-  timestampExtra: object;
+export interface InicioSaga {
+  estado: EstadoSaga;
+  observacao: string;
+  montarMensagens(ordem: OrdemRecord, sagaId: string): MensagemSaida[];
 }
 
-export interface ReprovarOrdemData {
-  id: string;
-  observacao?: string;
-  pecas: { pecaId: string; quantidade: number }[];
-}
-
-export interface CancelarOrdemData {
+export interface MudancaDeStatusData {
   id: string;
   statusAnterior: StatusOS;
-  motivo?: string;
-  pecas: { pecaId: string; quantidade: number }[];
-}
-
-export interface AdicionarItensData {
-  ordemId: string;
-  servicos: { servicoId: string; preco: number }[];
-  pecas: { pecaId: string; quantidade: number; preco: number }[];
-  novoTotal: number;
+  novoStatus: StatusOS;
+  observacao?: string;
 }
 
 export interface OrdemClienteResumo {
@@ -72,42 +54,14 @@ export interface OrdemVeiculoDetalhe {
   atualizadoEm: Date;
 }
 
-export interface ItemServicoOSRecord {
+export interface ItemOSRecord {
   id: string;
   ordemId: string;
-  servicoId: string;
-  preco: number | DecimalLike;
-  tempoReal: number | null;
-  servico: {
-    id: string;
-    nome: string;
-    descricao: string | null;
-    preco: number | DecimalLike;
-    tempoPrevisto: number | null;
-    ativo: boolean;
-    criadoEm: Date;
-    atualizadoEm: Date;
-  };
-}
-
-export interface ItemPecaOSRecord {
-  id: string;
-  ordemId: string;
-  pecaId: string;
+  tipo: 'SERVICO' | 'PECA';
+  referenciaId: string;
+  nome: string;
   quantidade: number;
-  preco: number | DecimalLike;
-  peca: {
-    id: string;
-    nome: string;
-    descricao: string | null;
-    preco: number | DecimalLike;
-    quantidade: number;
-    estoqueMin: number;
-    unidade: string;
-    ativo: boolean;
-    criadoEm: Date;
-    atualizadoEm: Date;
-  };
+  precoUnitario: number | DecimalLike;
 }
 
 export interface HistoricoOSRecord {
@@ -128,7 +82,10 @@ export interface OrdemRecord {
   descricao: string | null;
   observacoes: string | null;
   valorTotal: number | DecimalLike;
+  orcamentoId: string | null;
+  linkPagamento: string | null;
   aprovadoEm: Date | null;
+  pagoEm: Date | null;
   iniciadoEm: Date | null;
   finalizadoEm: Date | null;
   entregueEm: Date | null;
@@ -136,9 +93,17 @@ export interface OrdemRecord {
   atualizadoEm: Date;
   cliente: OrdemClienteResumo;
   veiculo: OrdemVeiculoDetalhe;
-  servicos: ItemServicoOSRecord[];
-  pecas: ItemPecaOSRecord[];
+  itens: ItemOSRecord[];
   historico: HistoricoOSRecord[];
+  saga: SagaResumo | null;
+}
+
+export interface SagaResumo {
+  id: string;
+  etapa: EstadoSaga['etapa'];
+  status: EstadoSaga['status'];
+  motivoFalha: string | null;
+  compensacoesPendentes: string[];
 }
 
 export interface OrdemListItem {
@@ -151,6 +116,7 @@ export interface OrdemListItem {
   observacoes: string | null;
   valorTotal: number | DecimalLike;
   aprovadoEm: Date | null;
+  pagoEm: Date | null;
   iniciadoEm: Date | null;
   finalizadoEm: Date | null;
   entregueEm: Date | null;
@@ -158,7 +124,7 @@ export interface OrdemListItem {
   atualizadoEm: Date;
   cliente: { id: string; nome: string; cpfCnpj: string };
   veiculo: { id: string; placa: string; marca: string; modelo: string };
-  _count: { servicos: number; pecas: number };
+  _count: { itens: number };
 }
 
 export interface OrdemStatusPublico {
@@ -166,13 +132,20 @@ export interface OrdemStatusPublico {
   numero: number;
   status: StatusOS;
   valorTotal: number | DecimalLike;
+  linkPagamento: string | null;
   criadoEm: Date;
   aprovadoEm: Date | null;
+  pagoEm: Date | null;
   iniciadoEm: Date | null;
   finalizadoEm: Date | null;
   entregueEm: Date | null;
   veiculo: { placa: string; marca: string; modelo: string };
-  servicos: { servico: { nome: string }; preco: number | DecimalLike }[];
+  itens: {
+    tipo: 'SERVICO' | 'PECA';
+    nome: string;
+    quantidade: number;
+    precoUnitario: number | DecimalLike;
+  }[];
   historico: { statusNovo: StatusOS; observacao: string | null; criadoEm: Date }[];
 }
 
@@ -181,16 +154,9 @@ export interface IOrdemRepository {
   buscarPorNumero(numero: number): Promise<OrdemRecord | null>;
   buscarStatusPublico(numero: number, cpfCnpj: string): Promise<OrdemStatusPublico | null>;
   listar(params: ListarOrdensParams): Promise<{ data: OrdemListItem[]; total: number }>;
-  criar(dados: CriarOrdemData): Promise<OrdemRecord>;
+  criarComSaga(dados: CriarOrdemData, saga: InicioSaga): Promise<OrdemRecord>;
   atualizar(id: string, data: { descricao?: string; observacoes?: string }): Promise<OrdemRecord>;
-  avancarStatus(dados: AvancarStatusData): Promise<void>;
-  reprovar(dados: ReprovarOrdemData): Promise<void>;
-  cancelar(dados: CancelarOrdemData): Promise<void>;
-  adicionarItens(dados: AdicionarItensData): Promise<void>;
-  buscarServico(id: string): Promise<{ id: string; preco: number | DecimalLike } | null>;
-  buscarPeca(
-    id: string,
-  ): Promise<{ id: string; nome: string; preco: number | DecimalLike; quantidade: number } | null>;
+  mudarStatus(dados: MudancaDeStatusData): Promise<void>;
   buscarCliente(id: string): Promise<{ id: string } | null>;
   buscarVeiculo(veiculoId: string, clienteId: string): Promise<{ id: string } | null>;
 }

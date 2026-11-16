@@ -14,7 +14,16 @@ export interface EnviarEmailAprovacaoInput {
   valorTotal: number;
 }
 
+export interface EnviarEmailPagamentoInput {
+  destinatario: string;
+  nomeCliente: string;
+  numeroOS: number;
+  valorTotal: number;
+  linkPagamento: string;
+}
+
 export interface IEmailService {
   enviarStatusAtualizado(dados: EnviarEmailStatusInput): Promise<void>;
   enviarAprovacaoSolicitada(dados: EnviarEmailAprovacaoInput): Promise<void>;
+  enviarPagamentoSolicitado(dados: EnviarEmailPagamentoInput): Promise<void>;
 }

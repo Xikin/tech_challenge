@@ -44,11 +44,11 @@ Onde cada variável é definida em cada ambiente — local (`.env`), produção 
 | `PORT`                 | `3000`                         | ConfigMap                                         | `3000`                            |
 | `HOST`                 | `0.0.0.0`                      | ConfigMap                                         | —                                  |
 | `DATABASE_URL`         | — (obrigatória)                | Montada no Deployment a partir de `POSTGRES_*`    | Secret `POSTGRES_PASSWORD` + literais |
-| `JWT_SECRET`           | — (obrigatória, ≥32 chars)     | **Secret** `oficina-secret`                       | Secret `JWT_SECRET`               |
-| `JWT_CLIENTE_SECRET`           | — (obrigatória, ≥32 chars)     | **Secret** `oficina-secret`                       | Secret `JWT_CLIENTE_SECRET`               |
+| `JWT_SECRET`           | — (obrigatória, ≥32 chars)     | **Secret** `oficina-os-secret`                       | Secret `JWT_SECRET`               |
+| `JWT_CLIENTE_SECRET`           | — (obrigatória, ≥32 chars)     | **Secret** `oficina-os-secret`                       | Secret `JWT_CLIENTE_SECRET`               |
 | `JWT_EXPIRES_IN`       | `8h`                           | ConfigMap                                         | —                                  |
 | `BCRYPT_ROUNDS`        | `12`                           | ConfigMap                                         | `4` (mais rápido em CI)           |
-| `SMTP_HOST/USER/PASS`  | vazio (e-mail desabilitado)    | **Secret** `oficina-secret` (opcionais)           | —                                  |
+| `SMTP_HOST/USER/PASS`  | vazio (e-mail desabilitado)    | **Secret** `oficina-os-secret` (opcionais)           | —                                  |
 | `SMTP_PORT`            | `587`                          | ConfigMap                                         | —                                  |
 | `SMTP_FROM`            | `Oficina Mecânica <...>`       | ConfigMap                                         | —                                  |
 | `ALLOWED_ORIGINS`      | vazio (bloqueia cross-origin)  | ConfigMap (vazio até haver frontend configurado)  | —                                  |

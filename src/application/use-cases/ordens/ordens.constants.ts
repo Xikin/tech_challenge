@@ -4,40 +4,17 @@ export const STATUS_LABEL: Record<StatusOS, string> = {
   RECEBIDA: 'Recebida',
   EM_DIAGNOSTICO: 'Em Diagnóstico',
   AGUARDANDO_APROVACAO: 'Aguardando Aprovação',
+  AGUARDANDO_PAGAMENTO: 'Aguardando Pagamento',
+  AGUARDANDO_EXECUCAO: 'Aguardando Execução',
   EM_EXECUCAO: 'Em Execução',
   FINALIZADA: 'Finalizada',
   ENTREGUE: 'Entregue',
   CANCELADA: 'Cancelada',
 };
 
-export const TRANSICOES: Record<StatusOS, StatusOS[]> = {
-  RECEBIDA: ['EM_DIAGNOSTICO'],
-  EM_DIAGNOSTICO: ['AGUARDANDO_APROVACAO'],
-  AGUARDANDO_APROVACAO: ['EM_EXECUCAO'],
-  EM_EXECUCAO: ['FINALIZADA'],
-  FINALIZADA: ['ENTREGUE'],
-  ENTREGUE: [],
-  CANCELADA: [],
-};
-
-export const CANCELAVEIS: StatusOS[] = [
+export const CANCELAVEIS_SEM_SAGA: StatusOS[] = [
   'RECEBIDA',
   'EM_DIAGNOSTICO',
   'AGUARDANDO_APROVACAO',
   'EM_EXECUCAO',
 ];
-
-export function timestampsParaStatus(status: StatusOS): Record<string, Date> {
-  const agora = new Date();
-
-  switch (status) {
-    case 'EM_EXECUCAO':
-      return { aprovadoEm: agora, iniciadoEm: agora };
-    case 'FINALIZADA':
-      return { finalizadoEm: agora };
-    case 'ENTREGUE':
-      return { entregueEm: agora };
-    default:
-      return {};
-  }
-}

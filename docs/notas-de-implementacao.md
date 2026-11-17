@@ -168,27 +168,39 @@ erro interno.
 
 ## Ordens de serviço
 
-### `src/application/use-cases/ordens/ordens.constants.ts`
+### `src/domain/ordens/marcos-de-status.ts`
 
-`timestampsParaStatus` precisa ser função, não constante: num objeto de módulo, os `new Date()` seriam avaliados
-uma única vez, no carregamento, e toda ordem receberia o horário de boot do processo em vez do horário da
-transição.
+`marcosDoStatus` precisa ser função, não constante: num objeto de módulo, os `new Date()` seriam avaliados uma
+única vez, no carregamento, e toda ordem receberia o horário de boot do processo em vez do horário da transição.
+Mora no domínio porque é usado tanto pelo repositório de OS (entrega, cancelamento sem saga) quanto pelo da saga.
 
 ### `src/application/use-cases/ordens/criar-ordem.use-case.ts`
 
-Emite o evento `os_criada`, que alimenta o painel de volume diário de OS. Um evento explícito é mais confiável do
-que contar transações HTTP 201 no APM: sobrevive a mudanças de rota e de status code.
+Emite o evento `os_criada`, que alimenta o painel de volume diário de OS. A OS, a saga e o primeiro comando
+(`abrir-diagnostico`) são gravados numa única transação, via `criarComSaga`: o comando precisa do número da OS,
+que só existe depois do `INSERT`, por isso o repositório recebe uma função que monta as mensagens a partir da OS
+criada.
 
-### `src/application/use-cases/ordens/avancar-status.use-case.ts`
+### `src/application/use-cases/ordens/cancelar-ordem.use-case.ts`
 
-- A duração no status anterior é calculada a partir de `historico_os`, e **não** das colunas
-  `aprovadoEm`/`iniciadoEm`/`finalizadoEm` da OS: aquelas são um cache mantido pela aplicação e podem divergir,
-  enquanto `historico_os.criado_em` é `DEFAULT now()` gerado pelo banco ([modelo-de-dados.md](modelo-de-dados.md),
-  seção 6). O histórico vem ordenado por `criadoEm` ascendente, então o último item é a transição mais recente — o
-  momento em que a OS entrou no status atual.
-- O e-mail é disparado sem `await` de propósito: a transição de status não deve falhar porque o SMTP está fora do
-  ar ([ADR-0002](adr/0002-comunicacao-sincrona-rest.md)). A falha é registrada como `falha_integracao`, que é o
-  sinal do alerta de falha de integração. `aprovar-orcamento.use-case.ts` segue o mesmo padrão.
+- OS com saga: o cancelamento vira um evento interno da saga (`os.cancelamento-solicitado`) e passa pela mesma
+  máquina de estados dos eventos vindos do RabbitMQ. A rota responde **202**: a OS só fica `CANCELADA` quando os
+  participantes confirmarem a compensação.
+- OS sem saga — criadas antes da Fase 4 — são canceladas direto, como antes, para não ficarem presas.
+
+### `src/application/use-cases/ordens/entregar-ordem.use-case.ts`
+
+A entrega não passa pela saga: acontece depois de a saga terminar e não envolve outro serviço. Mantém o evento
+`os_status_alterado` com a duração no status anterior, calculada a partir de `historico_os`, e **não** das
+colunas de data da OS: aquelas são um cache mantido pela aplicação, enquanto `historico_os.criado_em` é gerado
+pelo banco ([modelo-de-dados.md](modelo-de-dados.md), seção 6).
+
+### `src/application/use-cases/ordens/consultar-status-publico.use-case.ts`
+
+A entrada do cache é `os:publica:{numero}` e guarda o SHA-256 do CPF/CNPJ junto dos dados. Com a chave só pelo
+número, um documento diferente no cache recebe 404 sem ir ao banco, exatamente o que o banco devolveria, e a
+invalidação é um `DEL` direto, sem varrer chaves. Cachear também o "não encontrado" foi descartado: facilitaria
+enumerar números de OS sem custo.
 
 ### `src/domain/services/logger.service.interface.ts`
 
@@ -412,3 +424,127 @@ NEW_RELIC_API_KEY=NRAK-... NEW_RELIC_ACCOUNT_ID=1234567 \
 - `tests/integration/rate-limit.routes.test.ts` ([ADR-0012](adr/0012-limites-de-tentativa.md)): os testes
   compartilham a mesma instância da app — e portanto o mesmo contador em memória —, então a ordem importa.
 - `tests/setup.ts` mocka `$queryRaw`, usado pela readiness (`/health/ready`) para provar que o banco responde.
+
+---
+
+## Saga, mensageria e cache (Fase 4)
+
+### `src/domain/saga/saga-os.ts`
+
+- Função pura: recebe o estado e um evento e devolve a decisão (novo estado, status da OS, comandos, efeitos). Não
+  grava nada nem conhece RabbitMQ, por isso o BDD e os testes unitários exercitam a saga inteira sem
+  infraestrutura.
+- `valorDosItens` soma em centavos inteiros: `0.1 * 3` em ponto flutuante não fecha com o total que o Billing
+  calcula.
+- **Prematuro × fora de ordem.** Com várias réplicas consumindo `os.saga`, `orcamento-aprovado` pode ser processado
+  antes de `orcamento-gerado`. Um evento cuja etapa ainda não chegou é marcado como `prematura` e o caso de uso
+  lança `EventoPrematuroError`, que **não** é erro definitivo: volta pela fila de retentativa. Só evento de etapa
+  já vencida é ignorado. Antes dessa distinção, o teste com duas réplicas perdia a aprovação.
+- A compensação manda o cancelamento a todos os participantes **em paralelo**: estorno e devolução de peças são
+  independentes, e esperar um pelo outro só atrasaria o cancelamento.
+
+### `src/application/saga/executor-saga.ts`
+
+- Monta as mensagens de saída com `causadaPor` = id da mensagem que provocou a decisão: no `GET /ordens/:id/saga` e
+  nos logs dá para seguir a cadeia comando → evento → comando.
+- Eventos ignorados também são gravados (passo e `mensagens_processadas`), para aparecerem no histórico da saga e
+  não serem reprocessados.
+- O e-mail continua sem `await`: a transição não pode falhar porque o SMTP está fora; a falha vira
+  `falha_integracao`.
+
+### `src/application/saga/contratos.ts`
+
+Toda mensagem recebida é validada com Zod antes de chegar à saga. Mensagem fora do contrato lança
+`MensagemInvalidaError`, que o consumidor manda direto para a DLQ: repetir uma mensagem malformada nunca vai dar
+certo. Campos extras em `dados` são aceitos (o Zod descarta), para que um participante possa enriquecer o evento
+sem quebrar o orquestrador.
+
+### `src/infrastructure/database/repositories/prisma-saga.repository.ts`
+
+`aplicarTransicao` grava saga, OS, histórico, itens, passos, outbox e `mensagens_processadas` numa só transação. A
+atualização da saga é `updateMany` com `versao` no filtro: zero linhas afetadas significa que outra réplica mudou
+a saga entre a leitura e a escrita; `ConflitoDeVersaoError` faz a mensagem voltar pela retentativa (na API, vira
+409).
+
+### `src/infrastructure/mensageria/rabbitmq.ts`
+
+- `amqplib` 2.x com `recovery`: a função `configurar` roda a cada reconexão e redeclara exchange, filas e
+  consumidores, então uma queda do broker não deixa o serviço surdo.
+- Publicação com *publisher confirms* e `mandatory`. O RabbitMQ devolve (`basic.return`) mensagens sem fila de
+  destino **antes** da confirmação; o id fica num `Set` e a publicação falha, para o outbox tentar de novo. Sem
+  isso, um comando publicado antes de o participante declarar a fila sumiria em silêncio.
+- Retentativa com atraso sem plugin: a mensagem é reenviada para `X.retry`, que tem TTL e dead-letter de volta para
+  `X` pela exchange padrão (`''`) com a própria fila como routing key. Reencaminhar pela exchange da saga
+  entregaria a mensagem de novo a todas as filas ligadas àquela routing key.
+- Se nem o reencaminhamento funcionar (canal caiu), a mensagem é devolvida com `nack(requeue)`: perder é pior que
+  duplicar, e o consumidor é idempotente.
+- Este arquivo é cópia idêntica nos três serviços, de propósito: cada repositório é independente e não há pacote
+  compartilhado para versionar.
+
+### `src/infrastructure/mensageria/outbox-relay.ts`
+
+`SELECT ... FOR UPDATE SKIP LOCKED` dentro de uma transação de até 30 s: réplicas diferentes pegam linhas
+diferentes. Ao falhar uma publicação, o lote para (em vez de pular para a próxima linha) para não inverter a ordem
+de mensagens da mesma OS. Linhas publicadas há mais de 72 h são apagadas uma vez por hora.
+
+### `src/infrastructure/observabilidade/rastreamento-newrelic.ts` e `newrelic.cjs`
+
+A instrumentação automática do `amqplib` no agente está desligada (`instrumentation.amqplib.enabled: false`). Como
+a publicação acontece no relay, fora da requisição que originou a mensagem, o agente propagaria o trace do relay,
+não o da requisição. Os cabeçalhos de trace distribuído são capturados na gravação do outbox (dentro da requisição
+ou do consumo) e aceitos pelo consumidor numa transação de background `RabbitMQ/<fila>/<tipo>`. Assim, o trace de
+`POST /ordens` chega até o Execução.
+
+### `src/infrastructure/cache/redis-cache.ts`
+
+Falha aberta: qualquer erro do Redis vira cache vazio e log `falha_integracao`. O cliente é criado com
+`enableOfflineQueue: false` e `maxRetriesPerRequest: 1` (em `server.ts`); com o padrão do ioredis, os comandos
+ficariam enfileirados esperando o Redis voltar e a requisição travaria. O `JSON.parse` reconstrói datas ISO: o
+schema de resposta da consulta pública espera `Date`, não string.
+
+### `src/app.ts` — limite de tentativas no Redis
+
+O `@fastify/rate-limit` recebe o cliente Redis quando `REDIS_URL` existe, com `skipOnError: true`: Redis fora não
+pode impedir login. Erros do próprio Fastify com status 4xx (corpo JSON vazio ou malformado) são devolvidos com o
+status original; antes caíam no tratador genérico e viravam 500, disparando o alerta de erro interno.
+
+### `src/presentation/http/routes/integracao.routes.ts` e `middlewares/integracao.middleware.ts`
+
+Substitui a leitura direta da tabela `clientes` pela Lambda. A chave é comparada com `timingSafeEqual`. Sem
+`INTEGRACAO_API_KEY` configurada a rota responde 503, em vez de aceitar qualquer chamada. A rota é `POST` para o CPF
+não aparecer em URL nem em access log.
+
+### `prisma/migrations/20261110225617_fase4_saga_e_itens_snapshot`
+
+Copia os itens das OS existentes para `itens_os` **antes** de apagar `itens_servico_os`, `itens_peca_os`,
+`servicos` e `pecas`: nenhuma OS perde a composição. O catálogo não é migrado para o banco do Execução por SQL (são
+bancos diferentes); o Execução recria o catálogo pelo próprio seed.
+
+### `k8s/redis.yaml`
+
+Sem persistência (`--save ""`, `--appendonly no`) e com `allkeys-lru`: é cache, perder o conteúdo num restart só
+custa algumas consultas ao banco. A `NetworkPolicy` só aceita conexões dos pods `app=oficina-os`; ela só tem efeito
+porque o `oficina-infra-k8s` liga `enableNetworkPolicy` no VPC CNI.
+
+### `.github/workflows/ci-cd.yml`
+
+- A etapa de qualidade falha se `SONAR_TOKEN` não existir. Na Fase 3 ela era pulada em silêncio, e "verificação de
+  qualidade no CI" virava opcional.
+- O deploy publica `JWT_SECRET`, `JWT_CLIENTE_SECRET` e gera a `INTEGRACAO_API_KEY` no SSM. Os outros serviços e a
+  Lambda leem de lá; só este repositório e o da Lambda precisam dos secrets de JWT no GitHub.
+- Remove os recursos `oficina-api` da Fase 3 do cluster e publica o endereço em `/os/endpoint` e também em
+  `/api/endpoint`, para o gateway antigo continuar funcionando até a Lambda ser reaplicada.
+
+### `tests/bdd/`
+
+O Cucumber roda a saga real (casos de uso e máquina de estados) com repositórios em memória
+(`support/mundo.ts`). Os passos fazem o papel do Execução e do Billing, respondendo pelo mesmo contrato de
+mensagens. `@cucumber/cucumber` 13 exige Node 22+, um dos motivos da migração para Node 24 (o Node 20 saiu de
+suporte em abril de 2026).
+
+### `scripts/demo-saga.sh`
+
+Roteiro do vídeo: percorre o fluxo pelas APIs reais nos cenários `feliz`, `reprovado` e `falha`. Aceita
+`DEMO_TOKEN` para reaproveitar um login, porque o limite é de 5 logins por e-mail a cada 15 minutos e agora vale
+para todas as réplicas (Redis).
+

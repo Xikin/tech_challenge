@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Oficina Mecânica API",
-    "version": "1.0.0",
-    "description": "MVP — Sistema Integrado de Atendimento"
+    "title": "Oficina Mecânica — OS Service",
+    "version": "2.0.0",
+    "description": "Clientes, veículos, ordens de serviço e orquestração da saga de atendimento."
   },
   "components": {
     "securitySchemes": {
@@ -1808,1777 +1808,13 @@
         }
       }
     },
-    "/servicos/": {
-      "post": {
-        "summary": "Criar serviço",
-        "tags": [
-          "Serviços"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "nome": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 200
-                  },
-                  "descricao": {
-                    "type": "string",
-                    "maxLength": 1000
-                  },
-                  "preco": {
-                    "type": "number",
-                    "exclusiveMinimum": true,
-                    "minimum": 0
-                  },
-                  "tempoPrevisto": {
-                    "type": "integer",
-                    "exclusiveMinimum": true,
-                    "minimum": 0
-                  }
-                },
-                "required": [
-                  "nome",
-                  "preco"
-                ],
-                "additionalProperties": false
-              }
-            }
-          },
-          "required": true
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "descricao": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "preco": {
-                      "type": "number"
-                    },
-                    "tempoPrevisto": {
-                      "type": "integer",
-                      "nullable": true
-                    },
-                    "ativo": {
-                      "type": "boolean"
-                    },
-                    "criadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "atualizadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "nome",
-                    "preco",
-                    "tempoPrevisto",
-                    "ativo",
-                    "criadoEm",
-                    "atualizadoEm"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "summary": "Listar serviços",
-        "tags": [
-          "Serviços"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "minimum": 0,
-              "default": 1
-            },
-            "in": "query",
-            "name": "page",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "minimum": 0,
-              "maximum": 100,
-              "default": 20
-            },
-            "in": "query",
-            "name": "limit",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "query",
-            "name": "busca",
-            "required": false
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "nome": {
-                            "type": "string"
-                          },
-                          "descricao": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "preco": {
-                            "type": "number"
-                          },
-                          "tempoPrevisto": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "ativo": {
-                            "type": "boolean"
-                          },
-                          "criadoEm": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "atualizadoEm": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "nome",
-                          "preco",
-                          "tempoPrevisto",
-                          "ativo",
-                          "criadoEm",
-                          "atualizadoEm"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "page": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "total": {
-                          "type": "integer"
-                        },
-                        "totalPages": {
-                          "type": "integer"
-                        }
-                      },
-                      "required": [
-                        "page",
-                        "limit",
-                        "total",
-                        "totalPages"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/servicos/{id}": {
-      "get": {
-        "summary": "Buscar serviço por ID",
-        "tags": [
-          "Serviços"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "descricao": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "preco": {
-                      "type": "number"
-                    },
-                    "tempoPrevisto": {
-                      "type": "integer",
-                      "nullable": true
-                    },
-                    "ativo": {
-                      "type": "boolean"
-                    },
-                    "criadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "atualizadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "nome",
-                    "preco",
-                    "tempoPrevisto",
-                    "ativo",
-                    "criadoEm",
-                    "atualizadoEm"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "summary": "Atualizar serviço",
-        "tags": [
-          "Serviços"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "nome": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 200
-                  },
-                  "descricao": {
-                    "type": "string",
-                    "maxLength": 1000
-                  },
-                  "preco": {
-                    "type": "number",
-                    "exclusiveMinimum": true,
-                    "minimum": 0
-                  },
-                  "tempoPrevisto": {
-                    "type": "integer",
-                    "exclusiveMinimum": true,
-                    "minimum": 0
-                  }
-                },
-                "additionalProperties": false
-              }
-            }
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "descricao": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "preco": {
-                      "type": "number"
-                    },
-                    "tempoPrevisto": {
-                      "type": "integer",
-                      "nullable": true
-                    },
-                    "ativo": {
-                      "type": "boolean"
-                    },
-                    "criadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "atualizadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "nome",
-                    "preco",
-                    "tempoPrevisto",
-                    "ativo",
-                    "criadoEm",
-                    "atualizadoEm"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "summary": "Remover serviço",
-        "tags": [
-          "Serviços"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/servicos/{id}/tempo-medio": {
-      "get": {
-        "summary": "Tempo médio de execução",
-        "tags": [
-          "Serviços"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "tempoMedio": {
-                      "type": "integer",
-                      "nullable": true
-                    },
-                    "totalExecucoes": {
-                      "type": "integer"
-                    }
-                  },
-                  "required": [
-                    "tempoMedio",
-                    "totalExecucoes"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/pecas/": {
-      "post": {
-        "summary": "Cadastrar peça",
-        "tags": [
-          "Peças e Insumos"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "nome": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 200
-                  },
-                  "descricao": {
-                    "type": "string",
-                    "maxLength": 1000
-                  },
-                  "preco": {
-                    "type": "number",
-                    "exclusiveMinimum": true,
-                    "minimum": 0
-                  },
-                  "quantidade": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "default": 0
-                  },
-                  "estoqueMin": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "default": 0
-                  },
-                  "unidade": {
-                    "type": "string",
-                    "maxLength": 10,
-                    "default": "un"
-                  }
-                },
-                "required": [
-                  "nome",
-                  "preco"
-                ],
-                "additionalProperties": false
-              }
-            }
-          },
-          "required": true
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "descricao": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "preco": {
-                      "type": "number"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "estoqueMin": {
-                      "type": "integer"
-                    },
-                    "unidade": {
-                      "type": "string"
-                    },
-                    "ativo": {
-                      "type": "boolean"
-                    },
-                    "criadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "atualizadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "nome",
-                    "preco",
-                    "quantidade",
-                    "estoqueMin",
-                    "unidade",
-                    "ativo",
-                    "criadoEm",
-                    "atualizadoEm"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "summary": "Listar peças",
-        "tags": [
-          "Peças e Insumos"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "minimum": 0,
-              "default": 1
-            },
-            "in": "query",
-            "name": "page",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": true,
-              "minimum": 0,
-              "maximum": 100,
-              "default": 20
-            },
-            "in": "query",
-            "name": "limit",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "query",
-            "name": "busca",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "boolean",
-              "default": false
-            },
-            "in": "query",
-            "name": "apenasEstoqueBaixo",
-            "required": false
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "nome": {
-                            "type": "string"
-                          },
-                          "descricao": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "preco": {
-                            "type": "number"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "estoqueMin": {
-                            "type": "integer"
-                          },
-                          "unidade": {
-                            "type": "string"
-                          },
-                          "ativo": {
-                            "type": "boolean"
-                          },
-                          "criadoEm": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "atualizadoEm": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "estoqueBaixo": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "nome",
-                          "preco",
-                          "quantidade",
-                          "estoqueMin",
-                          "unidade",
-                          "ativo",
-                          "criadoEm",
-                          "atualizadoEm",
-                          "estoqueBaixo"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "page": {
-                          "type": "integer"
-                        },
-                        "limit": {
-                          "type": "integer"
-                        },
-                        "total": {
-                          "type": "integer"
-                        },
-                        "totalPages": {
-                          "type": "integer"
-                        }
-                      },
-                      "required": [
-                        "page",
-                        "limit",
-                        "total",
-                        "totalPages"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/pecas/alertas-estoque": {
-      "get": {
-        "summary": "Peças com estoque abaixo do mínimo",
-        "tags": [
-          "Peças e Insumos"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "format": "uuid"
-                      },
-                      "nome": {
-                        "type": "string"
-                      },
-                      "quantidade": {
-                        "type": "integer"
-                      },
-                      "estoqueMin": {
-                        "type": "integer"
-                      },
-                      "unidade": {
-                        "type": "string"
-                      },
-                      "deficit": {
-                        "type": "integer"
-                      }
-                    },
-                    "required": [
-                      "id",
-                      "nome",
-                      "quantidade",
-                      "estoqueMin",
-                      "unidade",
-                      "deficit"
-                    ],
-                    "additionalProperties": false
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/pecas/{id}": {
-      "get": {
-        "summary": "Buscar peça por ID",
-        "tags": [
-          "Peças e Insumos"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "descricao": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "preco": {
-                      "type": "number"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "estoqueMin": {
-                      "type": "integer"
-                    },
-                    "unidade": {
-                      "type": "string"
-                    },
-                    "ativo": {
-                      "type": "boolean"
-                    },
-                    "criadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "atualizadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "nome",
-                    "preco",
-                    "quantidade",
-                    "estoqueMin",
-                    "unidade",
-                    "ativo",
-                    "criadoEm",
-                    "atualizadoEm"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "summary": "Atualizar peça",
-        "tags": [
-          "Peças e Insumos"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "nome": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 200
-                  },
-                  "descricao": {
-                    "type": "string",
-                    "maxLength": 1000
-                  },
-                  "preco": {
-                    "type": "number",
-                    "exclusiveMinimum": true,
-                    "minimum": 0
-                  },
-                  "quantidade": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "default": 0
-                  },
-                  "estoqueMin": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "default": 0
-                  },
-                  "unidade": {
-                    "type": "string",
-                    "maxLength": 10,
-                    "default": "un"
-                  }
-                },
-                "additionalProperties": false
-              }
-            }
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "descricao": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "preco": {
-                      "type": "number"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "estoqueMin": {
-                      "type": "integer"
-                    },
-                    "unidade": {
-                      "type": "string"
-                    },
-                    "ativo": {
-                      "type": "boolean"
-                    },
-                    "criadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "atualizadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "nome",
-                    "preco",
-                    "quantidade",
-                    "estoqueMin",
-                    "unidade",
-                    "ativo",
-                    "criadoEm",
-                    "atualizadoEm"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "summary": "Remover peça",
-        "tags": [
-          "Peças e Insumos"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/pecas/{id}/estoque": {
-      "patch": {
-        "summary": "Ajustar estoque",
-        "tags": [
-          "Peças e Insumos"
-        ],
-        "description": "Use valor **positivo** para entrada e **negativo** para saída.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "quantidade": {
-                    "type": "integer"
-                  },
-                  "motivo": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "quantidade"
-                ],
-                "additionalProperties": false
-              }
-            }
-          },
-          "required": true
-        },
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "descricao": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "preco": {
-                      "type": "number"
-                    },
-                    "quantidade": {
-                      "type": "integer"
-                    },
-                    "estoqueMin": {
-                      "type": "integer"
-                    },
-                    "unidade": {
-                      "type": "string"
-                    },
-                    "ativo": {
-                      "type": "boolean"
-                    },
-                    "criadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "atualizadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "nome",
-                    "preco",
-                    "quantidade",
-                    "estoqueMin",
-                    "unidade",
-                    "ativo",
-                    "criadoEm",
-                    "atualizadoEm"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/ordens/consulta-publica": {
       "get": {
         "summary": "Consultar status da OS (sem login)",
         "tags": [
           "Ordens de Serviço"
         ],
-        "description": "Cliente informa número da OS e CPF/CNPJ para acompanhar sem autenticação.",
+        "description": "Cliente informa número da OS e CPF/CNPJ para acompanhar sem autenticação. Resposta em cache no Redis por 60 s, invalidada a cada mudança de status.",
         "parameters": [
           {
             "schema": {
@@ -3623,11 +1859,20 @@
                     "valorTotal": {
                       "type": "number"
                     },
+                    "linkPagamento": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "criadoEm": {
                       "type": "string",
                       "format": "date-time"
                     },
                     "aprovadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "pagoEm": {
                       "type": "string",
                       "format": "date-time",
                       "nullable": true
@@ -3667,30 +1912,33 @@
                       ],
                       "additionalProperties": false
                     },
-                    "servicos": {
+                    "itens": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "nome": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "nome"
-                            ],
-                            "additionalProperties": false
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "SERVICO",
+                              "PECA"
+                            ]
                           },
-                          "preco": {
+                          "nome": {
+                            "type": "string"
+                          },
+                          "quantidade": {
+                            "type": "integer"
+                          },
+                          "precoUnitario": {
                             "type": "number"
                           }
                         },
                         "required": [
-                          "servico",
-                          "preco"
+                          "tipo",
+                          "nome",
+                          "quantidade",
+                          "precoUnitario"
                         ],
                         "additionalProperties": false
                       }
@@ -3727,13 +1975,15 @@
                     "status",
                     "statusLabel",
                     "valorTotal",
+                    "linkPagamento",
                     "criadoEm",
                     "aprovadoEm",
+                    "pagoEm",
                     "iniciadoEm",
                     "finalizadoEm",
                     "entregueEm",
                     "veiculo",
-                    "servicos",
+                    "itens",
                     "historico"
                   ],
                   "additionalProperties": false
@@ -3800,10 +2050,11 @@
     },
     "/ordens/": {
       "post": {
-        "summary": "Criar OS",
+        "summary": "Abrir OS",
         "tags": [
           "Ordens de Serviço"
         ],
+        "description": "Cria a OS e inicia a saga: o comando de abertura de diagnóstico é gravado no outbox e publicado para o serviço de execução.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3825,52 +2076,11 @@
                   "observacoes": {
                     "type": "string",
                     "maxLength": 2000
-                  },
-                  "servicos": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "servicoId": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      },
-                      "required": [
-                        "servicoId"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "minItems": 1
-                  },
-                  "pecas": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "pecaId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "quantidade": {
-                          "type": "integer",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        }
-                      },
-                      "required": [
-                        "pecaId",
-                        "quantidade"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "default": []
                   }
                 },
                 "required": [
                   "clienteId",
-                  "veiculoId",
-                  "servicos"
+                  "veiculoId"
                 ],
                 "additionalProperties": false
               }
@@ -3920,7 +2130,20 @@
                     "valorTotal": {
                       "type": "number"
                     },
+                    "orcamentoId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "linkPagamento": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "aprovadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "pagoEm": {
                       "type": "string",
                       "format": "date-time",
                       "nullable": true
@@ -4032,7 +2255,7 @@
                       ],
                       "additionalProperties": false
                     },
-                    "servicos": {
+                    "itens": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -4045,155 +2268,34 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "servicoId": {
+                          "tipo": {
                             "type": "string",
-                            "format": "uuid"
+                            "enum": [
+                              "SERVICO",
+                              "PECA"
+                            ]
                           },
-                          "preco": {
-                            "type": "number"
+                          "referenciaId": {
+                            "type": "string"
                           },
-                          "tempoReal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "tempoPrevisto": {
-                                "type": "integer",
-                                "nullable": true
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "tempoPrevisto",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "servicoId",
-                          "preco",
-                          "tempoReal",
-                          "servico"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "pecas": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "pecaId": {
-                            "type": "string",
-                            "format": "uuid"
+                          "nome": {
+                            "type": "string"
                           },
                           "quantidade": {
                             "type": "integer"
                           },
-                          "preco": {
+                          "precoUnitario": {
                             "type": "number"
-                          },
-                          "peca": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "quantidade": {
-                                "type": "integer"
-                              },
-                              "estoqueMin": {
-                                "type": "integer"
-                              },
-                              "unidade": {
-                                "type": "string"
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "quantidade",
-                              "estoqueMin",
-                              "unidade",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
                           }
                         },
                         "required": [
                           "id",
                           "ordemId",
-                          "pecaId",
+                          "tipo",
+                          "referenciaId",
+                          "nome",
                           "quantidade",
-                          "preco",
-                          "peca"
+                          "precoUnitario"
                         ],
                         "additionalProperties": false
                       }
@@ -4237,6 +2339,40 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "saga": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "etapa": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "motivoFalha": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "compensacoesPendentes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "etapa",
+                        "status",
+                        "motivoFalha",
+                        "compensacoesPendentes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -4248,7 +2384,10 @@
                     "descricao",
                     "observacoes",
                     "valorTotal",
+                    "orcamentoId",
+                    "linkPagamento",
                     "aprovadoEm",
+                    "pagoEm",
                     "iniciadoEm",
                     "finalizadoEm",
                     "entregueEm",
@@ -4256,9 +2395,9 @@
                     "atualizadoEm",
                     "cliente",
                     "veiculo",
-                    "servicos",
-                    "pecas",
-                    "historico"
+                    "itens",
+                    "historico",
+                    "saga"
                   ],
                   "additionalProperties": false
                 }
@@ -4357,6 +2496,8 @@
                 "RECEBIDA",
                 "EM_DIAGNOSTICO",
                 "AGUARDANDO_APROVACAO",
+                "AGUARDANDO_PAGAMENTO",
+                "AGUARDANDO_EXECUCAO",
                 "EM_EXECUCAO",
                 "FINALIZADA",
                 "ENTREGUE",
@@ -4456,6 +2597,11 @@
                             "format": "date-time",
                             "nullable": true
                           },
+                          "pagoEm": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
                           "iniciadoEm": {
                             "type": "string",
                             "format": "date-time",
@@ -4528,16 +2674,12 @@
                           "_count": {
                             "type": "object",
                             "properties": {
-                              "servicos": {
-                                "type": "integer"
-                              },
-                              "pecas": {
+                              "itens": {
                                 "type": "integer"
                               }
                             },
                             "required": [
-                              "servicos",
-                              "pecas"
+                              "itens"
                             ],
                             "additionalProperties": false
                           }
@@ -4552,6 +2694,7 @@
                           "observacoes",
                           "valorTotal",
                           "aprovadoEm",
+                          "pagoEm",
                           "iniciadoEm",
                           "finalizadoEm",
                           "entregueEm",
@@ -4686,7 +2829,20 @@
                     "valorTotal": {
                       "type": "number"
                     },
+                    "orcamentoId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "linkPagamento": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "aprovadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "pagoEm": {
                       "type": "string",
                       "format": "date-time",
                       "nullable": true
@@ -4798,7 +2954,7 @@
                       ],
                       "additionalProperties": false
                     },
-                    "servicos": {
+                    "itens": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -4811,155 +2967,34 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "servicoId": {
+                          "tipo": {
                             "type": "string",
-                            "format": "uuid"
+                            "enum": [
+                              "SERVICO",
+                              "PECA"
+                            ]
                           },
-                          "preco": {
-                            "type": "number"
+                          "referenciaId": {
+                            "type": "string"
                           },
-                          "tempoReal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "tempoPrevisto": {
-                                "type": "integer",
-                                "nullable": true
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "tempoPrevisto",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "servicoId",
-                          "preco",
-                          "tempoReal",
-                          "servico"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "pecas": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "pecaId": {
-                            "type": "string",
-                            "format": "uuid"
+                          "nome": {
+                            "type": "string"
                           },
                           "quantidade": {
                             "type": "integer"
                           },
-                          "preco": {
+                          "precoUnitario": {
                             "type": "number"
-                          },
-                          "peca": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "quantidade": {
-                                "type": "integer"
-                              },
-                              "estoqueMin": {
-                                "type": "integer"
-                              },
-                              "unidade": {
-                                "type": "string"
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "quantidade",
-                              "estoqueMin",
-                              "unidade",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
                           }
                         },
                         "required": [
                           "id",
                           "ordemId",
-                          "pecaId",
+                          "tipo",
+                          "referenciaId",
+                          "nome",
                           "quantidade",
-                          "preco",
-                          "peca"
+                          "precoUnitario"
                         ],
                         "additionalProperties": false
                       }
@@ -5003,6 +3038,40 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "saga": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "etapa": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "motivoFalha": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "compensacoesPendentes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "etapa",
+                        "status",
+                        "motivoFalha",
+                        "compensacoesPendentes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -5014,7 +3083,10 @@
                     "descricao",
                     "observacoes",
                     "valorTotal",
+                    "orcamentoId",
+                    "linkPagamento",
                     "aprovadoEm",
+                    "pagoEm",
                     "iniciadoEm",
                     "finalizadoEm",
                     "entregueEm",
@@ -5022,9 +3094,9 @@
                     "atualizadoEm",
                     "cliente",
                     "veiculo",
-                    "servicos",
-                    "pecas",
-                    "historico"
+                    "itens",
+                    "historico",
+                    "saga"
                   ],
                   "additionalProperties": false
                 }
@@ -5147,7 +3219,20 @@
                     "valorTotal": {
                       "type": "number"
                     },
+                    "orcamentoId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "linkPagamento": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "aprovadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "pagoEm": {
                       "type": "string",
                       "format": "date-time",
                       "nullable": true
@@ -5259,7 +3344,7 @@
                       ],
                       "additionalProperties": false
                     },
-                    "servicos": {
+                    "itens": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -5272,155 +3357,34 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "servicoId": {
+                          "tipo": {
                             "type": "string",
-                            "format": "uuid"
+                            "enum": [
+                              "SERVICO",
+                              "PECA"
+                            ]
                           },
-                          "preco": {
-                            "type": "number"
+                          "referenciaId": {
+                            "type": "string"
                           },
-                          "tempoReal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "tempoPrevisto": {
-                                "type": "integer",
-                                "nullable": true
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "tempoPrevisto",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "servicoId",
-                          "preco",
-                          "tempoReal",
-                          "servico"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "pecas": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "pecaId": {
-                            "type": "string",
-                            "format": "uuid"
+                          "nome": {
+                            "type": "string"
                           },
                           "quantidade": {
                             "type": "integer"
                           },
-                          "preco": {
+                          "precoUnitario": {
                             "type": "number"
-                          },
-                          "peca": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "quantidade": {
-                                "type": "integer"
-                              },
-                              "estoqueMin": {
-                                "type": "integer"
-                              },
-                              "unidade": {
-                                "type": "string"
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "quantidade",
-                              "estoqueMin",
-                              "unidade",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
                           }
                         },
                         "required": [
                           "id",
                           "ordemId",
-                          "pecaId",
+                          "tipo",
+                          "referenciaId",
+                          "nome",
                           "quantidade",
-                          "preco",
-                          "peca"
+                          "precoUnitario"
                         ],
                         "additionalProperties": false
                       }
@@ -5464,6 +3428,40 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "saga": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "etapa": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "motivoFalha": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "compensacoesPendentes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "etapa",
+                        "status",
+                        "motivoFalha",
+                        "compensacoesPendentes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -5475,7 +3473,10 @@
                     "descricao",
                     "observacoes",
                     "valorTotal",
+                    "orcamentoId",
+                    "linkPagamento",
                     "aprovadoEm",
+                    "pagoEm",
                     "iniciadoEm",
                     "finalizadoEm",
                     "entregueEm",
@@ -5483,9 +3484,9 @@
                     "atualizadoEm",
                     "cliente",
                     "veiculo",
-                    "servicos",
-                    "pecas",
-                    "historico"
+                    "itens",
+                    "historico",
+                    "saga"
                   ],
                   "additionalProperties": false
                 }
@@ -5549,7 +3550,7 @@
         }
       },
       "put": {
-        "summary": "Atualizar OS",
+        "summary": "Atualizar descrição e observações da OS",
         "tags": [
           "Ordens de Serviço"
         ],
@@ -5626,7 +3627,20 @@
                     "valorTotal": {
                       "type": "number"
                     },
+                    "orcamentoId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "linkPagamento": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "aprovadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "pagoEm": {
                       "type": "string",
                       "format": "date-time",
                       "nullable": true
@@ -5738,7 +3752,7 @@
                       ],
                       "additionalProperties": false
                     },
-                    "servicos": {
+                    "itens": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -5751,155 +3765,34 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "servicoId": {
+                          "tipo": {
                             "type": "string",
-                            "format": "uuid"
+                            "enum": [
+                              "SERVICO",
+                              "PECA"
+                            ]
                           },
-                          "preco": {
-                            "type": "number"
+                          "referenciaId": {
+                            "type": "string"
                           },
-                          "tempoReal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "tempoPrevisto": {
-                                "type": "integer",
-                                "nullable": true
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "tempoPrevisto",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "servicoId",
-                          "preco",
-                          "tempoReal",
-                          "servico"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "pecas": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "pecaId": {
-                            "type": "string",
-                            "format": "uuid"
+                          "nome": {
+                            "type": "string"
                           },
                           "quantidade": {
                             "type": "integer"
                           },
-                          "preco": {
+                          "precoUnitario": {
                             "type": "number"
-                          },
-                          "peca": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "quantidade": {
-                                "type": "integer"
-                              },
-                              "estoqueMin": {
-                                "type": "integer"
-                              },
-                              "unidade": {
-                                "type": "string"
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "quantidade",
-                              "estoqueMin",
-                              "unidade",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
                           }
                         },
                         "required": [
                           "id",
                           "ordemId",
-                          "pecaId",
+                          "tipo",
+                          "referenciaId",
+                          "nome",
                           "quantidade",
-                          "preco",
-                          "peca"
+                          "precoUnitario"
                         ],
                         "additionalProperties": false
                       }
@@ -5943,6 +3836,40 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "saga": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "etapa": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "motivoFalha": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "compensacoesPendentes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "etapa",
+                        "status",
+                        "motivoFalha",
+                        "compensacoesPendentes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -5954,7 +3881,10 @@
                     "descricao",
                     "observacoes",
                     "valorTotal",
+                    "orcamentoId",
+                    "linkPagamento",
                     "aprovadoEm",
+                    "pagoEm",
                     "iniciadoEm",
                     "finalizadoEm",
                     "entregueEm",
@@ -5962,9 +3892,9 @@
                     "atualizadoEm",
                     "cliente",
                     "veiculo",
-                    "servicos",
-                    "pecas",
-                    "historico"
+                    "itens",
+                    "historico",
+                    "saga"
                   ],
                   "additionalProperties": false
                 }
@@ -6028,65 +3958,13 @@
         }
       }
     },
-    "/ordens/{id}/itens": {
-      "post": {
-        "summary": "Adicionar itens à OS",
+    "/ordens/{id}/saga": {
+      "get": {
+        "summary": "Estado e histórico da saga da OS",
         "tags": [
           "Ordens de Serviço"
         ],
-        "description": "Permitido apenas para OS Recebida, Em Diagnóstico ou Aguardando Aprovação.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "servicos": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "servicoId": {
-                          "type": "string",
-                          "format": "uuid"
-                        }
-                      },
-                      "required": [
-                        "servicoId"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "default": []
-                  },
-                  "pecas": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "pecaId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "quantidade": {
-                          "type": "integer",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        }
-                      },
-                      "required": [
-                        "pecaId",
-                        "quantidade"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "default": []
-                  }
-                },
-                "additionalProperties": false
-              }
-            }
-          }
-        },
+        "description": "Etapa atual, compensações pendentes e cada mensagem enviada ou recebida, em ordem.",
         "parameters": [
           {
             "schema": {
@@ -6115,50 +3993,34 @@
                       "type": "string",
                       "format": "uuid"
                     },
-                    "numero": {
-                      "type": "integer"
-                    },
-                    "clienteId": {
+                    "ordemId": {
                       "type": "string",
                       "format": "uuid"
                     },
-                    "veiculoId": {
-                      "type": "string",
-                      "format": "uuid"
+                    "etapa": {
+                      "type": "string"
                     },
                     "status": {
                       "type": "string"
                     },
-                    "descricao": {
+                    "participantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "compensacoesPendentes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "motivoFalha": {
                       "type": "string",
                       "nullable": true
                     },
-                    "observacoes": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "valorTotal": {
-                      "type": "number"
-                    },
-                    "aprovadoEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "iniciadoEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "finalizadoEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "entregueEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
+                    "versao": {
+                      "type": "integer"
                     },
                     "criadoEm": {
                       "type": "string",
@@ -6168,91 +4030,7 @@
                       "type": "string",
                       "format": "date-time"
                     },
-                    "cliente": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "nome": {
-                          "type": "string"
-                        },
-                        "cpfCnpj": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "telefone": {
-                          "type": "string",
-                          "nullable": true
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "nome",
-                        "cpfCnpj",
-                        "email",
-                        "telefone"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "veiculo": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "placa": {
-                          "type": "string"
-                        },
-                        "marca": {
-                          "type": "string"
-                        },
-                        "modelo": {
-                          "type": "string"
-                        },
-                        "ano": {
-                          "type": "integer"
-                        },
-                        "cor": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "clienteId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "ativo": {
-                          "type": "boolean"
-                        },
-                        "criadoEm": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "atualizadoEm": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "placa",
-                        "marca",
-                        "modelo",
-                        "ano",
-                        "cor",
-                        "clienteId",
-                        "ativo",
-                        "criadoEm",
-                        "atualizadoEm"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "servicos": {
+                    "passos": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -6261,184 +4039,20 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "ordemId": {
+                          "direcao": {
                             "type": "string",
-                            "format": "uuid"
+                            "enum": [
+                              "ENVIADA",
+                              "RECEBIDA"
+                            ]
                           },
-                          "servicoId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "preco": {
-                            "type": "number"
-                          },
-                          "tempoReal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "tempoPrevisto": {
-                                "type": "integer",
-                                "nullable": true
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "tempoPrevisto",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "servicoId",
-                          "preco",
-                          "tempoReal",
-                          "servico"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "pecas": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "pecaId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "preco": {
-                            "type": "number"
-                          },
-                          "peca": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "quantidade": {
-                                "type": "integer"
-                              },
-                              "estoqueMin": {
-                                "type": "integer"
-                              },
-                              "unidade": {
-                                "type": "string"
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "quantidade",
-                              "estoqueMin",
-                              "unidade",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "pecaId",
-                          "quantidade",
-                          "preco",
-                          "peca"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "historico": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "statusAnterior": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "statusNovo": {
+                          "tipo": {
                             "type": "string"
                           },
-                          "observacao": {
+                          "mensagemId": {
+                            "type": "string"
+                          },
+                          "detalhe": {
                             "type": "string",
                             "nullable": true
                           },
@@ -6449,10 +4063,10 @@
                         },
                         "required": [
                           "id",
-                          "ordemId",
-                          "statusAnterior",
-                          "statusNovo",
-                          "observacao",
+                          "direcao",
+                          "tipo",
+                          "mensagemId",
+                          "detalhe",
                           "criadoEm"
                         ],
                         "additionalProperties": false
@@ -6461,24 +4075,16 @@
                   },
                   "required": [
                     "id",
-                    "numero",
-                    "clienteId",
-                    "veiculoId",
+                    "ordemId",
+                    "etapa",
                     "status",
-                    "descricao",
-                    "observacoes",
-                    "valorTotal",
-                    "aprovadoEm",
-                    "iniciadoEm",
-                    "finalizadoEm",
-                    "entregueEm",
+                    "participantes",
+                    "compensacoesPendentes",
+                    "motivoFalha",
+                    "versao",
                     "criadoEm",
                     "atualizadoEm",
-                    "cliente",
-                    "veiculo",
-                    "servicos",
-                    "pecas",
-                    "historico"
+                    "passos"
                   ],
                   "additionalProperties": false
                 }
@@ -6511,1012 +4117,17 @@
                 }
               }
             }
-          },
-          "422": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
           }
         }
       }
     },
-    "/ordens/{id}/avancar": {
+    "/ordens/{id}/entregar": {
       "patch": {
-        "summary": "Avançar status da OS",
+        "summary": "Registrar a entrega do veículo",
         "tags": [
           "Ordens de Serviço"
         ],
-        "description": "Recebida → Em Diagnóstico → Aguardando Aprovação → Em Execução → Finalizada → Entregue",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "observacao": {
-                    "type": "string",
-                    "maxLength": 1000
-                  },
-                  "tempoReal": {
-                    "type": "integer",
-                    "exclusiveMinimum": true,
-                    "minimum": 0
-                  }
-                },
-                "additionalProperties": false
-              }
-            }
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "numero": {
-                      "type": "integer"
-                    },
-                    "clienteId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "veiculoId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "status": {
-                      "type": "string"
-                    },
-                    "descricao": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "observacoes": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "valorTotal": {
-                      "type": "number"
-                    },
-                    "aprovadoEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "iniciadoEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "finalizadoEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "entregueEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "criadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "atualizadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "cliente": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "nome": {
-                          "type": "string"
-                        },
-                        "cpfCnpj": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "telefone": {
-                          "type": "string",
-                          "nullable": true
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "nome",
-                        "cpfCnpj",
-                        "email",
-                        "telefone"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "veiculo": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "placa": {
-                          "type": "string"
-                        },
-                        "marca": {
-                          "type": "string"
-                        },
-                        "modelo": {
-                          "type": "string"
-                        },
-                        "ano": {
-                          "type": "integer"
-                        },
-                        "cor": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "clienteId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "ativo": {
-                          "type": "boolean"
-                        },
-                        "criadoEm": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "atualizadoEm": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "placa",
-                        "marca",
-                        "modelo",
-                        "ano",
-                        "cor",
-                        "clienteId",
-                        "ativo",
-                        "criadoEm",
-                        "atualizadoEm"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "servicos": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "servicoId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "preco": {
-                            "type": "number"
-                          },
-                          "tempoReal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "tempoPrevisto": {
-                                "type": "integer",
-                                "nullable": true
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "tempoPrevisto",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "servicoId",
-                          "preco",
-                          "tempoReal",
-                          "servico"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "pecas": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "pecaId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "preco": {
-                            "type": "number"
-                          },
-                          "peca": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "quantidade": {
-                                "type": "integer"
-                              },
-                              "estoqueMin": {
-                                "type": "integer"
-                              },
-                              "unidade": {
-                                "type": "string"
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "quantidade",
-                              "estoqueMin",
-                              "unidade",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "pecaId",
-                          "quantidade",
-                          "preco",
-                          "peca"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "historico": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "statusAnterior": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "statusNovo": {
-                            "type": "string"
-                          },
-                          "observacao": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "criadoEm": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "statusAnterior",
-                          "statusNovo",
-                          "observacao",
-                          "criadoEm"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "numero",
-                    "clienteId",
-                    "veiculoId",
-                    "status",
-                    "descricao",
-                    "observacoes",
-                    "valorTotal",
-                    "aprovadoEm",
-                    "iniciadoEm",
-                    "finalizadoEm",
-                    "entregueEm",
-                    "criadoEm",
-                    "atualizadoEm",
-                    "cliente",
-                    "veiculo",
-                    "servicos",
-                    "pecas",
-                    "historico"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/ordens/{id}/aprovar-orcamento": {
-      "patch": {
-        "summary": "Aprovar ou recusar orçamento",
-        "tags": [
-          "Ordens de Serviço"
-        ],
-        "description": "Aprovação avança para Em Execução; recusa retorna para Em Diagnóstico.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "aprovado": {
-                    "type": "boolean"
-                  },
-                  "observacao": {
-                    "type": "string",
-                    "maxLength": 1000
-                  }
-                },
-                "required": [
-                  "aprovado"
-                ],
-                "additionalProperties": false
-              }
-            }
-          },
-          "required": true
-        },
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "in": "path",
-            "name": "id",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "numero": {
-                      "type": "integer"
-                    },
-                    "clienteId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "veiculoId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "status": {
-                      "type": "string"
-                    },
-                    "descricao": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "observacoes": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "valorTotal": {
-                      "type": "number"
-                    },
-                    "aprovadoEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "iniciadoEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "finalizadoEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "entregueEm": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true
-                    },
-                    "criadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "atualizadoEm": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "cliente": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "nome": {
-                          "type": "string"
-                        },
-                        "cpfCnpj": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "telefone": {
-                          "type": "string",
-                          "nullable": true
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "nome",
-                        "cpfCnpj",
-                        "email",
-                        "telefone"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "veiculo": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "placa": {
-                          "type": "string"
-                        },
-                        "marca": {
-                          "type": "string"
-                        },
-                        "modelo": {
-                          "type": "string"
-                        },
-                        "ano": {
-                          "type": "integer"
-                        },
-                        "cor": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "clienteId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "ativo": {
-                          "type": "boolean"
-                        },
-                        "criadoEm": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "atualizadoEm": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "placa",
-                        "marca",
-                        "modelo",
-                        "ano",
-                        "cor",
-                        "clienteId",
-                        "ativo",
-                        "criadoEm",
-                        "atualizadoEm"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "servicos": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "servicoId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "preco": {
-                            "type": "number"
-                          },
-                          "tempoReal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "tempoPrevisto": {
-                                "type": "integer",
-                                "nullable": true
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "tempoPrevisto",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "servicoId",
-                          "preco",
-                          "tempoReal",
-                          "servico"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "pecas": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "pecaId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "quantidade": {
-                            "type": "integer"
-                          },
-                          "preco": {
-                            "type": "number"
-                          },
-                          "peca": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "quantidade": {
-                                "type": "integer"
-                              },
-                              "estoqueMin": {
-                                "type": "integer"
-                              },
-                              "unidade": {
-                                "type": "string"
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "quantidade",
-                              "estoqueMin",
-                              "unidade",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "pecaId",
-                          "quantidade",
-                          "preco",
-                          "peca"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "historico": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "statusAnterior": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "statusNovo": {
-                            "type": "string"
-                          },
-                          "observacao": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "criadoEm": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "statusAnterior",
-                          "statusNovo",
-                          "observacao",
-                          "criadoEm"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "numero",
-                    "clienteId",
-                    "veiculoId",
-                    "status",
-                    "descricao",
-                    "observacoes",
-                    "valorTotal",
-                    "aprovadoEm",
-                    "iniciadoEm",
-                    "finalizadoEm",
-                    "entregueEm",
-                    "criadoEm",
-                    "atualizadoEm",
-                    "cliente",
-                    "veiculo",
-                    "servicos",
-                    "pecas",
-                    "historico"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "statusCode": {
-                      "type": "integer"
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "statusCode",
-                    "code",
-                    "message"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/ordens/{id}/reprovar": {
-      "patch": {
-        "summary": "Reprovar orçamento",
-        "tags": [
-          "Ordens de Serviço"
-        ],
-        "description": "Retorna OS para Em Diagnóstico e devolve as peças ao estoque.",
+        "description": "Permitido apenas para OS Finalizada.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -7586,7 +4197,20 @@
                     "valorTotal": {
                       "type": "number"
                     },
+                    "orcamentoId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "linkPagamento": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "aprovadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "pagoEm": {
                       "type": "string",
                       "format": "date-time",
                       "nullable": true
@@ -7698,7 +4322,7 @@
                       ],
                       "additionalProperties": false
                     },
-                    "servicos": {
+                    "itens": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -7711,155 +4335,34 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "servicoId": {
+                          "tipo": {
                             "type": "string",
-                            "format": "uuid"
+                            "enum": [
+                              "SERVICO",
+                              "PECA"
+                            ]
                           },
-                          "preco": {
-                            "type": "number"
+                          "referenciaId": {
+                            "type": "string"
                           },
-                          "tempoReal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "tempoPrevisto": {
-                                "type": "integer",
-                                "nullable": true
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "tempoPrevisto",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "servicoId",
-                          "preco",
-                          "tempoReal",
-                          "servico"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "pecas": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "pecaId": {
-                            "type": "string",
-                            "format": "uuid"
+                          "nome": {
+                            "type": "string"
                           },
                           "quantidade": {
                             "type": "integer"
                           },
-                          "preco": {
+                          "precoUnitario": {
                             "type": "number"
-                          },
-                          "peca": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "quantidade": {
-                                "type": "integer"
-                              },
-                              "estoqueMin": {
-                                "type": "integer"
-                              },
-                              "unidade": {
-                                "type": "string"
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "quantidade",
-                              "estoqueMin",
-                              "unidade",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
                           }
                         },
                         "required": [
                           "id",
                           "ordemId",
-                          "pecaId",
+                          "tipo",
+                          "referenciaId",
+                          "nome",
                           "quantidade",
-                          "preco",
-                          "peca"
+                          "precoUnitario"
                         ],
                         "additionalProperties": false
                       }
@@ -7903,6 +4406,40 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "saga": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "etapa": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "motivoFalha": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "compensacoesPendentes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "etapa",
+                        "status",
+                        "motivoFalha",
+                        "compensacoesPendentes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -7914,7 +4451,10 @@
                     "descricao",
                     "observacoes",
                     "valorTotal",
+                    "orcamentoId",
+                    "linkPagamento",
                     "aprovadoEm",
+                    "pagoEm",
                     "iniciadoEm",
                     "finalizadoEm",
                     "entregueEm",
@@ -7922,9 +4462,9 @@
                     "atualizadoEm",
                     "cliente",
                     "veiculo",
-                    "servicos",
-                    "pecas",
-                    "historico"
+                    "itens",
+                    "historico",
+                    "saga"
                   ],
                   "additionalProperties": false
                 }
@@ -7994,7 +4534,7 @@
         "tags": [
           "Ordens de Serviço"
         ],
-        "description": "Cancela a OS e devolve as peças ao estoque. Permitido para: Recebida, Em Diagnóstico, Aguardando Aprovação e Em Execução.",
+        "description": "Inicia a compensação da saga: cancela a execução (devolve peças reservadas) e o orçamento (estorna o pagamento, se houver). Responde 202 e a OS passa a Cancelada quando todos os participantes confirmarem.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -8065,7 +4605,20 @@
                     "valorTotal": {
                       "type": "number"
                     },
+                    "orcamentoId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "linkPagamento": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "aprovadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "pagoEm": {
                       "type": "string",
                       "format": "date-time",
                       "nullable": true
@@ -8177,7 +4730,7 @@
                       ],
                       "additionalProperties": false
                     },
-                    "servicos": {
+                    "itens": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -8190,155 +4743,34 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "servicoId": {
+                          "tipo": {
                             "type": "string",
-                            "format": "uuid"
+                            "enum": [
+                              "SERVICO",
+                              "PECA"
+                            ]
                           },
-                          "preco": {
-                            "type": "number"
+                          "referenciaId": {
+                            "type": "string"
                           },
-                          "tempoReal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "servico": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "tempoPrevisto": {
-                                "type": "integer",
-                                "nullable": true
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "tempoPrevisto",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "ordemId",
-                          "servicoId",
-                          "preco",
-                          "tempoReal",
-                          "servico"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "pecas": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "ordemId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "pecaId": {
-                            "type": "string",
-                            "format": "uuid"
+                          "nome": {
+                            "type": "string"
                           },
                           "quantidade": {
                             "type": "integer"
                           },
-                          "preco": {
+                          "precoUnitario": {
                             "type": "number"
-                          },
-                          "peca": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "format": "uuid"
-                              },
-                              "nome": {
-                                "type": "string"
-                              },
-                              "descricao": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "preco": {
-                                "type": "number"
-                              },
-                              "quantidade": {
-                                "type": "integer"
-                              },
-                              "estoqueMin": {
-                                "type": "integer"
-                              },
-                              "unidade": {
-                                "type": "string"
-                              },
-                              "ativo": {
-                                "type": "boolean"
-                              },
-                              "criadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              },
-                              "atualizadoEm": {
-                                "type": "string",
-                                "format": "date-time"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "nome",
-                              "preco",
-                              "quantidade",
-                              "estoqueMin",
-                              "unidade",
-                              "ativo",
-                              "criadoEm",
-                              "atualizadoEm"
-                            ],
-                            "additionalProperties": false
                           }
                         },
                         "required": [
                           "id",
                           "ordemId",
-                          "pecaId",
+                          "tipo",
+                          "referenciaId",
+                          "nome",
                           "quantidade",
-                          "preco",
-                          "peca"
+                          "precoUnitario"
                         ],
                         "additionalProperties": false
                       }
@@ -8382,6 +4814,40 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "saga": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "etapa": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "motivoFalha": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "compensacoesPendentes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "etapa",
+                        "status",
+                        "motivoFalha",
+                        "compensacoesPendentes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -8393,7 +4859,10 @@
                     "descricao",
                     "observacoes",
                     "valorTotal",
+                    "orcamentoId",
+                    "linkPagamento",
                     "aprovadoEm",
+                    "pagoEm",
                     "iniciadoEm",
                     "finalizadoEm",
                     "entregueEm",
@@ -8401,9 +4870,319 @@
                     "atualizadoEm",
                     "cliente",
                     "veiculo",
-                    "servicos",
-                    "pecas",
-                    "historico"
+                    "itens",
+                    "historico",
+                    "saga"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "numero": {
+                      "type": "integer"
+                    },
+                    "clienteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "veiculoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "descricao": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "observacoes": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "valorTotal": {
+                      "type": "number"
+                    },
+                    "orcamentoId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "linkPagamento": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "aprovadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "pagoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "iniciadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "finalizadoEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "entregueEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "criadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "cliente": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "cpfCnpj": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "telefone": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "cpfCnpj",
+                        "email",
+                        "telefone"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "veiculo": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "placa": {
+                          "type": "string"
+                        },
+                        "marca": {
+                          "type": "string"
+                        },
+                        "modelo": {
+                          "type": "string"
+                        },
+                        "ano": {
+                          "type": "integer"
+                        },
+                        "cor": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "clienteId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "ativo": {
+                          "type": "boolean"
+                        },
+                        "criadoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "atualizadoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "placa",
+                        "marca",
+                        "modelo",
+                        "ano",
+                        "cor",
+                        "clienteId",
+                        "ativo",
+                        "criadoEm",
+                        "atualizadoEm"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "itens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "ordemId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "SERVICO",
+                              "PECA"
+                            ]
+                          },
+                          "referenciaId": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "quantidade": {
+                            "type": "integer"
+                          },
+                          "precoUnitario": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "ordemId",
+                          "tipo",
+                          "referenciaId",
+                          "nome",
+                          "quantidade",
+                          "precoUnitario"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "historico": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "ordemId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "statusAnterior": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "statusNovo": {
+                            "type": "string"
+                          },
+                          "observacao": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "criadoEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "ordemId",
+                          "statusAnterior",
+                          "statusNovo",
+                          "observacao",
+                          "criadoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "saga": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "etapa": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "motivoFalha": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "compensacoesPendentes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "etapa",
+                        "status",
+                        "motivoFalha",
+                        "compensacoesPendentes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "numero",
+                    "clienteId",
+                    "veiculoId",
+                    "status",
+                    "descricao",
+                    "observacoes",
+                    "valorTotal",
+                    "orcamentoId",
+                    "linkPagamento",
+                    "aprovadoEm",
+                    "pagoEm",
+                    "iniciadoEm",
+                    "finalizadoEm",
+                    "entregueEm",
+                    "criadoEm",
+                    "atualizadoEm",
+                    "cliente",
+                    "veiculo",
+                    "itens",
+                    "historico",
+                    "saga"
                   ],
                   "additionalProperties": false
                 }
@@ -8466,6 +5245,152 @@
           }
         }
       }
+    },
+    "/integracao/clientes/identificar": {
+      "post": {
+        "summary": "Identificar cliente pessoa física pelo CPF (uso da Lambda de autenticação)",
+        "tags": [
+          "Integração"
+        ],
+        "description": "Exige o cabeçalho x-api-key. Substitui a leitura direta da tabela de clientes pela Lambda.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cpf": {
+                    "type": "string",
+                    "minLength": 11,
+                    "maxLength": 14
+                  }
+                },
+                "required": [
+                  "cpf"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nome": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "ativo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nome",
+                    "email",
+                    "ativo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "tags": [
@@ -8479,13 +5404,10 @@
       "name": "Veículos"
     },
     {
-      "name": "Serviços"
-    },
-    {
-      "name": "Peças e Insumos"
-    },
-    {
       "name": "Ordens de Serviço"
+    },
+    {
+      "name": "Integração"
     }
   ]
 }

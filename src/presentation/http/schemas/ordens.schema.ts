@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { DecimalLike } from '../../../domain/types/decimal-like';
+import { STATUS_OS, type StatusOS } from '../../../domain/enums/status-os.enum';
 import { validarCPF, validarCNPJ, limparDocumento } from '../../../shared/utils/validators';
 
 const cpfCnpjSchema = z
@@ -15,10 +16,6 @@ export const criarOSSchema = z.object({
   veiculoId: z.string().uuid(),
   descricao: z.string().max(2000).optional(),
   observacoes: z.string().max(2000).optional(),
-  servicos: z.array(z.object({ servicoId: z.string().uuid() })).min(1),
-  pecas: z
-    .array(z.object({ pecaId: z.string().uuid(), quantidade: z.number().int().positive() }))
-    .default([]),
 });
 
 export const atualizarOSSchema = z.object({
@@ -26,19 +23,7 @@ export const atualizarOSSchema = z.object({
   observacoes: z.string().max(2000).optional(),
 });
 
-export const adicionarItensSchema = z.object({
-  servicos: z.array(z.object({ servicoId: z.string().uuid() })).default([]),
-  pecas: z
-    .array(z.object({ pecaId: z.string().uuid(), quantidade: z.number().int().positive() }))
-    .default([]),
-});
-
-export const avancarStatusSchema = z.object({
-  observacao: z.string().max(1000).optional(),
-  tempoReal: z.number().int().positive().optional(),
-});
-
-export const reprovarOSSchema = z.object({
+export const entregarOSSchema = z.object({
   observacao: z.string().max(1000).optional(),
 });
 
@@ -46,25 +31,10 @@ export const cancelarOSSchema = z.object({
   motivo: z.string().min(1).max(500).optional(),
 });
 
-export const aprovarOrcamentoSchema = z.object({
-  aprovado: z.boolean(),
-  observacao: z.string().max(1000).optional(),
-});
-
 export const listarOSSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
-  status: z
-    .enum([
-      'RECEBIDA',
-      'EM_DIAGNOSTICO',
-      'AGUARDANDO_APROVACAO',
-      'EM_EXECUCAO',
-      'FINALIZADA',
-      'ENTREGUE',
-      'CANCELADA',
-    ])
-    .optional(),
+  status: z.enum(STATUS_OS as [StatusOS, ...StatusOS[]]).optional(),
   clienteId: z.string().uuid().optional(),
   veiculoId: z.string().uuid().optional(),
   dataInicio: z.string().datetime().optional(),
@@ -94,42 +64,24 @@ const historicoOSItemSchema = z.object({
   criadoEm: z.date(),
 });
 
-const itemServicoOSSchema = z.object({
+const precoSchema = z.number() as z.ZodType<number | DecimalLike>;
+
+const itemOSSchema = z.object({
   id: z.string().uuid(),
   ordemId: z.string().uuid(),
-  servicoId: z.string().uuid(),
-  preco: z.number() as z.ZodType<number | DecimalLike>,
-  tempoReal: z.number().int().nullable(),
-  servico: z.object({
-    id: z.string().uuid(),
-    nome: z.string(),
-    descricao: z.string().nullish(),
-    preco: z.number() as z.ZodType<number | DecimalLike>,
-    tempoPrevisto: z.number().int().nullable(),
-    ativo: z.boolean(),
-    criadoEm: z.date(),
-    atualizadoEm: z.date(),
-  }),
+  tipo: z.enum(['SERVICO', 'PECA']),
+  referenciaId: z.string(),
+  nome: z.string(),
+  quantidade: z.number().int(),
+  precoUnitario: precoSchema,
 });
 
-const itemPecaOSSchema = z.object({
+const sagaResumoSchema = z.object({
   id: z.string().uuid(),
-  ordemId: z.string().uuid(),
-  pecaId: z.string().uuid(),
-  quantidade: z.number().int(),
-  preco: z.number() as z.ZodType<number | DecimalLike>,
-  peca: z.object({
-    id: z.string().uuid(),
-    nome: z.string(),
-    descricao: z.string().nullish(),
-    preco: z.number() as z.ZodType<number | DecimalLike>,
-    quantidade: z.number().int(),
-    estoqueMin: z.number().int(),
-    unidade: z.string(),
-    ativo: z.boolean(),
-    criadoEm: z.date(),
-    atualizadoEm: z.date(),
-  }),
+  etapa: z.string(),
+  status: z.string(),
+  motivoFalha: z.string().nullable(),
+  compensacoesPendentes: z.array(z.string()),
 });
 
 export const osResponseSchema = z.object({
@@ -140,8 +92,11 @@ export const osResponseSchema = z.object({
   status: z.string(),
   descricao: z.string().nullable(),
   observacoes: z.string().nullable(),
-  valorTotal: z.number() as z.ZodType<number | DecimalLike>,
+  valorTotal: precoSchema,
+  orcamentoId: z.string().nullable(),
+  linkPagamento: z.string().nullable(),
   aprovadoEm: z.date().nullable(),
+  pagoEm: z.date().nullable(),
   iniciadoEm: z.date().nullable(),
   finalizadoEm: z.date().nullable(),
   entregueEm: z.date().nullable(),
@@ -166,9 +121,9 @@ export const osResponseSchema = z.object({
     criadoEm: z.date(),
     atualizadoEm: z.date(),
   }),
-  servicos: z.array(itemServicoOSSchema),
-  pecas: z.array(itemPecaOSSchema),
+  itens: z.array(itemOSSchema),
   historico: z.array(historicoOSItemSchema),
+  saga: sagaResumoSchema.nullable(),
 });
 
 const osListItemSchema = z.object({
@@ -179,8 +134,9 @@ const osListItemSchema = z.object({
   status: z.string(),
   descricao: z.string().nullable(),
   observacoes: z.string().nullable(),
-  valorTotal: z.number() as z.ZodType<number | DecimalLike>,
+  valorTotal: precoSchema,
   aprovadoEm: z.date().nullable(),
+  pagoEm: z.date().nullable(),
   iniciadoEm: z.date().nullable(),
   finalizadoEm: z.date().nullable(),
   entregueEm: z.date().nullable(),
@@ -193,7 +149,7 @@ const osListItemSchema = z.object({
     marca: z.string(),
     modelo: z.string(),
   }),
-  _count: z.object({ servicos: z.number().int(), pecas: z.number().int() }),
+  _count: z.object({ itens: z.number().int() }),
 });
 
 export const listarOSResponseSchema = z.object({
@@ -211,17 +167,21 @@ export const consultaPublicaResponseSchema = z.object({
   numero: z.number().int(),
   status: z.string(),
   statusLabel: z.string(),
-  valorTotal: z.number() as z.ZodType<number | DecimalLike>,
+  valorTotal: precoSchema,
+  linkPagamento: z.string().nullable(),
   criadoEm: z.date(),
   aprovadoEm: z.date().nullable(),
+  pagoEm: z.date().nullable(),
   iniciadoEm: z.date().nullable(),
   finalizadoEm: z.date().nullable(),
   entregueEm: z.date().nullable(),
   veiculo: z.object({ placa: z.string(), marca: z.string(), modelo: z.string() }),
-  servicos: z.array(
+  itens: z.array(
     z.object({
-      servico: z.object({ nome: z.string() }),
-      preco: z.number() as z.ZodType<number | DecimalLike>,
+      tipo: z.enum(['SERVICO', 'PECA']),
+      nome: z.string(),
+      quantidade: z.number().int(),
+      precoUnitario: precoSchema,
     }),
   ),
   historico: z.array(
@@ -229,10 +189,30 @@ export const consultaPublicaResponseSchema = z.object({
   ),
 });
 
+export const sagaResponseSchema = z.object({
+  id: z.string().uuid(),
+  ordemId: z.string().uuid(),
+  etapa: z.string(),
+  status: z.string(),
+  participantes: z.array(z.string()),
+  compensacoesPendentes: z.array(z.string()),
+  motivoFalha: z.string().nullable(),
+  versao: z.number().int(),
+  criadoEm: z.date(),
+  atualizadoEm: z.date(),
+  passos: z.array(
+    z.object({
+      id: z.string().uuid(),
+      direcao: z.enum(['ENVIADA', 'RECEBIDA']),
+      tipo: z.string(),
+      mensagemId: z.string(),
+      detalhe: z.string().nullable(),
+      criadoEm: z.date(),
+    }),
+  ),
+});
+
 export type CriarOSInput = z.infer<typeof criarOSSchema>;
 export type AtualizarOSInput = z.infer<typeof atualizarOSSchema>;
-export type AdicionarItensInput = z.infer<typeof adicionarItensSchema>;
-export type AvancarStatusInput = z.infer<typeof avancarStatusSchema>;
 export type ListarOSInput = z.infer<typeof listarOSSchema>;
 export type CancelarOSInput = z.infer<typeof cancelarOSSchema>;
-export type AprovarOrcamentoInput = z.infer<typeof aprovarOrcamentoSchema>;

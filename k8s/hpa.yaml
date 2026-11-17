@@ -1,13 +1,13 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: oficina-api-hpa
+  name: oficina-os-hpa
   namespace: oficina
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: oficina-api
+    name: oficina-os
   minReplicas: 2
   maxReplicas: 10
   metrics:

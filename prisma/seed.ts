@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { PrismaClient, Role, TipoPessoa, StatusOS } from '@prisma/client';
+import { PrismaClient, Role, TipoPessoa } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -66,40 +66,6 @@ async function main() {
     ),
   ];
 
-  const servicos = [
-    { nome: 'Troca de Óleo', preco: 89.9, tempoPrevisto: 30 },
-    { nome: 'Alinhamento e Balanceamento', preco: 120.0, tempoPrevisto: 60 },
-    { nome: 'Revisão Geral', preco: 350.0, tempoPrevisto: 240 },
-    { nome: 'Troca de Pastilha de Freio', preco: 200.0, tempoPrevisto: 90 },
-    { nome: 'Diagnóstico Eletrônico', preco: 80.0, tempoPrevisto: 30 },
-  ];
-
-  for (const s of servicos) {
-    const existe = await prisma.servico.findFirst({ where: { nome: s.nome } });
-    if (!existe) await prisma.servico.create({ data: s });
-  }
-
-  const pecas = [
-    { nome: 'Óleo Motor 5W30', preco: 28.0, quantidade: 50, estoqueMin: 10, unidade: 'L' },
-    { nome: 'Filtro de Óleo', preco: 22.0, quantidade: 30, estoqueMin: 5, unidade: 'un' },
-    {
-      nome: 'Pastilha de Freio Dianteira',
-      preco: 85.0,
-      quantidade: 15,
-      estoqueMin: 3,
-      unidade: 'jg',
-    },
-    { nome: 'Filtro de Ar', preco: 45.0, quantidade: 20, estoqueMin: 5, unidade: 'un' },
-    { nome: 'Vela de Ignição NGK', preco: 35.0, quantidade: 40, estoqueMin: 8, unidade: 'un' },
-  ];
-
-  for (const p of pecas) {
-    const existe = await prisma.peca.findFirst({ where: { nome: p.nome } });
-    if (!existe) await prisma.peca.create({ data: p });
-  }
-
-  const trocaDeOleo = await prisma.servico.findFirstOrThrow({ where: { nome: 'Troca de Óleo' } });
-
   const clientesDemo = [
     {
       nome: 'Ana Souza',
@@ -139,29 +105,10 @@ async function main() {
 
     if (!c.veiculo) continue;
 
-    const veiculo = await prisma.veiculo.upsert({
+    await prisma.veiculo.upsert({
       where: { placa: c.veiculo.placa },
       update: {},
       create: { ...c.veiculo, clienteId: cliente.id },
-    });
-
-    const jaTemOS = await prisma.ordemServico.count({ where: { clienteId: cliente.id } });
-    if (jaTemOS > 0) continue;
-
-    await prisma.ordemServico.create({
-      data: {
-        clienteId: cliente.id,
-        veiculoId: veiculo.id,
-        status: StatusOS.RECEBIDA,
-        descricao: 'OS de demonstração — troca de óleo',
-        valorTotal: trocaDeOleo.preco,
-        servicos: { create: [{ servicoId: trocaDeOleo.id, preco: trocaDeOleo.preco }] },
-        historico: {
-          create: [
-            { statusNovo: StatusOS.RECEBIDA, observacao: 'Criada pelo seed de demonstração' },
-          ],
-        },
-      },
     });
   }
 

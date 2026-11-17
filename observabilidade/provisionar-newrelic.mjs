@@ -74,21 +74,21 @@ const CONDICOES = [
   {
     name: '01 Falha no processamento de ordens de serviço',
     description: 'Notificação ao cliente falhou; a OS avançou mas o cliente não foi avisado.',
-    query: "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'falha_integracao'",
+    query: "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'falha_integracao'",
     signal: sinalDeLog(),
     terms: [termo('CRITICAL', 'ABOVE', 0, 300)],
   },
   {
     name: '02 Erro interno na aplicação',
     description: 'Exceção não tratada: resposta 500 ao usuário.',
-    query: "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'erro_interno'",
+    query: "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'erro_interno'",
     signal: sinalDeLog(),
     terms: [termo('CRITICAL', 'ABOVE', 3, 300)],
   },
   {
     name: '03 Banco de dados inacessível',
     description: 'readinessProbe falhando: os pods saem do balanceamento.',
-    query: "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'readiness_falhou'",
+    query: "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'readiness_falhou'",
     signal: sinalDeLog(60),
     terms: [termo('CRITICAL', 'ABOVE', 0, 180)],
   },
@@ -102,7 +102,7 @@ const CONDICOES = [
   {
     name: '05 Latência degradada (p95)',
     description: 'A API responde, mas lentamente. Antecede a indisponibilidade.',
-    query: "SELECT percentile(duration, 95) * 1000 FROM Transaction WHERE appName = 'oficina-api'",
+    query: "SELECT percentile(duration, 95) * 1000 FROM Transaction WHERE appName = 'oficina-os'",
     signal: sinalContinuo(),
     terms: [termo('CRITICAL', 'ABOVE', 3000, 300), termo('WARNING', 'ABOVE', 1000, 300)],
   },
@@ -117,21 +117,21 @@ const CONDICOES = [
   {
     name: '07 Pods reiniciando',
     description: 'Crashloop ou OOMKill; costuma ser o primeiro sinal de um deploy ruim.',
-    query: "SELECT sum(restartCountDelta) FROM K8sContainerSample WHERE containerName = 'oficina-api'",
+    query: "SELECT sum(restartCountDelta) FROM K8sContainerSample WHERE containerName = 'oficina-os'",
     signal: sinalContinuo(),
     terms: [termo('CRITICAL', 'ABOVE', 5, 600), termo('WARNING', 'ABOVE', 2, 600)],
   },
   {
     name: '08 HPA no teto de réplicas',
     description: 'O autoscaling chegou ao maxReplicas; a próxima onda de tráfego degrada.',
-    query: "SELECT latest(podsDesired) FROM K8sReplicasetSample WHERE deploymentName = 'oficina-api'",
+    query: "SELECT latest(podsDesired) FROM K8sReplicasetSample WHERE deploymentName = 'oficina-os'",
     signal: sinalContinuo(),
     terms: [termo('CRITICAL', 'ABOVE_OR_EQUALS', 10, 1800), termo('WARNING', 'ABOVE_OR_EQUALS', 10, 600)],
   },
   {
     name: '10 Token forjado (segredo JWT vazado)',
     description: 'Assinatura válida com papel ou emissor incompatível. Rotacionar os segredos (ADR-0011).',
-    query: "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'token_emissor_invalido'",
+    query: "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'token_emissor_invalido'",
     signal: sinalDeLog(),
     terms: [termo('CRITICAL', 'ABOVE', 0, 300)],
   },
@@ -139,9 +139,41 @@ const CONDICOES = [
     name: '11 Pico de bloqueios por limite de tentativas',
     description: 'Força bruta no login ou varredura da consulta pública (ADR-0012).',
     query:
-      "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'erro_negocio' AND codigo = 'RATE_LIMITED'",
+      "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'erro_negocio' AND codigo = 'RATE_LIMITED'",
     signal: sinalDeLog(),
     terms: [termo('CRITICAL', 'ABOVE', 100, 300), termo('WARNING', 'ABOVE', 20, 300)],
+  },
+  {
+    name: '12 Mensagem na fila de mortas',
+    description:
+      'Um comando ou evento da saga esgotou as tentativas ou veio fora do contrato. A OS envolvida está parada até alguém agir (docs/saga.md).',
+    query:
+      "SELECT count(*) FROM Log WHERE service IN ('oficina-os', 'oficina-execucao', 'oficina-billing') AND evento = 'mensagem_falhou' AND destino LIKE '%.dlq'",
+    signal: sinalDeLog(),
+    terms: [termo('CRITICAL', 'ABOVE', 0, 300)],
+  },
+  {
+    name: '13 Mercado Pago indisponível',
+    description: 'Cobrança, consulta ou estorno falhando; aprovações recebem 502 e compensações ficam em retentativa.',
+    query:
+      "SELECT count(*) FROM Log WHERE service = 'oficina-billing' AND evento = 'falha_integracao' AND integracao = 'mercado_pago'",
+    signal: sinalDeLog(),
+    terms: [termo('CRITICAL', 'ABOVE', 2, 300)],
+  },
+  {
+    name: '14 Pico de compensações da saga',
+    description: 'Muitas OS sendo desfeitas: orçamentos reprovados em massa, pagamentos recusados ou falhas de execução em série.',
+    query: "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'saga_compensacao_iniciada'",
+    signal: sinalDeLog(900),
+    terms: [termo('WARNING', 'ABOVE', 5, 900)],
+  },
+  {
+    name: '15 RabbitMQ inacessível',
+    description: 'Algum serviço esgotou as reconexões ao broker; a saga não avança até o processo ser reiniciado.',
+    query:
+      "SELECT count(*) FROM Log WHERE service IN ('oficina-os', 'oficina-execucao', 'oficina-billing') AND evento = 'mensageria_reconexao_falhou'",
+    signal: sinalDeLog(),
+    terms: [termo('CRITICAL', 'ABOVE', 0, 300)],
   },
 ];
 

@@ -1,6 +1,6 @@
 # ADR-0002: Comunicação síncrona via REST/HTTP
 
-**Status:** Aceita
+**Status:** Substituída em parte pela [ADR-0014](0014-saga-orquestrada-com-rabbitmq.md) — REST continua como entrada síncrona; o que atravessa serviços passou a ser mensagem no RabbitMQ.
 
 ## Contexto
 

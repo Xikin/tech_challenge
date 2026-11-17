@@ -1,16 +1,26 @@
-version: "3.9"
+name: oficina
 
 networks:
   oficina_net:
     driver: bridge
+
+x-mensageria: &mensageria
+  RABBITMQ_URL: amqp://oficina:${RABBITMQ_PASSWORD:-oficina_local}@rabbitmq:5672
+  RABBITMQ_EXCHANGE: oficina.saga
+  MENSAGERIA_MAX_TENTATIVAS: 5
+  MENSAGERIA_ATRASO_RETENTATIVA_MS: 2000
+  OUTBOX_INTERVALO_MS: 500
+
+x-segredos-jwt: &segredos-jwt
+  JWT_SECRET: ${JWT_SECRET}
+  JWT_CLIENTE_SECRET: ${JWT_CLIENTE_SECRET}
 
 services:
   postgres:
     image: postgres:16-alpine
     container_name: oficina_postgres
     restart: unless-stopped
-    networks:
-      - oficina_net
+    networks: [oficina_net]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-oficina}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -25,36 +35,160 @@ services:
       timeout: 5s
       retries: 10
 
-  api:
-    build: { context: ., dockerfile: Dockerfile, target: runner }
-    container_name: oficina_api
-    read_only: true
-    tmpfs:
-      - /tmp
+  postgres_execucao:
+    image: postgres:16-alpine
+    container_name: oficina_postgres_execucao
     restart: unless-stopped
-    networks:
-      - oficina_net
+    networks: [oficina_net]
+    environment:
+      POSTGRES_USER: execucao
+      POSTGRES_PASSWORD: ${EXECUCAO_DB_PASSWORD:-execucao_local}
+      POSTGRES_DB: execucao_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_execucao_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U execucao -d execucao_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongodb:
+    image: mongo:8.0
+    container_name: oficina_mongodb
+    restart: unless-stopped
+    networks: [oficina_net]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: billing
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-billing_local}
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    container_name: oficina_rabbitmq
+    restart: unless-stopped
+    networks: [oficina_net]
+    environment:
+      RABBITMQ_DEFAULT_USER: oficina
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-oficina_local}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: oficina_redis
+    restart: unless-stopped
+    networks: [oficina_net]
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "96mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  os:
+    build: { context: ., dockerfile: Dockerfile, target: runner }
+    container_name: oficina_os
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    networks: [oficina_net]
     depends_on:
       postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      redis: { condition: service_healthy }
     environment:
+      <<: [*mensageria, *segredos-jwt]
       NODE_ENV: production
       PORT: 3000
-      HOST: 0.0.0.0
       DATABASE_URL: postgresql://${POSTGRES_USER:-oficina}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-oficina_db}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_CLIENTE_SECRET: ${JWT_CLIENTE_SECRET}
+      REDIS_URL: redis://redis:6379
+      INTEGRACAO_API_KEY: ${INTEGRACAO_API_KEY:-}
+      NEW_RELIC_APP_NAME: oficina-os
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:-}
       SEED_PERMITIR_SENHA_PADRAO: ${SEED_PERMITIR_SENHA_PADRAO:-false}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
       SEED_FUNCIONARIO_PASSWORD: ${SEED_FUNCIONARIO_PASSWORD:-}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
-      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-Oficina Mecânica <noreply@oficina.com>}
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  execucao:
+    build: { context: ../oficina-execucao, dockerfile: Dockerfile, target: runner }
+    container_name: oficina_execucao
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    networks: [oficina_net]
+    depends_on:
+      postgres_execucao: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    environment:
+      <<: *mensageria
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://execucao:${EXECUCAO_DB_PASSWORD:-execucao_local}@postgres_execucao:5432/execucao_db
+      JWT_SECRET: ${JWT_SECRET}
+      NEW_RELIC_APP_NAME: oficina-execucao
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:-}
+    ports:
+      - "3001:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  billing:
+    build: { context: ../oficina-billing, dockerfile: Dockerfile, target: runner }
+    container_name: oficina_billing
+    read_only: true
+    tmpfs: [/tmp]
+    restart: unless-stopped
+    networks: [oficina_net]
+    depends_on:
+      mongodb: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    environment:
+      <<: [*mensageria, *segredos-jwt]
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://billing:${MONGODB_PASSWORD:-billing_local}@mongodb:27017/?authSource=admin
+      MERCADO_PAGO_MODO: ${MERCADO_PAGO_MODO:-simulado}
+      MERCADO_PAGO_ACCESS_TOKEN: ${MERCADO_PAGO_ACCESS_TOKEN:-}
+      MERCADO_PAGO_WEBHOOK_SECRET: ${MERCADO_PAGO_WEBHOOK_SECRET:-}
+      BILLING_URL_PUBLICA: ${BILLING_URL_PUBLICA:-http://localhost:3002}
+      NEW_RELIC_APP_NAME: oficina-billing
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:-}
+    ports:
+      - "3002:3000"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
       interval: 10s
@@ -64,9 +198,8 @@ services:
   sonar_postgres:
     image: postgres:16-alpine
     container_name: oficina_sonar_postgres
-    restart: unless-stopped
-    networks:
-      - oficina_net
+    profiles: ["sonar"]
+    networks: [oficina_net]
     environment:
       POSTGRES_USER: ${SONAR_DB_USER:-sonar}
       POSTGRES_PASSWORD: ${SONAR_DB_PASSWORD}
@@ -82,9 +215,8 @@ services:
   sonarqube:
     image: sonarqube:10-community
     container_name: oficina_sonarqube
-    restart: unless-stopped
-    networks:
-      - oficina_net
+    profiles: ["sonar"]
+    networks: [oficina_net]
     depends_on:
       sonar_postgres: { condition: service_healthy }
     environment:
@@ -110,8 +242,7 @@ services:
   sonar_scanner:
     image: sonarsource/sonar-scanner-cli:latest
     container_name: oficina_sonar_scanner
-    networks:
-      - oficina_net
+    networks: [oficina_net]
     depends_on:
       sonarqube: { condition: service_healthy }
     environment:
@@ -123,19 +254,16 @@ services:
     working_dir: /usr/src
     command: >
       sonar-scanner
-        -Dsonar.projectKey=oficina-mvp
-        -Dsonar.projectName="Oficina Mecânica MVP"
-        -Dsonar.projectVersion=1.0.0
-        -Dsonar.sources=src
-        -Dsonar.tests=tests
-        -Dsonar.language=ts
-        -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info
-        -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.test.ts
+        -Dsonar.projectKey=oficina-os
+        -Dsonar.projectName="Oficina — OS Service"
         -Dsonar.host.url=http://sonarqube:9000
     profiles: ["scan"]
 
 volumes:
   postgres_data: { name: oficina_postgres_data }
+  postgres_execucao_data: { name: oficina_postgres_execucao_data }
+  mongodb_data: { name: oficina_mongodb_data }
+  rabbitmq_data: { name: oficina_rabbitmq_data }
   sonar_postgres_data: { name: oficina_sonar_postgres_data }
   sonar_data: { name: oficina_sonar_data }
   sonar_extensions: { name: oficina_sonar_extensions }

@@ -1,228 +1,53 @@
 # CI/CD
 
-> **Atualizado na Fase 3.** O pipeline descrito aqui rodava `sonar` e `deploy` num
-> **runner self-hosted** apontando para o Kind local. Agora:
->
-> | | Fase 2 | Fase 3 |
-> | --- | --- | --- |
-> | Runner | self-hosted na máquina do dev | `ubuntu-latest` |
-> | Deploy | `kubectl` contra o Kind local | `aws eks update-kubeconfig` + EKS |
-> | Gatilhos | só `main` | `main` (produção) e `homolog` (homologação) |
-> | Qualidade | SonarQube em Docker local | SonarQube em Docker local, fora do pipeline (`npm run sonar`) |
-> | Verificação | nenhuma | smoke test: `/health/ready` = 200 e `/clientes` sem token = 401 |
-> | Registro | GHCR + pull secret criado com `GITHUB_TOKEN` | Amazon ECR, pull pela role dos nós |
->
-> A troca de registro corrige um defeito: o `GITHUB_TOKEN` expira ao fim do job, então
-> pods agendados depois em nós novos falhavam com `ImagePullBackOff`. As seções abaixo
-> que mencionam `ghcr.io` descrevem o pipeline da Fase 2.
->
-> São quatro pipelines, um por repositório — ver
-> [arquitetura-nuvem.md](arquitetura-nuvem.md), seção 4.
+Workflow: [`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml). Os serviços de Execução e Billing têm pipelines independentes com a mesma estrutura.
 
----
-
-Pipeline automatizado no GitHub Actions definido em `.github/workflows/ci-cd.yml`. Executa em todo **push** e **pull request** para a branch `main`.
-
----
-
-## Visão geral
-
-```
-push → main
-    │
-    ├── [1] test      Build + testes + cobertura
-    │       │
-    │       └── [2] docker   Build e push da imagem → GHCR
-    │               │
-    │               └── [3] deploy   Deploy no cluster Kubernetes
+```mermaid
+flowchart LR
+    pr([PR ou push]) --> t["Build & Testes<br/>formatação · typecheck · migrations<br/>build · Vitest ≥80% · BDD · OpenAPI"]
+    t --> q["Qualidade<br/>SonarQube Cloud<br/>quality gate"]
+    q -->|só push| d["Imagem<br/>ECR"]
+    d --> k["Deploy EKS<br/>Redis · Secret · rollout<br/>smoke test · New Relic"]
 ```
 
-Os jobs **docker** e **deploy** só executam em push direto para `main` (não em pull requests).
+| Gatilho | O que roda |
+| --- | --- |
+| PR para `main` ou `homolog` | Build & Testes e Qualidade |
+| Push em `homolog` | Tudo, com deploy no ambiente `homolog` |
+| Push em `main` | Tudo, com deploy no ambiente `prod` |
 
----
+## Etapas
 
-## Jobs
+1. **Build & Testes** — `npm ci`, `format:check`, `prisma migrate deploy` num PostgreSQL de serviço, `typecheck`, `build`, `npm test` (falha abaixo de 80% de cobertura), `npm run test:bdd` e exportação do OpenAPI. Artefatos: `coverage`, `bdd`, `openapi`.
+2. **Qualidade** — análise no SonarQube Cloud com `sonar.qualitygate.wait=true`: quality gate reprovado reprova o pipeline e bloqueia a imagem. Sem `SONAR_TOKEN` a etapa falha, em vez de ser pulada.
+3. **Imagem** — build multi-stage (Node 24) e push no ECR com as tags `sha-<commit>` e `<ambiente>`.
+4. **Deploy** — confere dependências no SSM, publica os segredos compartilhados, aplica Redis e configuração, cria o Secret, faz o rollout da imagem imutável `sha-<commit>`, remove os recursos `oficina-api` da Fase 3 e publica o endereço do NLB. O **smoke test** exige `/health/ready` com banco e RabbitMQ conectados e `401` em rota protegida. Por fim registra o deploy no New Relic.
 
-### Job 1 — `test` (Build & Test)
+## Configuração do repositório
 
-Executa em todo push e PR. Garante que nenhum código quebrado chega à `main`.
+| Tipo | Nome | Uso |
+| --- | --- | --- |
+| Secret | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` | Learner Lab; expiram a cada 4 h |
+| Secret | `JWT_SECRET`, `JWT_CLIENTE_SECRET` | Assinatura dos tokens; o mesmo `JWT_CLIENTE_SECRET` vai na Lambda |
+| Secret | `SONAR_TOKEN` | SonarQube Cloud |
+| Variável | `SONAR_ORGANIZATION`, `SONAR_PROJECT_KEY` (opcional) | Padrão: dono do repositório em minúsculas e `<org>_<repositório>` |
+| Secret | `NEW_RELIC_LICENSE_KEY`, `NEW_RELIC_API_KEY`, `NEW_RELIC_ACCOUNT_ID` | APM e marcador de deploy |
+| Secret | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | E-mail (opcional) |
 
-**Serviço auxiliar:** PostgreSQL 16-alpine (container efêmero para os testes de integração)
+## Proteção da `main`
 
-**Variáveis de ambiente usadas:**
+Em Settings → Branches → *Add branch ruleset* para `main`:
 
-| Variável          | Origem                     |
-|-------------------|----------------------------|
-| `DATABASE_URL`    | Monta com `secrets.POSTGRES_PASSWORD` |
-| `JWT_SECRET`      | `secrets.JWT_SECRET`       |
-| `JWT_CLIENTE_SECRET`      | `secrets.JWT_CLIENTE_SECRET`       |
-| `BCRYPT_ROUNDS`   | `4` (hardcoded — mais rápido em CI) |
-| `NODE_ENV`        | `test`                     |
+- exigir pull request;
+- exigir os status checks `Build & Testes` e `Qualidade (SonarQube Cloud)`;
+- bloquear *force push*.
 
-**Passos:**
-1. Checkout do código
-2. Setup Node.js 20 com cache npm
-3. `npm ci --frozen-lockfile`
-4. `npx prisma generate`
-5. `npx prisma migrate deploy` (aplica migrações no DB de teste)
-6. `npm run build` (verifica erros de compilação TypeScript)
-7. `npm test` (Vitest com cobertura)
-8. Upload do relatório de cobertura como artefato (7 dias de retenção)
+Faça o mesmo nos repositórios `oficina-execucao` e `oficina-billing`; nos de Terraform, o check obrigatório é `Plan`.
 
----
+## SonarQube Cloud
 
-### Job 2 — `docker` (Build & Push Docker Image)
+1. Entre em https://sonarcloud.io com a conta do GitHub e importe os repositórios `tech_challenge`, `oficina-execucao` e `oficina-billing`.
+2. Em cada projeto, desligue *Automatic Analysis* (a análise vem do pipeline, com a cobertura).
+3. Gere um token em *My Account → Security* e grave como `SONAR_TOKEN` nos três repositórios; grave a organização como variável `SONAR_ORGANIZATION`.
 
-Executa apenas em push para `main`, após o job `test` passar.
-
-**Permissões necessárias:**
-- `contents: read`
-- `packages: write` (para publicar no GHCR)
-
-**Registry:** GitHub Container Registry (`ghcr.io`)
-
-**Tags geradas automaticamente:**
-
-| Tag                          | Exemplo                                           |
-|------------------------------|---------------------------------------------------|
-| SHA completo do commit       | `ghcr.io/usuario/oficina:sha-abc1234...`         |
-| `latest`                     | `ghcr.io/usuario/oficina:latest`                 |
-
-**Output para o próximo job:**
-```
-image_ref: ghcr.io/usuario/oficina:<sha-do-commit>
-```
-
-**Cache:** GitHub Actions Cache (`type=gha`) — acelera builds subsequentes reutilizando camadas Docker.
-
----
-
-### Job 3 — `deploy` (Deploy Kubernetes)
-
-Executa apenas em push para `main`, após o job `docker` gerar a imagem.
-
-**Roda num runner self-hosted**, não no `ubuntu-latest` da GitHub — o cluster é um Kind local (Docker na sua máquina), com a API em `127.0.0.1`, inacessível a partir de um runner na nuvem. Veja [Runner self-hosted](#runner-self-hosted) abaixo antes de tentar rodar este job.
-
-**Passos em detalhe:**
-
-**1. Configurar `kubectl` e validar acesso ao cluster**
-```bash
-# KUBECONFIG já vem definido no ambiente do runner (arquivo .env do runner,
-# não do workflow — ver seção "Runner self-hosted")
-kubectl cluster-info
-```
-
-**2. Namespace e ConfigMap**
-```bash
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/configmap.yaml
-```
-
-**3. Secret com credenciais** (idempotente via `--dry-run + apply`)
-```bash
-kubectl create secret generic oficina-secret \
-  --from-literal=POSTGRES_PASSWORD="..." \
-  --from-literal=JWT_SECRET="..." \
-  --from-literal=JWT_CLIENTE_SECRET="..." \
-  --dry-run=client -o yaml | kubectl apply -f -
-```
-O `--dry-run=client -o yaml | kubectl apply -f -` garante que o comando funciona tanto na primeira execução (cria) quanto nas seguintes (atualiza sem erro de conflito).
-
-**4. PostgreSQL**
-```bash
-kubectl apply -f k8s/postgres-pvc.yaml
-kubectl apply -f k8s/postgres-deployment.yaml
-kubectl apply -f k8s/postgres-service.yaml
-kubectl rollout status deployment/postgres -n oficina --timeout=120s
-```
-
-**5. API** (substituição da imagem via `sed`)
-```bash
-sed "s|DOCKER_IMAGE_PLACEHOLDER|$IMAGE_REF|g" k8s/api-deployment.yaml \
-  | kubectl apply -f -
-kubectl apply -f k8s/api-service.yaml
-kubectl apply -f k8s/hpa.yaml
-kubectl rollout status deployment/oficina-api -n oficina --timeout=180s
-```
-O `sed` substitui o placeholder pela imagem exata do commit atual antes de aplicar o manifest.
-
----
-
-## Secrets do GitHub necessários
-
-Configure em: **Settings → Secrets and variables → Actions**
-
-| Secret              | Descrição                                                |
-|---------------------|----------------------------------------------------------|
-| `POSTGRES_PASSWORD` | Senha do PostgreSQL                                      |
-| `JWT_SECRET`        | Chave JWT (mínimo 32 caracteres aleatórios)             |
-| `JWT_CLIENTE_SECRET`        | Chave JWT (mínimo 32 caracteres aleatórios)             |
-| `SMTP_HOST`         | Host SMTP (pode ser vazio se não usar e-mail)           |
-| `SMTP_USER`         | Usuário SMTP (pode ser vazio)                           |
-| `SMTP_PASS`         | Senha SMTP (pode ser vazio)                             |
-
-Não há secret `KUBECONFIG` — o job `deploy` roda num runner self-hosted que já tem acesso direto ao cluster local (ver abaixo). Se um dia o cluster for movido para a cloud, aí sim volta a fazer sentido guardar o kubeconfig como secret e usar um runner hospedado pela GitHub novamente.
-
----
-
-## Runner self-hosted
-
-O job `deploy` (`runs-on: self-hosted`) precisa de uma máquina sua registrada como runner, porque o cluster Kind só existe localmente.
-
-**1. Registrar o runner** — em **Settings → Actions → Runners → New self-hosted runner** no GitHub, escolha Linux/x64 e siga os comandos que a própria página gera (`config.sh --url ... --token ...`, token expira em minutos).
-
-**2. Instalar como serviço** (para sobreviver a reinícios):
-```bash
-sudo ./svc.sh install
-sudo ./svc.sh start
-```
-
-**3. Expor o `KUBECONFIG` para os jobs** — crie um arquivo `.env` na raiz da pasta do runner (`actions-runner/.env`) com o caminho absoluto do kubeconfig gerado pelo Terraform nessa mesma máquina:
-```bash
-echo "KUBECONFIG=/caminho/absoluto/para/oficina-mvp/infra/oficina-config" >> ~/actions-runner/.env
-sudo ./svc.sh stop && sudo ./svc.sh start   # recarrega o .env
-```
-O runner injeta automaticamente as variáveis desse `.env` em todo job — por isso o workflow não precisa (nem deve) montar o `KUBECONFIG` a partir do checkout, já que a work dir do job é diferente do diretório onde você rodou `terraform apply` manualmente.
-
-**4. Pré-requisitos na máquina do runner**: `docker`, `kind`, `kubectl` instalados, e o cluster já criado via `terraform apply` (ver [terraform.md](terraform.md)) antes do primeiro push que dispare o `deploy`.
-
----
-
-## Fluxo completo de uma entrega
-
-```
-Desenvolvedor faz push para main
-        │
-        ▼
-[test] Instala deps → Roda migrações → Build TS → Vitest
-        │ aprovado
-        ▼
-[docker] Build multi-stage → Push ghcr.io/usuario/oficina:<sha>
-        │ publicado
-        ▼
-[deploy] kubectl aplica namespace → configmap → secret
-              → postgres → api (com imagem do SHA atual)
-              → hpa
-        │ rollout concluído
-        ▼
-API disponível no cluster com a versão exata do commit
-```
-
----
-
-## Comportamento por evento
-
-| Evento                   | `test` | `docker` | `deploy` |
-|--------------------------|--------|----------|----------|
-| Push para `main`         | ✅     | ✅       | ✅       |
-| Pull Request para `main` | ✅     | ❌       | ❌       |
-| Push para outra branch   | ❌     | ❌       | ❌       |
-
----
-
-## Artefatos gerados
-
-| Artefato      | Onde                     | Retenção |
-|---------------|--------------------------|----------|
-| `coverage/`   | GitHub Actions Artifacts | 7 dias   |
-| Imagem Docker | `ghcr.io` (GHCR)        | Indefinida (gerenciada pelo GHCR) |
+Localmente, `npm run sonar` sobe um SonarQube no Docker (perfil `sonar` do compose) e analisa com a cobertura gerada.

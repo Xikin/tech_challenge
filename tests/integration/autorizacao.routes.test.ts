@@ -25,7 +25,10 @@ function ordemDe(clienteId: string) {
     descricao: null,
     observacoes: null,
     valorTotal: 100,
+    orcamentoId: null,
+    linkPagamento: null,
     aprovadoEm: null,
+    pagoEm: null,
     iniciadoEm: null,
     finalizadoEm: null,
     entregueEm: null,
@@ -44,9 +47,9 @@ function ordemDe(clienteId: string) {
       criadoEm: new Date(),
       atualizadoEm: new Date(),
     },
-    servicos: [],
-    pecas: [],
+    itens: [],
     historico: [],
+    saga: null,
   };
 }
 
@@ -86,8 +89,7 @@ describe('rotas internas rejeitam o papel CLIENTE', () => {
     ['GET', '/clientes'],
     ['GET', '/ordens'],
     ['GET', '/veiculos'],
-    ['GET', '/servicos'],
-    ['GET', '/pecas'],
+    ['GET', `/ordens/${OS_ID}/saga`],
   ];
 
   it.each(rotasInternas)('%s %s devolve 403 para CLIENTE', async (method, url) => {
@@ -108,16 +110,19 @@ describe('rotas internas rejeitam o papel CLIENTE', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  it('PATCH /ordens/:id/avancar devolve 403 para CLIENTE', async () => {
-    const res = await app.inject({
-      method: 'PATCH',
-      url: `/ordens/${OS_ID}/avancar`,
-      headers: comoCliente(),
-      payload: {},
-    });
+  it.each(['entregar', 'cancelar'])(
+    'PATCH /ordens/:id/%s devolve 403 para CLIENTE',
+    async (acao) => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/ordens/${OS_ID}/${acao}`,
+        headers: comoCliente(),
+        payload: {},
+      });
 
-    expect(res.statusCode).toBe(403);
-  });
+      expect(res.statusCode).toBe(403);
+    },
+  );
 });
 
 describe('CLIENTE acessa apenas os próprios recursos', () => {

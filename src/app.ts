@@ -11,19 +11,36 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import { ZodError } from 'zod';
+import type Redis from 'ioredis';
 import { env } from './config/env';
 import { prisma } from './config/prisma';
 import { AppError, TooManyRequestsError } from './shared/errors';
 import { mascararDocumentos } from './shared/utils/mascarar-documentos';
 import { EMISSOR_INTERNO } from './domain/auth/emissores';
+import { cacheDesligado, type ICache } from './domain/services/cache.service.interface';
+import { ConflitoDeVersaoError } from './domain/repositories/saga.repository.interface';
+import {
+  rastreamentoDesligado,
+  type IRastreamento,
+} from './domain/services/rastreamento.interface';
 import { authRoutes } from './presentation/http/routes/auth.routes';
 import { clientesRoutes } from './presentation/http/routes/clientes.routes';
 import { veiculosRoutes } from './presentation/http/routes/veiculos.routes';
-import { servicosRoutes } from './presentation/http/routes/servicos.routes';
-import { pecasRoutes } from './presentation/http/routes/pecas.routes';
 import { ordensRoutes } from './presentation/http/routes/ordens.routes';
+import { RedisCache } from './infrastructure/cache/redis-cache';
+import { integracaoRoutes } from './presentation/http/routes/integracao.routes';
 
-export async function buildApp(): Promise<FastifyInstance> {
+export interface Dependencias {
+  cache: ICache;
+  rastreamento: IRastreamento;
+  redis: Redis | null;
+  mensageria: { readonly conectado: boolean } | null;
+}
+
+export async function buildApp(deps: Partial<Dependencias> = {}): Promise<FastifyInstance> {
+  const rastreamento = deps.rastreamento ?? rastreamentoDesligado;
+  const mensageria = deps.mensageria ?? null;
+
   const app = Fastify({
     logger:
       env.NODE_ENV === 'test'
@@ -31,7 +48,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         : {
             level: env.LOG_LEVEL,
             base: {
-              service: 'oficina-api',
+              service: 'oficina-os',
               env: env.NODE_ENV,
               version: process.env.APP_VERSION ?? 'dev',
             },
@@ -71,6 +88,8 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
   });
 
+  const cache = deps.cache ?? (deps.redis ? new RedisCache(deps.redis, app.log) : cacheDesligado);
+
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
@@ -91,6 +110,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(fastifyRateLimit, {
     global: false,
+    ...(deps.redis && { redis: deps.redis, nameSpace: 'oficina-os:limite:', skipOnError: true }),
     errorResponseBuilder: (_req, contexto) =>
       new TooManyRequestsError(
         `Muitas tentativas. Tente novamente em ${Math.max(1, Math.ceil(contexto.ttl / 60_000))} minuto(s).`,
@@ -102,9 +122,10 @@ export async function buildApp(): Promise<FastifyInstance> {
       transform: jsonSchemaTransform,
       openapi: {
         info: {
-          title: 'Oficina Mecânica API',
-          version: '1.0.0',
-          description: 'MVP — Sistema Integrado de Atendimento',
+          title: 'Oficina Mecânica — OS Service',
+          version: '2.0.0',
+          description:
+            'Clientes, veículos, ordens de serviço e orquestração da saga de atendimento.',
         },
         components: {
           securitySchemes: {
@@ -115,9 +136,8 @@ export async function buildApp(): Promise<FastifyInstance> {
           { name: 'Autenticação' },
           { name: 'Clientes' },
           { name: 'Veículos' },
-          { name: 'Serviços' },
-          { name: 'Peças e Insumos' },
           { name: 'Ordens de Serviço' },
+          { name: 'Integração' },
         ],
       },
     });
@@ -164,6 +184,17 @@ export async function buildApp(): Promise<FastifyInstance> {
         .status(error.statusCode)
         .send({ statusCode: error.statusCode, code: error.code, message: error.message });
     }
+    if (error instanceof ConflitoDeVersaoError) {
+      req.log.warn(
+        { evento: 'erro_negocio', codigo: 'CONFLICT', rota: req.routeOptions?.url },
+        'saga alterada por outro processo durante a requisição',
+      );
+      return reply.status(409).send({
+        statusCode: 409,
+        code: 'CONFLICT',
+        message: 'A OS foi alterada ao mesmo tempo por outro processo; tente de novo',
+      });
+    }
     if (error.code === 'P2002') {
       req.log.warn(
         { evento: 'erro_negocio', codigo: 'CONFLICT', rota: req.routeOptions?.url },
@@ -172,6 +203,18 @@ export async function buildApp(): Promise<FastifyInstance> {
       return reply
         .status(409)
         .send({ statusCode: 409, code: 'CONFLICT', message: 'Registro duplicado' });
+    }
+
+    if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
+      req.log.warn(
+        { evento: 'requisicao_invalida', codigo: error.code, rota: req.routeOptions?.url },
+        error.message,
+      );
+      return reply.status(error.statusCode).send({
+        statusCode: error.statusCode,
+        code: error.code ?? 'BAD_REQUEST',
+        message: error.message,
+      });
     }
 
     req.log.error(
@@ -198,7 +241,10 @@ export async function buildApp(): Promise<FastifyInstance> {
         await prisma.$queryRaw`SELECT 1`;
         return rep.send({
           status: 'ok',
-          dependencias: { database: 'ok' },
+          dependencias: {
+            database: 'ok',
+            mensageria: mensageria ? (mensageria.conectado ? 'ok' : 'reconectando') : 'desligada',
+          },
           latenciaMs: Date.now() - inicio,
           timestamp: new Date().toISOString(),
         });
@@ -220,9 +266,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.register(authRoutes, { prefix: '/auth' });
   app.register(clientesRoutes, { prefix: '/clientes' });
   app.register(veiculosRoutes, { prefix: '/veiculos' });
-  app.register(servicosRoutes, { prefix: '/servicos' });
-  app.register(pecasRoutes, { prefix: '/pecas' });
-  app.register(ordensRoutes, { prefix: '/ordens' });
+  app.register(ordensRoutes, { prefix: '/ordens', cache, rastreamento });
+  app.register(integracaoRoutes, { prefix: '/integracao' });
 
   return app;
 }

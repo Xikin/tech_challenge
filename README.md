@@ -1,287 +1,231 @@
-# Oficina Mecânica — API
+# Oficina Mecânica — OS Service
 
-Sistema Integrado de Atendimento e Execução de Serviços de uma oficina mecânica.
-Aplicação principal executando em Kubernetes — **repositório 4 de 4** do Tech
-Challenge Fase 3.
+Serviço de **ordens de serviço** da oficina e **orquestrador da saga** que coordena o atendimento entre os microsserviços. Tech Challenge — Fase 4.
 
-Gerencia clientes, veículos, catálogo de serviços, estoque de peças e o ciclo de
-vida da ordem de serviço: Recebida → Em Diagnóstico → Aguardando Aprovação → Em
-Execução → Finalizada → Entregue.
+Cuida de usuários internos, clientes, veículos e do ciclo de vida da OS. Toda etapa que depende de outro serviço (diagnóstico, orçamento, pagamento, reparo) é coordenada por mensagens no RabbitMQ, com compensação quando algo falha.
 
-| Repositório | Papel |
-| --- | --- |
-| [oficina-auth-lambda](https://github.com/Xikin/oficina-auth-lambda) | Function serverless de autenticação por CPF + API Gateway |
-| [oficina-infra-k8s](https://github.com/Xikin/oficina-infra-k8s) | VPC + cluster EKS + metrics-server |
-| [oficina-infra-db](https://github.com/Xikin/oficina-infra-db) | RDS PostgreSQL gerenciado |
-| **oficina-mvp** (este) | Aplicação principal executando no cluster |
+## Repositórios
 
----
+| Repositório | Papel | Banco |
+| --- | --- | --- |
+| **oficina-mvp** (este) | OS Service: clientes, veículos, OS, orquestração da saga | PostgreSQL + Redis |
+| [oficina-execucao](https://github.com/Xikin/oficina-execucao) | Execução e Produção: fila do mecânico, catálogo, estoque | PostgreSQL próprio |
+| [oficina-billing](https://github.com/Xikin/oficina-billing) | Orçamento e Pagamento: aprovação, Mercado Pago, estorno | MongoDB |
+| [oficina-auth-lambda](https://github.com/Xikin/oficina-auth-lambda) | Autenticação do cliente por CPF + API Gateway | — |
+| [oficina-infra-k8s](https://github.com/Xikin/oficina-infra-k8s) | VPC, EKS, ECR, RabbitMQ | — |
+| [oficina-infra-db](https://github.com/Xikin/oficina-infra-db) | RDS do OS Service e do Execução | — |
 
-## Arquitetura deste repositório
+## Arquitetura geral
 
 ```mermaid
 flowchart TB
-    gw{{"API Gateway<br/>oficina-auth-lambda"}}
+    cliente(["Cliente / Atendente / Mecânico"])
+    mp[["Mercado Pago"]]
+    nr[("New Relic<br/>APM, logs, traces")]
 
-    subgraph eks["Cluster EKS · namespace oficina"]
-        nlb["Service LoadBalancer<br/>NLB"]
+    subgraph aws["AWS"]
+        gw{{"API Gateway"}}
+        lambda["Lambda<br/>auth por CPF"]
 
-        subgraph dep["Deployment oficina-api"]
-            p1["pod"]
-            p2["pod"]
-            p3["pod ..."]
+        subgraph eks["EKS"]
+            subgraph ns["namespace oficina"]
+                os["OS Service<br/>orquestrador"]
+                ex["Execução"]
+                bi["Billing"]
+                redis[("Redis<br/>cache")]
+                mongo[("MongoDB")]
+            end
+            subgraph plat["namespace plataforma"]
+                mq{{"RabbitMQ<br/>exchange oficina.saga"}}
+            end
         end
 
-        hpa["HPA<br/>2 a 10 réplicas<br/>CPU 70% / mem 80%"]
-        cm[("ConfigMap<br/>oficina-config")]
-        sec[("Secret<br/>oficina-secret")]
+        rdsos[("RDS PostgreSQL<br/>OS")]
+        rdsex[("RDS PostgreSQL<br/>Execução")]
     end
 
-    rds[("RDS PostgreSQL<br/>oficina-infra-db")]
-    nr[("New Relic")]
-    smtp["SMTP"]
+    cliente -->|HTTPS| gw
+    gw -->|"POST /auth/cpf"| lambda
+    gw -->|"/ordens, /clientes, /veiculos"| os
+    gw -->|"/execucoes, /servicos, /pecas"| ex
+    gw -->|"/orcamentos, /pagamentos"| bi
+    lambda -->|"identificar cliente (x-api-key)"| os
 
-    gw --> nlb --> dep
-    hpa -.->|"escala"| dep
-    cm -.-> dep
-    sec -.-> dep
-    dep -->|"Prisma · 5432"| rds
-    dep -.->|"APM, logs, traces"| nr
-    dep -.->|"notificações"| smtp
+    os <-->|comandos e eventos| mq
+    ex <-->|comandos e eventos| mq
+    bi <-->|comandos e eventos| mq
+
+    os --> rdsos
+    os --> redis
+    ex --> rdsex
+    bi --> mongo
+    bi <-->|"cobrança, webhook, estorno"| mp
+
+    os -.-> nr
+    ex -.-> nr
+    bi -.-> nr
 ```
 
-Internamente a aplicação segue Clean Architecture em quatro camadas
-(`domain` → `application` → `infrastructure` / `presentation`), detalhada em
-[docs/arquitetura.md](docs/arquitetura.md).
+Nenhum serviço acessa o banco de outro: cada um recebe só a própria credencial, distribuída pelo pipeline a partir do SSM. A Lambda, que na Fase 3 lia a tabela de clientes, agora chama este serviço por HTTP ([ADR-0013](docs/adr/0013-divisao-em-tres-microsservicos.md)).
+
+## Saga: orquestrada
+
+**Estratégia: saga orquestrada**, com este serviço como orquestrador e o RabbitMQ como transporte. O fluxo completo, o contrato das mensagens e cada cenário de falha estão em **[docs/saga.md](docs/saga.md)**.
 
 ```
-src/
-├── domain/          contratos: repositórios, serviços, enums — sem framework
-├── application/     casos de uso, um por ação
-├── infrastructure/  Prisma, Nodemailer, JWT
-├── presentation/    rotas Fastify, schemas Zod, middlewares de autorização
-└── shared/          erros e utilitários
+abrir OS → diagnóstico (Execução) → orçamento (Billing) → aprovação do cliente
+        → pagamento (Mercado Pago) → reparo (Execução) → finalizada → entregue
 ```
 
----
+**Por que orquestrada e não coreografada.** O fluxo tem ordem rígida (sem orçamento não há pagamento, sem pagamento não há reparo) e só dois participantes. Com um orquestrador, a regra inteira fica numa função pura ([`saga-os.ts`](src/domain/saga/saga-os.ts)), testável sem infraestrutura. A compensação também fica num lugar só, com a lista exata de quem participou, e o estado aparece em `GET /ordens/:id/saga`. Na coreografia, cada serviço precisaria conhecer os eventos dos outros para saber o que desfazer. Comparação completa na [ADR-0014](docs/adr/0014-saga-orquestrada-com-rabbitmq.md).
 
-## Tecnologias
+**Rollback.** Em qualquer falha (orçamento reprovado, pagamento recusado, falha no reparo, cancelamento pela oficina), o orquestrador manda cancelar a todos os participantes envolvidos. O Execução devolve as peças reservadas; o Billing estorna o pagamento no Mercado Pago, se houver. A OS só fica `CANCELADA` quando todos confirmam.
 
-| Camada | Tecnologia |
+**Garantias** ([ADR-0015](docs/adr/0015-outbox-idempotencia-e-dlq.md)):
+
+| Problema | Solução |
 | --- | --- |
-| Runtime | Node.js 20, TypeScript 5.6 |
-| HTTP | Fastify 4 + `fastify-type-provider-zod` |
-| Banco | PostgreSQL 16 (Amazon RDS) via Prisma 5 |
-| Autenticação | JWT (`@fastify/jwt`), HS256 |
-| Validação | Zod |
-| Testes | Vitest — 160 testes, unitários e de integração |
-| Container | Docker multi-stage, usuário não-root |
-| Orquestração | Kubernetes (Amazon EKS) com HPA |
-| Observabilidade | New Relic APM + logs JSON (pino) com correlação |
-| CI/CD | GitHub Actions — testes, imagem no Amazon ECR, deploy no EKS |
-| Qualidade | Prettier no pipeline; SonarQube local (`npm run sonar`) |
+| Gravar estado e publicar mensagem não são atômicos | Outbox transacional em todos os serviços; relay com *publisher confirms* |
+| Mensagem entregue duas vezes | Consumidor idempotente (`mensagens_processadas`) |
+| Duas réplicas alterando a mesma saga | Concorrência otimista (`versao`) |
+| Evento chega antes do anterior | Adiado para nova tentativa, não descartado |
+| Erro persistente | Retentativa com atraso e fila de mortas (`*.dlq`), com alerta |
 
----
+## Este serviço
 
-## Autenticação e autorização
+### Responsabilidades
 
-Dois emissores de token, um único validador.
+- Cadastro de clientes e veículos, usuários internos e login (`POST /auth/login`).
+- Abertura da OS, consulta, histórico, cancelamento (dispara a compensação) e entrega.
+- Orquestração da saga: consome `os.saga`, decide o próximo passo, envia comandos.
+- Notificação do cliente por e-mail a cada mudança de status (orçamento para aprovar, link de pagamento, conclusão, cancelamento).
+- Identificação do cliente por CPF para a Lambda (`POST /integracao/clientes/identificar`, protegido por `x-api-key`).
 
-| Quem | Como autentica | Onde | Papel |
+### Status da OS
+
+`RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → AGUARDANDO_PAGAMENTO → AGUARDANDO_EXECUCAO → EM_EXECUCAO → FINALIZADA → ENTREGUE`, além de `CANCELADA`.
+
+Os status mudam pelos eventos da saga, não por chamada manual. As únicas ações manuais sobre o status são `PATCH /ordens/:id/cancelar` e `PATCH /ordens/:id/entregar`.
+
+### Persistência
+
+| Onde | O quê |
+| --- | --- |
+| PostgreSQL (RDS) | usuários, clientes, veículos, OS, itens orçados (cópia), histórico, `sagas_os`, `passos_saga`, `outbox`, `mensagens_processadas` |
+| Redis | cache da consulta pública de status (60 s, invalidado a cada mudança) e contador do limite de tentativas compartilhado entre réplicas |
+
+Escolhas de banco justificadas na [ADR-0016](docs/adr/0016-persistencia-poliglota.md).
+
+### API
+
+- **Swagger:** `<API_GATEWAY_URL>/docs`
+- **OpenAPI versionado:** [`docs/openapi.json`](docs/openapi.json), regenerado no CI a cada push
+- **Postman:** [`postman/`](postman/)
+
+| Rota | Quem | O que faz |
+| --- | --- | --- |
+| `POST /ordens` | oficina | Abre a OS e inicia a saga |
+| `GET /ordens/:id` | oficina ou dono | OS com itens orçados, histórico e resumo da saga |
+| `GET /ordens/:id/saga` | oficina | Etapa, pendências e cada mensagem da saga |
+| `PATCH /ordens/:id/cancelar` | oficina | Inicia a compensação (202) |
+| `PATCH /ordens/:id/entregar` | oficina | Registra a entrega de OS finalizada |
+| `GET /ordens/consulta-publica` | público | Status pelo número da OS e CPF/CNPJ (cache no Redis) |
+
+## Executar localmente
+
+Os três serviços sobem juntos pelo `docker-compose.yml` deste repositório. Clone os três lado a lado:
+
+```bash
+git clone https://github.com/Xikin/tech_challenge oficina-mvp
+git clone https://github.com/Xikin/oficina-execucao
+git clone https://github.com/Xikin/oficina-billing
+
+cd oficina-mvp
+cp .env.example .env          # defina POSTGRES_PASSWORD, JWT_SECRET e JWT_CLIENTE_SECRET
+docker compose up -d --build --wait
+
+docker compose exec os npx tsx prisma/seed.ts          # usuários, clientes e veículos
+docker compose exec execucao node dist/seed.js         # catálogo de serviços e peças
+
+bash scripts/demo-saga.sh feliz       # fluxo completo, da abertura à entrega
+bash scripts/demo-saga.sh reprovado   # cliente reprova → compensação
+bash scripts/demo-saga.sh falha       # falha depois do pagamento → estorno
+```
+
+`scripts/demo-saga.sh` usa `OS_URL`, `EXECUCAO_URL` e `BILLING_URL` (padrão `http://localhost:3000`, ou seja, o API Gateway). No compose, use `OS_URL=http://localhost:3000 EXECUCAO_URL=http://localhost:3001 BILLING_URL=http://localhost:3002`.
+
+| Serviço local | Endereço |
+| --- | --- |
+| OS Service | http://localhost:3000/docs |
+| Execução | http://localhost:3001/docs |
+| Billing | http://localhost:3002/docs |
+| RabbitMQ Management | http://localhost:15672 (usuário `oficina`) |
+
+> Se você já rodou a Fase 3 com Docker, o volume `oficina_postgres_data` será migrado na primeira subida: os itens das OS antigas são copiados para `itens_os` e as tabelas de catálogo saem deste banco (agora vivem no Execução).
+
+## Testes e qualidade
+
+| Tipo | Ferramenta | Comando | Resultado |
 | --- | --- | --- | --- |
-| Funcionário / Admin | e-mail + senha | `POST /auth/login` nesta API | `FUNCIONARIO`, `ADMIN` |
-| Cliente final | CPF | `POST /auth/cpf` na [Lambda](https://github.com/Xikin/oficina-auth-lambda) | `CLIENTE` |
+| Unitários e de integração | Vitest | `npm test` | 224 testes |
+| BDD do fluxo completo | Cucumber | `npm run test:bdd` | 6 cenários, 60 passos |
+| Qualidade | SonarQube Cloud | pipeline | quality gate bloqueia a imagem |
 
-Cada emissor tem **segredo próprio**: `JWT_SECRET` assina o login interno e nunca sai desta API; `JWT_CLIENTE_SECRET` é compartilhado apenas com a Lambda. A API exige que tokens do emissor de clientes carreguem só o papel `CLIENTE` — quem obtiver o segredo da Lambda não consegue forjar um ADMIN ([ADR-0011](docs/adr/0011-segredos-jwt-por-emissor.md)).
+**Cobertura** (mínimo exigido pelo pipeline: 80% em linhas, branches, funções e statements):
 
-O login aceita 5 tentativas por e-mail e a consulta pública 10 por número de OS, a cada
-15 minutos. O login leva o mesmo tempo para e-mail existente ou não, para que não se
-descubra quem tem conta cronometrando a resposta ([ADR-0012](docs/adr/0012-limites-de-tentativa.md)).
-
-O papel determina o que se pode acessar:
-
-| Guard | Aplicado em | Regra |
-| --- | --- | --- |
-| `exigirInterno` | todas as rotas administrativas | `role ∈ {ADMIN, FUNCIONARIO}` |
-| `exigirDonoDoRecurso` | `GET /ordens/:id`, `GET /ordens/numero/:n`, `GET /clientes/:id` | interno passa; cliente só acessa o próprio recurso |
-| `exigirRole('ADMIN')` | `/auth/usuarios` | só administrador |
-
-> Isso não é detalhe de implementação. Sem `exigirInterno`, um token de cliente
-> legítimo abriria `GET /clientes` (a base inteira, com CPF de todo mundo) e
-> `PUT /ordens/:id` (alterar OS de terceiros). Ver
-> [ADR-0008](docs/adr/0008-autorizacao-do-papel-cliente.md).
-
----
-
-## API
-
-- **Swagger UI:** `<API_GATEWAY_URL>/docs`
-- **OpenAPI versionado:** [`docs/openapi.json`](docs/openapi.json) — 27 caminhos,
-  gerado no CI a cada push, então não depende de haver ambiente no ar
-- **Postman:** [`postman/oficina-mvp.postman_collection.json`](postman/oficina-mvp.postman_collection.json)
-  (41 endpoints) + [environment local](postman/oficina-mvp.local.postman_environment.json)
-
-### Fluxo mínimo
-
-```bash
-BASE=<API_GATEWAY_URL>
-
-# Cliente final — autentica por CPF (Lambda)
-TOKEN=$(curl -sS -X POST "$BASE/auth/cpf" \
-  -H 'content-type: application/json' \
-  -d '{"cpf":"529.982.247-25"}' | jq -r .token)
-
-# Consulta a própria OS
-curl -sS "$BASE/ordens/numero/1042" -H "Authorization: Bearer $TOKEN"
-
-# Funcionário — autentica por e-mail e senha (esta API)
-TOKEN=$(curl -sS -X POST "$BASE/auth/login" \
-  -H 'content-type: application/json' \
-  -d '{"email":"admin@oficina.com","senha":"..."}' | jq -r .token)
-
-curl -sS "$BASE/ordens" -H "Authorization: Bearer $TOKEN"
-```
-
-### Healthchecks
-
-| Rota | Uso | Verifica o banco? |
-| --- | --- | --- |
-| `GET /health` | liveness probe | não — de propósito |
-| `GET /health/ready` | readiness probe e synthetic check | sim (`SELECT 1`) |
-
-Liveness raso e readiness profundo: se ambos tocassem o banco, uma indisponibilidade
-do RDS reiniciaria todos os pods em cascata sem resolver nada.
-
----
-
-## Execução local
-
-```bash
-git clone <url> && cd oficina-mvp
-cp .env.example .env      # ajuste JWT_SECRET e JWT_CLIENTE_SECRET (32+ caracteres, diferentes)
-
-docker compose up -d --build
-docker compose exec api npx prisma migrate deploy
-docker compose exec api npm run db:seed
-
-curl http://localhost:3000/health
-open http://localhost:3000/docs
-```
-
-Sem Docker:
-
-```bash
-npm ci
-npx prisma generate
-npx prisma migrate deploy
-npm run dev
-```
-
-### Testes
-
-```bash
-npm test              # 137 testes com cobertura
-npm run test:watch
-npm run typecheck
-npm run format:check
-```
-
-Os testes usam mock do Prisma e não precisam de banco.
-
----
-
-## Deploy
-
-> **Ordem obrigatória entre os repositórios.** Este deploy lê do SSM o nome do
-> cluster e a `DATABASE_URL`, e falha com mensagem explícita se faltarem:
->
-> ```
-> oficina-infra-k8s  →  oficina-infra-db  →  oficina-mvp  →  oficina-auth-lambda
-> ```
-
-### Automático
-
-| Gatilho | O que acontece |
+| Camada | Linhas |
 | --- | --- |
-| PR para `main` ou `homolog` | formatação, migrations, build, 160 testes |
-| Push em `homolog` | tudo acima + imagem no ECR + deploy no EKS de homologação + smoke test |
-| Push em `main` | tudo acima + deploy no EKS de produção + smoke test |
+| domain | 98,3% |
+| application | 97,1% |
+| infrastructure | 91,5% |
+| presentation | 99,9% |
+| **total** | **95,2%** linhas · 92,2% branches · 91,2% funções |
 
-O smoke test exige que `/health/ready` responda 200 e que `/clientes` sem token
-responda 401 — se a autorização quebrar, o deploy falha.
+O relatório HTML fica no artefato `coverage` de cada execução do pipeline, e o relatório do Cucumber no artefato `bdd`.
 
-Ao final, o pipeline publica o hostname do Load Balancer em
-`/oficina/<env>/api/endpoint`, que é o backend usado pelo API Gateway.
+O BDD ([`atendimento-da-os.feature`](tests/bdd/features/atendimento-da-os.feature)) cobre:
 
-### Manual
+- o fluxo completo da abertura à entrega;
+- reprovação com compensação;
+- falha depois do pagamento com estorno;
+- cancelamento pela oficina;
+- evento que chega fora de ordem;
+- mensagem duplicada.
 
-```bash
-CLUSTER=$(aws ssm get-parameter --name /oficina/prod/eks/cluster_name \
-  --query Parameter.Value --output text)
-aws eks update-kubeconfig --region us-east-1 --name "$CLUSTER"
+## CI/CD
 
-DATABASE_URL=$(aws ssm get-parameter --name /oficina/prod/db/database_url \
-  --with-decryption --query Parameter.Value --output text)
+`PR → main/homolog`: formatação, typecheck, migrations, build, testes com cobertura, BDD e Sonar com quality gate. `push`: tudo isso, mais a imagem no ECR, o deploy no EKS e o smoke test, que exige `/health/ready` com banco e RabbitMQ conectados.
 
-kubectl apply -f k8s/namespace.yaml -f k8s/configmap.yaml
-kubectl create secret generic oficina-secret -n oficina \
-  --from-literal=DATABASE_URL="$DATABASE_URL" \
-  --from-literal=JWT_SECRET="<segredo do login interno>" \
-  --from-literal=JWT_CLIENTE_SECRET="<o MESMO da Lambda>" \
-  --from-literal=NEW_RELIC_LICENSE_KEY="<chave>" \
-  --dry-run=client -o yaml | kubectl apply -f -
+**Proteção da `main`** (Settings → Branches → Add rule, em cada um dos seis repositórios): exigir pull request antes do merge e exigir os checks `Build & Testes` e `Qualidade (SonarQube Cloud)` (no Terraform, o check `Plan`).
 
-ECR=$(aws ssm get-parameter --name /oficina/prod/ecr/api_repository_url \
-  --query Parameter.Value --output text)
-sed "s|DOCKER_IMAGE_PLACEHOLDER|$ECR:prod|g" \
-  k8s/api-deployment.yaml | kubectl apply -f -
-kubectl apply -f k8s/api-service.yaml -f k8s/hpa.yaml
-kubectl rollout status deployment/oficina-api -n oficina
+Ordem de implantação entre os repositórios:
+
+```
+oficina-infra-k8s → oficina-infra-db → oficina-mvp → oficina-execucao → oficina-billing → oficina-auth-lambda
 ```
 
-### Secrets do repositório
-
-| Secret | Origem |
+| Secret / variável | Para quê |
 | --- | --- |
-| `AWS_ACCESS_KEY_ID` | Learner Lab → AWS Details → AWS CLI |
-| `AWS_SECRET_ACCESS_KEY` | idem |
-| `AWS_SESSION_TOKEN` | idem — **expira a cada 4h** |
-| `JWT_SECRET` | segredo do login interno — **nunca** vai para a Lambda |
-| `JWT_CLIENTE_SECRET` | **o mesmo** configurado na Lambda; diferente do `JWT_SECRET` |
-| `NEW_RELIC_LICENSE_KEY` | New Relic → Administration → API keys (tipo *INGEST - LICENSE*) |
-| `NEW_RELIC_API_KEY` | *User key* (`NRAK-...`) — marcador de deploy; opcional |
-| `NEW_RELIC_ACCOUNT_ID` | Account ID numérico — marcador de deploy; opcional |
-| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | opcionais |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` | Learner Lab (expiram a cada 4 h) |
+| `JWT_SECRET`, `JWT_CLIENTE_SECRET` | Publicados no SSM por este pipeline; os outros serviços leem de lá |
+| `SONAR_TOKEN` (secret), `SONAR_ORGANIZATION` (variável) | Análise e quality gate no SonarQube Cloud |
+| `NEW_RELIC_LICENSE_KEY`, `NEW_RELIC_API_KEY`, `NEW_RELIC_ACCOUNT_ID` | APM e marcador de deploy |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | E-mail ao cliente (opcional) |
 
----
+Detalhes em [docs/cicd.md](docs/cicd.md) e [docs/kubernetes.md](docs/kubernetes.md).
 
 ## Observabilidade
 
-Diretório [`observabilidade/`](observabilidade/) traz o dashboard pronto para
-importar, as consultas NRQL em texto e as 9 condições de alerta.
-
-Os painéis não inferem nada de status HTTP: os casos de uso emitem eventos de
-negócio explícitos (`os_criada`, `os_status_alterado`, `falha_integracao`).
-
-Toda requisição carrega um `x-request-id` — propagado pelo API Gateway, honrado
-pela aplicação e devolvido em toda resposta —, o que permite seguir uma chamada do
-access log do gateway até a linha de log da aplicação.
-
----
+New Relic APM nos três serviços, com trace distribuído que atravessa o RabbitMQ: o contexto do trace é gravado junto da mensagem no outbox e aceito pelo consumidor. Assim, uma requisição `POST /ordens` aparece ligada ao processamento no Execução e no Billing. O dashboard ganhou a página **Saga e mensageria** (transições, compensações, retentativas, DLQ, pagamentos) e alertas para mensagem na DLQ, Mercado Pago indisponível e pico de compensações. Ver [`observabilidade/`](observabilidade/).
 
 ## Documentação
 
 | Documento | Assunto |
 | --- | --- |
-| [arquitetura-nuvem.md](docs/arquitetura-nuvem.md) | Diagrama de componentes e diagramas de sequência (autenticação e abertura de OS) |
-| [arquitetura.md](docs/arquitetura.md) | Clean Architecture, camadas e endpoints |
-| [modelo-de-dados.md](docs/modelo-de-dados.md) | Justificativa do banco, diagrama ER, relacionamentos e ajustes da Fase 3 |
-| [dominio.md](docs/dominio.md) | Glossário e regras de negócio |
-| [desenvolvimento.md](docs/desenvolvimento.md) | Ambiente local, padrões, testes |
-| [notas-de-implementacao.md](docs/notas-de-implementacao.md) | O porquê das escolhas do código e da configuração, por arquivo |
-| [kubernetes.md](docs/kubernetes.md) | Manifestos e operação do cluster |
-| [cicd.md](docs/cicd.md) | Pipeline |
-| [qualidade-seguranca.md](docs/qualidade-seguranca.md) | Sonar, OWASP ZAP |
-| [ADRs](docs/adr/README.md) | Decisões arquiteturais permanentes |
-| [RFCs](docs/rfc/README.md) | Decisões técnicas em discussão |
-| [observabilidade/](observabilidade/) | Dashboards, consultas e alertas |
+| [saga.md](docs/saga.md) | Fluxo, contrato de mensagens, topologia, compensações e falhas |
+| [ADRs](docs/adr/README.md) | Decisões; 0013 a 0017 são da Fase 4 |
+| [entrega-fase4.md](docs/entrega-fase4.md) | Conteúdo do PDF de entrega e roteiro do vídeo |
+| [arquitetura.md](docs/arquitetura.md) | Clean Architecture e camadas |
+| [notas-de-implementacao.md](docs/notas-de-implementacao.md) | O porquê das escolhas do código, por arquivo |
+| [kubernetes.md](docs/kubernetes.md), [cicd.md](docs/cicd.md) | Manifestos e pipeline |
+| [observabilidade/](observabilidade/) | Dashboard, consultas e alertas |

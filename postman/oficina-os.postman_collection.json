@@ -1,0 +1,4708 @@
+{
+  "item": [
+    {
+      "id": "f6cb3941-7af2-40f8-8948-db58f240ea77",
+      "name": "Autenticação",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "7d423a72-647b-41e2-9fe9-d5ae53bcbbe9",
+          "name": "Login",
+          "request": {
+            "name": "Login",
+            "description": {},
+            "url": {
+              "path": [
+                "auth",
+                "login"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"W7SSghxK8w@PSWctBhhukLBNMYPjgMeDRMMe.sf\",\n  \"senha\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "a04a9701-690f-49a6-9941-fcabaf2a549a",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "auth",
+                    "login"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"W7SSghxK8w@PSWctBhhukLBNMYPjgMeDRMMe.sf\",\n  \"senha\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"token\": \"string\",\n  \"usuario\": {\n    \"id\": \"f602def1-1be6-9725-a12a-4f9c52074e93\",\n    \"nome\": \"string\",\n    \"email\": \"string\",\n    \"role\": \"FUNCIONARIO\"\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "b2bb92b0-94eb-4b0f-808a-e4b0bac6fb6f",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "auth",
+                    "login"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"W7SSghxK8w@PSWctBhhukLBNMYPjgMeDRMMe.sf\",\n  \"senha\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "587d34e8-598c-4cfa-b6da-835b56aecfcc",
+          "name": "Criar usuário (Admin)",
+          "request": {
+            "name": "Criar usuário (Admin)",
+            "description": {},
+            "url": {
+              "path": [
+                "auth",
+                "usuarios"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"string\",\n  \"email\": \"sw98ZjQB@FlEbPIEeynPFtCk.rilk\",\n  \"senha\": \"        \",\n  \"role\": \"FUNCIONARIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "49581d55-c230-4eab-b9ef-895229daed0e",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "auth",
+                    "usuarios"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"string\",\n  \"email\": \"sw98ZjQB@FlEbPIEeynPFtCk.rilk\",\n  \"senha\": \"        \",\n  \"role\": \"FUNCIONARIO\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"e46aefc3-d2f9-208f-305f-fa52380638ef\",\n  \"nome\": \"string\",\n  \"email\": \"string\",\n  \"role\": \"string\",\n  \"criadoEm\": \"1975-11-12T11:58:28.324Z\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "db04cc14-8ce3-4dc0-9d42-785afe5b8d21",
+          "name": "Listar usuários (Admin)",
+          "request": {
+            "name": "Listar usuários (Admin)",
+            "description": {},
+            "url": {
+              "path": [
+                "auth",
+                "usuarios"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "f16c759c-f7f6-49cb-a8f4-34dfcb2d1477",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "auth",
+                    "usuarios"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"81da6d68-cec8-13ca-67ba-2aaae5ef8ebe\",\n    \"nome\": \"string\",\n    \"email\": \"string\",\n    \"role\": \"ADMIN\",\n    \"ativo\": true,\n    \"criadoEm\": \"1956-11-08T06:31:22.673Z\"\n  },\n  {\n    \"id\": \"741c1072-0061-4ae7-981a-d8c955529aba\",\n    \"nome\": \"string\",\n    \"email\": \"string\",\n    \"role\": \"FUNCIONARIO\",\n    \"ativo\": false,\n    \"criadoEm\": \"1960-09-04T12:44:48.845Z\"\n  }\n]",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "739ba2b1-9aae-41cf-aad6-199b87105486",
+          "name": "Dados do usuário logado",
+          "request": {
+            "name": "Dados do usuário logado",
+            "description": {},
+            "url": {
+              "path": [
+                "auth",
+                "me"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "bffec491-c16c-45a8-8d00-6d81d5c8344e",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "auth",
+                    "me"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"sub\": \"ad5447ef-1f19-444b-86c0-01569d9b1232\",\n  \"role\": \"FUNCIONARIO\",\n  \"email\": \"string\",\n  \"nome\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "dcd8eae4-26f6-4d50-9fd5-f68cc6169bdb",
+      "name": "Clientes",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "a1886b88-8404-48d6-89de-b5869d63a062",
+          "name": "Criar cliente",
+          "request": {
+            "name": "Criar cliente",
+            "description": {},
+            "url": {
+              "path": [
+                "clientes",
+                ""
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"string\",\n  \"cpfCnpj\": \"string\",\n  \"email\": \"kmXwlMo@EoKRWcfJtOfjiWtRfPxHCLb.aylm\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "11d922f9-dc84-4281-85be-229acafa4a9f",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"string\",\n  \"cpfCnpj\": \"string\",\n  \"email\": \"kmXwlMo@EoKRWcfJtOfjiWtRfPxHCLb.aylm\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44be5fd9-ce24-1a9f-35f9-382c9bd8dd5d\",\n  \"nome\": \"string\",\n  \"cpfCnpj\": \"string\",\n  \"tipoPessoa\": \"FISICA\",\n  \"ativo\": false,\n  \"criadoEm\": \"1988-03-24T11:06:50.555Z\",\n  \"atualizadoEm\": \"1990-12-30T15:51:19.031Z\",\n  \"email\": \"string\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "18cd54af-703a-4ead-8844-8def7a0efca5",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"string\",\n  \"cpfCnpj\": \"string\",\n  \"email\": \"kmXwlMo@EoKRWcfJtOfjiWtRfPxHCLb.aylm\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "6dcb83c5-a0b4-431f-bd8a-8acbbf90a3dd",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"string\",\n  \"cpfCnpj\": \"string\",\n  \"email\": \"kmXwlMo@EoKRWcfJtOfjiWtRfPxHCLb.aylm\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "6aa45c6d-875a-4b6d-a468-b837c8f1d70c",
+          "name": "Listar clientes",
+          "request": {
+            "name": "Listar clientes",
+            "description": {},
+            "url": {
+              "path": [
+                "clientes",
+                ""
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": false,
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "disabled": false,
+                  "key": "busca",
+                  "value": "string"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "2452ebdb-0a1e-4ce3-9123-747b833069de",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "busca",
+                      "value": "string"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"20b81a47-21b7-3642-fbc4-5ae52aef797f\",\n      \"nome\": \"string\",\n      \"cpfCnpj\": \"string\",\n      \"tipoPessoa\": \"JURIDICA\",\n      \"ativo\": false,\n      \"criadoEm\": \"2005-10-07T02:21:32.478Z\",\n      \"atualizadoEm\": \"2013-08-26T07:45:26.491Z\",\n      \"email\": \"string\",\n      \"telefone\": \"string\",\n      \"endereco\": \"string\"\n    },\n    {\n      \"id\": \"9047a627-46a8-c3f2-50b4-6be49f9af0e9\",\n      \"nome\": \"string\",\n      \"cpfCnpj\": \"string\",\n      \"tipoPessoa\": \"JURIDICA\",\n      \"ativo\": false,\n      \"criadoEm\": \"1982-05-15T06:00:45.379Z\",\n      \"atualizadoEm\": \"2025-06-03T08:30:44.172Z\",\n      \"email\": \"string\",\n      \"telefone\": \"string\",\n      \"endereco\": \"string\"\n    }\n  ],\n  \"meta\": {\n    \"page\": 471,\n    \"limit\": 1697,\n    \"total\": 6059,\n    \"totalPages\": 7853\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "ef21633c-a3d4-4211-ad14-c2d56f8ec0c3",
+          "name": "Buscar por CPF/CNPJ",
+          "request": {
+            "name": "Buscar por CPF/CNPJ",
+            "description": {},
+            "url": {
+              "path": [
+                "clientes",
+                "cpf-cnpj",
+                ":documento"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "string",
+                  "key": "documento",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "cd047d2b-caf2-49aa-baf0-4b008e4fccf2",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    "cpf-cnpj",
+                    ":documento"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "string",
+                      "key": "documento",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44be5fd9-ce24-1a9f-35f9-382c9bd8dd5d\",\n  \"nome\": \"string\",\n  \"cpfCnpj\": \"string\",\n  \"tipoPessoa\": \"FISICA\",\n  \"ativo\": false,\n  \"criadoEm\": \"1988-03-24T11:06:50.555Z\",\n  \"atualizadoEm\": \"1990-12-30T15:51:19.031Z\",\n  \"email\": \"string\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "fce4aa5f-4413-4c59-bd08-868ff3352091",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    "cpf-cnpj",
+                    ":documento"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "string",
+                      "key": "documento",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "51994fb2-8137-4829-8d2d-69e7c70a16f6",
+          "name": "Buscar por ID",
+          "request": {
+            "name": "Buscar por ID",
+            "description": {},
+            "url": {
+              "path": [
+                "clientes",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "113ba9c6-433e-419e-ae47-24fa6a367523",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44be5fd9-ce24-1a9f-35f9-382c9bd8dd5d\",\n  \"nome\": \"string\",\n  \"cpfCnpj\": \"string\",\n  \"tipoPessoa\": \"FISICA\",\n  \"ativo\": false,\n  \"criadoEm\": \"1988-03-24T11:06:50.555Z\",\n  \"atualizadoEm\": \"1990-12-30T15:51:19.031Z\",\n  \"email\": \"string\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "710dc91b-8622-416d-bbd3-235f740c70a0",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "24e10441-5b36-44d0-9896-ae632188cac9",
+          "name": "Atualizar cliente",
+          "request": {
+            "name": "Atualizar cliente",
+            "description": {},
+            "url": {
+              "path": [
+                "clientes",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"string\",\n  \"email\": \"REONFNK0vSW1V@DNBGSXQZkMnuX.deph\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "6b18721f-d5a1-4a3e-885c-7b10156c9989",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"string\",\n  \"email\": \"REONFNK0vSW1V@DNBGSXQZkMnuX.deph\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44be5fd9-ce24-1a9f-35f9-382c9bd8dd5d\",\n  \"nome\": \"string\",\n  \"cpfCnpj\": \"string\",\n  \"tipoPessoa\": \"FISICA\",\n  \"ativo\": false,\n  \"criadoEm\": \"1988-03-24T11:06:50.555Z\",\n  \"atualizadoEm\": \"1990-12-30T15:51:19.031Z\",\n  \"email\": \"string\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ee2ad002-a87f-41ec-b3f7-1cfba9aeb354",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"string\",\n  \"email\": \"REONFNK0vSW1V@DNBGSXQZkMnuX.deph\",\n  \"telefone\": \"string\",\n  \"endereco\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "8b0468e4-9d24-4444-914a-0810d1fc1cb0",
+          "name": "Remover cliente (soft delete)",
+          "request": {
+            "name": "Remover cliente (soft delete)",
+            "description": {},
+            "url": {
+              "path": [
+                "clientes",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "61bce020-3aec-45cc-857f-9314b034b11f",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "clientes",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "632abf0b-20e1-4849-9992-1766cfdcac2d",
+      "name": "Veículos",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "6a68b357-85ab-41d5-a0af-8f12b5d09653",
+          "name": "Cadastrar veículo",
+          "request": {
+            "name": "Cadastrar veículo",
+            "description": {},
+            "url": {
+              "path": [
+                "veiculos",
+                ""
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": \"1c037900-e763-b82d-4e9d-fda790bf4670\",\n  \"placa\": \"string\",\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 1940,\n  \"cor\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "1b121e83-1746-407c-8d9c-16130cd3a5e8",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clienteId\": \"1c037900-e763-b82d-4e9d-fda790bf4670\",\n  \"placa\": \"string\",\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 1940,\n  \"cor\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1cafc91c-9002-4659-b2d8-c290c974c33e\",\n  \"placa\": \"string\",\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 6399,\n  \"cor\": \"string\",\n  \"ativo\": false,\n  \"clienteId\": \"110ad798-e53d-82be-8e11-c1cba35ce63f\",\n  \"criadoEm\": \"1989-10-14T19:44:03.113Z\",\n  \"atualizadoEm\": \"2008-10-18T15:59:31.702Z\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ff130ad1-93ba-4707-8519-d74cb8b4ecd6",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clienteId\": \"1c037900-e763-b82d-4e9d-fda790bf4670\",\n  \"placa\": \"string\",\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 1940,\n  \"cor\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "590df424-fdc4-449c-aebd-0f5eae67c76a",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clienteId\": \"1c037900-e763-b82d-4e9d-fda790bf4670\",\n  \"placa\": \"string\",\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 1940,\n  \"cor\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "e153ed77-02f2-448d-9ffe-66c60054f339",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clienteId\": \"1c037900-e763-b82d-4e9d-fda790bf4670\",\n  \"placa\": \"string\",\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 1940,\n  \"cor\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "8ad8f8b2-f786-463d-a43a-4a1b12e0d238",
+          "name": "Listar veículos",
+          "request": {
+            "name": "Listar veículos",
+            "description": {},
+            "url": {
+              "path": [
+                "veiculos",
+                ""
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "clienteId",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "ffb9f20f-206e-4fd0-ba1a-f2996a1aeb85",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "clienteId",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"7bc40ec6-13b6-5478-f612-3b6da5fea1d5\",\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\",\n    \"ano\": 466,\n    \"cor\": \"string\",\n    \"ativo\": true,\n    \"clienteId\": \"850b2736-4f4d-269e-934e-833d2689389b\",\n    \"criadoEm\": \"2024-07-07T13:03:03.108Z\",\n    \"atualizadoEm\": \"1969-07-16T19:08:21.755Z\"\n  },\n  {\n    \"id\": \"5450c05c-fcdc-e8f3-732c-bbd2557b396b\",\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\",\n    \"ano\": 6127,\n    \"cor\": \"string\",\n    \"ativo\": true,\n    \"clienteId\": \"fbd22e57-473f-c7a4-a6b7-0522f6610d5e\",\n    \"criadoEm\": \"2026-05-24T00:37:27.172Z\",\n    \"atualizadoEm\": \"1987-04-01T17:21:59.789Z\"\n  }\n]",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "4514cb98-baca-4686-9d4e-77c06fb9c6ea",
+          "name": "Buscar por placa",
+          "request": {
+            "name": "Buscar por placa",
+            "description": {},
+            "url": {
+              "path": [
+                "veiculos",
+                "placa",
+                ":placa"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "string",
+                  "key": "placa",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "f51b5700-60d1-4ce0-9005-cf474e12e950",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    "placa",
+                    ":placa"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "string",
+                      "key": "placa",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1cafc91c-9002-4659-b2d8-c290c974c33e\",\n  \"placa\": \"string\",\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 6399,\n  \"cor\": \"string\",\n  \"ativo\": false,\n  \"clienteId\": \"110ad798-e53d-82be-8e11-c1cba35ce63f\",\n  \"criadoEm\": \"1989-10-14T19:44:03.113Z\",\n  \"atualizadoEm\": \"2008-10-18T15:59:31.702Z\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "fa5d2dae-d4ac-456a-98a6-3a1e4a13c474",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    "placa",
+                    ":placa"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "string",
+                      "key": "placa",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "a1b6b626-3513-403a-836e-bf13fddf53c8",
+          "name": "Buscar por ID",
+          "request": {
+            "name": "Buscar por ID",
+            "description": {},
+            "url": {
+              "path": [
+                "veiculos",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "04423b80-b1f7-4f24-86e4-2b3d29f4beb4",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1cafc91c-9002-4659-b2d8-c290c974c33e\",\n  \"placa\": \"string\",\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 6399,\n  \"cor\": \"string\",\n  \"ativo\": false,\n  \"clienteId\": \"110ad798-e53d-82be-8e11-c1cba35ce63f\",\n  \"criadoEm\": \"1989-10-14T19:44:03.113Z\",\n  \"atualizadoEm\": \"2008-10-18T15:59:31.702Z\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "86623f7f-6816-4af3-9eb6-856e43171442",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "dfc5b291-5db4-4cf3-8b9e-eb51ef1db9f4",
+          "name": "Atualizar veículo",
+          "request": {
+            "name": "Atualizar veículo",
+            "description": {},
+            "url": {
+              "path": [
+                "veiculos",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 1924,\n  \"cor\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "e1f90995-0df7-45c1-afce-9bdffb625df9",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 1924,\n  \"cor\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1cafc91c-9002-4659-b2d8-c290c974c33e\",\n  \"placa\": \"string\",\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 6399,\n  \"cor\": \"string\",\n  \"ativo\": false,\n  \"clienteId\": \"110ad798-e53d-82be-8e11-c1cba35ce63f\",\n  \"criadoEm\": \"1989-10-14T19:44:03.113Z\",\n  \"atualizadoEm\": \"2008-10-18T15:59:31.702Z\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "1e54c174-4a40-4588-8238-37a1bd6d3fa2",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"marca\": \"string\",\n  \"modelo\": \"string\",\n  \"ano\": 1924,\n  \"cor\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "519f6a97-22bc-4b85-bbbc-4e0548f50508",
+          "name": "Remover veículo",
+          "request": {
+            "name": "Remover veículo",
+            "description": {},
+            "url": {
+              "path": [
+                "veiculos",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "ebb15ae2-98d6-47ce-ac95-a85a4410a8ce",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "veiculos",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "6cf15221-19ee-4eb0-8b09-86a0c292548d",
+      "name": "Ordens de Serviço",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "86cd285e-0c21-4c9f-8658-f1fdeb83d29b",
+          "name": "Consultar status da OS (sem login)",
+          "request": {
+            "name": "Consultar status da OS (sem login)",
+            "description": {
+              "content": "Cliente informa número da OS e CPF/CNPJ para acompanhar sem autenticação. Resposta em cache no Redis por 60 s, invalidada a cada mudança de status.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "ordens",
+                "consulta-publica"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "numero",
+                  "value": "3295",
+                  "description": "(Required) "
+                },
+                {
+                  "disabled": false,
+                  "key": "cpfCnpj",
+                  "value": "string",
+                  "description": "(Required) "
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "19874125-f4e0-404f-95f0-e9f92b81792a",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    "consulta-publica"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "numero",
+                      "value": "3295"
+                    },
+                    {
+                      "key": "cpfCnpj",
+                      "value": "string"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"cc420a16-c0c8-6bc5-d300-dbe27ccae9f4\",\n  \"numero\": 6771,\n  \"status\": \"string\",\n  \"statusLabel\": \"string\",\n  \"valorTotal\": 7970.023656729749,\n  \"linkPagamento\": \"string\",\n  \"criadoEm\": \"1991-12-08T18:07:57.494Z\",\n  \"aprovadoEm\": \"1954-03-31T22:12:19.049Z\",\n  \"pagoEm\": \"1952-11-15T20:55:45.840Z\",\n  \"iniciadoEm\": \"2016-12-26T12:54:15.963Z\",\n  \"finalizadoEm\": \"1949-09-18T22:47:39.067Z\",\n  \"entregueEm\": \"2022-04-08T19:50:03.941Z\",\n  \"veiculo\": {\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\"\n  },\n  \"itens\": [\n    {\n      \"tipo\": \"SERVICO\",\n      \"nome\": \"string\",\n      \"quantidade\": 4253,\n      \"precoUnitario\": 2226.1393268924335\n    },\n    {\n      \"tipo\": \"PECA\",\n      \"nome\": \"string\",\n      \"quantidade\": 7490,\n      \"precoUnitario\": 6142.955227980709\n    }\n  ],\n  \"historico\": [\n    {\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"1969-10-24T23:25:59.712Z\"\n    },\n    {\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"1975-06-05T12:20:03.871Z\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "1f376e47-a8df-45eb-add0-41947f2c5712",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    "consulta-publica"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "numero",
+                      "value": "3295"
+                    },
+                    {
+                      "key": "cpfCnpj",
+                      "value": "string"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "4e391415-53a5-432d-a3b2-88b4d0d09f20",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    "consulta-publica"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "numero",
+                      "value": "3295"
+                    },
+                    {
+                      "key": "cpfCnpj",
+                      "value": "string"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "59f27a73-d53b-4c31-bb7f-c8f238e62cd6",
+          "name": "Abrir OS",
+          "request": {
+            "name": "Abrir OS",
+            "description": {
+              "content": "Cria a OS e inicia a saga: o comando de abertura de diagnóstico é gravado no outbox e publicado para o serviço de execução.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "ordens",
+                ""
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": \"b98e723d-d45a-6fdb-8462-0434045ea5a1\",\n  \"veiculoId\": \"9c6d54a0-05c6-da77-a9f6-031d40aa4111\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "f456fd7f-a00b-4016-8606-7432b0edf83f",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clienteId\": \"b98e723d-d45a-6fdb-8462-0434045ea5a1\",\n  \"veiculoId\": \"9c6d54a0-05c6-da77-a9f6-031d40aa4111\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1694d1b5-e589-a9ac-de49-aca2a5f61516\",\n  \"numero\": 4388,\n  \"clienteId\": \"4fb65b2d-279f-c7f8-38c7-485796812854\",\n  \"veiculoId\": \"df256e07-fe6a-e958-fac6-f724962ed691\",\n  \"status\": \"string\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\",\n  \"valorTotal\": 6627.270273933978,\n  \"orcamentoId\": \"string\",\n  \"linkPagamento\": \"string\",\n  \"aprovadoEm\": \"1997-12-03T22:10:22.769Z\",\n  \"pagoEm\": \"1971-07-28T13:26:39.296Z\",\n  \"iniciadoEm\": \"1996-11-21T04:18:43.105Z\",\n  \"finalizadoEm\": \"1982-02-05T09:28:21.660Z\",\n  \"entregueEm\": \"1980-10-09T02:46:08.480Z\",\n  \"criadoEm\": \"1984-06-09T12:23:07.077Z\",\n  \"atualizadoEm\": \"1994-11-24T00:56:34.588Z\",\n  \"cliente\": {\n    \"id\": \"0fa1074e-703a-9ad5-01ea-e51a53d0f2ad\",\n    \"nome\": \"string\",\n    \"cpfCnpj\": \"string\",\n    \"email\": \"string\",\n    \"telefone\": \"string\"\n  },\n  \"veiculo\": {\n    \"id\": \"3d22b259-bc97-d3e3-c373-d9dff05499c7\",\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\",\n    \"ano\": 8920,\n    \"cor\": \"string\",\n    \"clienteId\": \"be30edf9-ab7b-a01c-ef5c-705c4373fe4e\",\n    \"ativo\": false,\n    \"criadoEm\": \"1976-05-12T01:26:19.222Z\",\n    \"atualizadoEm\": \"1973-12-08T09:29:11.238Z\"\n  },\n  \"itens\": [\n    {\n      \"id\": \"ac77ca85-4690-ffaa-6cf4-45a199e7bcdc\",\n      \"ordemId\": \"f505c2c7-6993-646b-e070-18fba5e3e82d\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9797,\n      \"precoUnitario\": 7621.090713021003\n    },\n    {\n      \"id\": \"1d5f8724-6307-9c56-0edb-7d638a48a154\",\n      \"ordemId\": \"356a182b-9e93-da1a-d806-ae748a8237c2\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9222,\n      \"precoUnitario\": 6104.041865540006\n    }\n  ],\n  \"historico\": [\n    {\n      \"id\": \"f565db22-bd9a-5d78-f4f8-0bcfbe0d875e\",\n      \"ordemId\": \"7b5af871-53cb-0210-6214-8999fbe484ca\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2008-08-31T13:39:46.027Z\"\n    },\n    {\n      \"id\": \"325dbe93-1a25-a785-af84-2069d5eb28e6\",\n      \"ordemId\": \"764f84ba-0c8a-b7c6-09b6-f80dfbdf6f6b\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2006-08-23T12:36:10.500Z\"\n    }\n  ],\n  \"saga\": {\n    \"id\": \"70c231d7-34bf-19e6-4238-a6eb29a38111\",\n    \"etapa\": \"string\",\n    \"status\": \"string\",\n    \"motivoFalha\": \"string\",\n    \"compensacoesPendentes\": [\n      \"string\",\n      \"string\"\n    ]\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "0b19c4c5-d4d3-4e9b-a7d4-7ee4a680dc9a",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clienteId\": \"b98e723d-d45a-6fdb-8462-0434045ea5a1\",\n  \"veiculoId\": \"9c6d54a0-05c6-da77-a9f6-031d40aa4111\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ad893830-22a2-4d79-b721-5d82574d38ae",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clienteId\": \"b98e723d-d45a-6fdb-8462-0434045ea5a1\",\n  \"veiculoId\": \"9c6d54a0-05c6-da77-a9f6-031d40aa4111\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "56a9752a-57bf-467a-8aa8-4bbc98499161",
+          "name": "Listar OS",
+          "request": {
+            "name": "Listar OS",
+            "description": {},
+            "url": {
+              "path": [
+                "ordens",
+                ""
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "disabled": false,
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "disabled": false,
+                  "key": "status",
+                  "value": "AGUARDANDO_PAGAMENTO"
+                },
+                {
+                  "disabled": false,
+                  "key": "clienteId",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16"
+                },
+                {
+                  "disabled": false,
+                  "key": "veiculoId",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16"
+                },
+                {
+                  "disabled": false,
+                  "key": "dataInicio",
+                  "value": "1963-11-06T21:17:52.680Z"
+                },
+                {
+                  "disabled": false,
+                  "key": "dataFim",
+                  "value": "1963-11-06T21:17:52.680Z"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "85d954ad-a378-4e92-a52b-337c982b2778",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "status",
+                      "value": "AGUARDANDO_PAGAMENTO"
+                    },
+                    {
+                      "key": "clienteId",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16"
+                    },
+                    {
+                      "key": "veiculoId",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16"
+                    },
+                    {
+                      "key": "dataInicio",
+                      "value": "1963-11-06T21:17:52.680Z"
+                    },
+                    {
+                      "key": "dataFim",
+                      "value": "1963-11-06T21:17:52.680Z"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"e1623a48-b7bc-73f3-d9d3-9500d7aa7afc\",\n      \"numero\": 7318,\n      \"clienteId\": \"003d909a-4de2-429b-5057-7ee33af9241e\",\n      \"veiculoId\": \"377fb740-00c1-1073-d371-4781617583ea\",\n      \"status\": \"string\",\n      \"descricao\": \"string\",\n      \"observacoes\": \"string\",\n      \"valorTotal\": 3536.694871174041,\n      \"aprovadoEm\": \"1968-03-29T03:19:27.673Z\",\n      \"pagoEm\": \"1985-11-09T14:09:05.623Z\",\n      \"iniciadoEm\": \"1984-11-18T22:31:25.524Z\",\n      \"finalizadoEm\": \"1984-07-24T00:16:55.972Z\",\n      \"entregueEm\": \"1972-10-11T03:12:56.080Z\",\n      \"criadoEm\": \"1979-04-24T15:41:29.158Z\",\n      \"atualizadoEm\": \"1975-11-17T22:23:23.231Z\",\n      \"cliente\": {\n        \"id\": \"4106950e-99ae-1aee-64d9-96e4f1957d4d\",\n        \"nome\": \"string\",\n        \"cpfCnpj\": \"string\"\n      },\n      \"veiculo\": {\n        \"id\": \"c0f0de54-ea47-f3b8-bcc7-a5f15190d31d\",\n        \"placa\": \"string\",\n        \"marca\": \"string\",\n        \"modelo\": \"string\"\n      },\n      \"_count\": {\n        \"itens\": 2900\n      }\n    },\n    {\n      \"id\": \"631f33e0-2279-b474-7341-4ef34ad3d3ed\",\n      \"numero\": 499,\n      \"clienteId\": \"8988e526-5bda-ac55-3a40-9bb8e8fe73aa\",\n      \"veiculoId\": \"40414d50-84b2-559a-5f09-214af9822f84\",\n      \"status\": \"string\",\n      \"descricao\": \"string\",\n      \"observacoes\": \"string\",\n      \"valorTotal\": 6355.482576863357,\n      \"aprovadoEm\": \"2010-10-21T09:07:14.677Z\",\n      \"pagoEm\": \"1966-09-27T00:40:01.892Z\",\n      \"iniciadoEm\": \"2024-11-20T08:14:36.887Z\",\n      \"finalizadoEm\": \"1988-01-29T19:36:51.326Z\",\n      \"entregueEm\": \"1998-02-14T04:53:50.770Z\",\n      \"criadoEm\": \"1994-08-03T10:18:06.745Z\",\n      \"atualizadoEm\": \"1996-10-14T15:47:20.245Z\",\n      \"cliente\": {\n        \"id\": \"9f3eff8e-02ab-9d11-f055-1a6217f998c6\",\n        \"nome\": \"string\",\n        \"cpfCnpj\": \"string\"\n      },\n      \"veiculo\": {\n        \"id\": \"69bf2d24-3fd6-0b2c-b76b-234cdc7d5797\",\n        \"placa\": \"string\",\n        \"marca\": \"string\",\n        \"modelo\": \"string\"\n      },\n      \"_count\": {\n        \"itens\": 6867\n      }\n    }\n  ],\n  \"meta\": {\n    \"page\": 9639,\n    \"limit\": 1321,\n    \"total\": 3596,\n    \"totalPages\": 9244\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "0b232602-adb7-4300-be8f-5654097ded2f",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ""
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    },
+                    {
+                      "key": "status",
+                      "value": "AGUARDANDO_PAGAMENTO"
+                    },
+                    {
+                      "key": "clienteId",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16"
+                    },
+                    {
+                      "key": "veiculoId",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16"
+                    },
+                    {
+                      "key": "dataInicio",
+                      "value": "1963-11-06T21:17:52.680Z"
+                    },
+                    {
+                      "key": "dataFim",
+                      "value": "1963-11-06T21:17:52.680Z"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "76d83960-7652-426c-9cb9-d307e0af0697",
+          "name": "Buscar OS por número",
+          "request": {
+            "name": "Buscar OS por número",
+            "description": {},
+            "url": {
+              "path": [
+                "ordens",
+                "numero",
+                ":numero"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "7769",
+                  "key": "numero",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "cc8f59a8-cc2f-46cf-b027-583d72ebcffa",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    "numero",
+                    ":numero"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "7769",
+                      "key": "numero",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1694d1b5-e589-a9ac-de49-aca2a5f61516\",\n  \"numero\": 4388,\n  \"clienteId\": \"4fb65b2d-279f-c7f8-38c7-485796812854\",\n  \"veiculoId\": \"df256e07-fe6a-e958-fac6-f724962ed691\",\n  \"status\": \"string\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\",\n  \"valorTotal\": 6627.270273933978,\n  \"orcamentoId\": \"string\",\n  \"linkPagamento\": \"string\",\n  \"aprovadoEm\": \"1997-12-03T22:10:22.769Z\",\n  \"pagoEm\": \"1971-07-28T13:26:39.296Z\",\n  \"iniciadoEm\": \"1996-11-21T04:18:43.105Z\",\n  \"finalizadoEm\": \"1982-02-05T09:28:21.660Z\",\n  \"entregueEm\": \"1980-10-09T02:46:08.480Z\",\n  \"criadoEm\": \"1984-06-09T12:23:07.077Z\",\n  \"atualizadoEm\": \"1994-11-24T00:56:34.588Z\",\n  \"cliente\": {\n    \"id\": \"0fa1074e-703a-9ad5-01ea-e51a53d0f2ad\",\n    \"nome\": \"string\",\n    \"cpfCnpj\": \"string\",\n    \"email\": \"string\",\n    \"telefone\": \"string\"\n  },\n  \"veiculo\": {\n    \"id\": \"3d22b259-bc97-d3e3-c373-d9dff05499c7\",\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\",\n    \"ano\": 8920,\n    \"cor\": \"string\",\n    \"clienteId\": \"be30edf9-ab7b-a01c-ef5c-705c4373fe4e\",\n    \"ativo\": false,\n    \"criadoEm\": \"1976-05-12T01:26:19.222Z\",\n    \"atualizadoEm\": \"1973-12-08T09:29:11.238Z\"\n  },\n  \"itens\": [\n    {\n      \"id\": \"ac77ca85-4690-ffaa-6cf4-45a199e7bcdc\",\n      \"ordemId\": \"f505c2c7-6993-646b-e070-18fba5e3e82d\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9797,\n      \"precoUnitario\": 7621.090713021003\n    },\n    {\n      \"id\": \"1d5f8724-6307-9c56-0edb-7d638a48a154\",\n      \"ordemId\": \"356a182b-9e93-da1a-d806-ae748a8237c2\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9222,\n      \"precoUnitario\": 6104.041865540006\n    }\n  ],\n  \"historico\": [\n    {\n      \"id\": \"f565db22-bd9a-5d78-f4f8-0bcfbe0d875e\",\n      \"ordemId\": \"7b5af871-53cb-0210-6214-8999fbe484ca\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2008-08-31T13:39:46.027Z\"\n    },\n    {\n      \"id\": \"325dbe93-1a25-a785-af84-2069d5eb28e6\",\n      \"ordemId\": \"764f84ba-0c8a-b7c6-09b6-f80dfbdf6f6b\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2006-08-23T12:36:10.500Z\"\n    }\n  ],\n  \"saga\": {\n    \"id\": \"70c231d7-34bf-19e6-4238-a6eb29a38111\",\n    \"etapa\": \"string\",\n    \"status\": \"string\",\n    \"motivoFalha\": \"string\",\n    \"compensacoesPendentes\": [\n      \"string\",\n      \"string\"\n    ]\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d9bfcef6-6d4f-467b-9495-3a75c1334290",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    "numero",
+                    ":numero"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "7769",
+                      "key": "numero",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "b649e893-790f-4b85-8618-60f4aafd19bf",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    "numero",
+                    ":numero"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "7769",
+                      "key": "numero",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "64b548b6-87cc-4764-b727-0233e6cce914",
+          "name": "Buscar OS por ID",
+          "request": {
+            "name": "Buscar OS por ID",
+            "description": {},
+            "url": {
+              "path": [
+                "ordens",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "d798eeb6-f504-4e1f-b6b8-5ad6c146f36b",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1694d1b5-e589-a9ac-de49-aca2a5f61516\",\n  \"numero\": 4388,\n  \"clienteId\": \"4fb65b2d-279f-c7f8-38c7-485796812854\",\n  \"veiculoId\": \"df256e07-fe6a-e958-fac6-f724962ed691\",\n  \"status\": \"string\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\",\n  \"valorTotal\": 6627.270273933978,\n  \"orcamentoId\": \"string\",\n  \"linkPagamento\": \"string\",\n  \"aprovadoEm\": \"1997-12-03T22:10:22.769Z\",\n  \"pagoEm\": \"1971-07-28T13:26:39.296Z\",\n  \"iniciadoEm\": \"1996-11-21T04:18:43.105Z\",\n  \"finalizadoEm\": \"1982-02-05T09:28:21.660Z\",\n  \"entregueEm\": \"1980-10-09T02:46:08.480Z\",\n  \"criadoEm\": \"1984-06-09T12:23:07.077Z\",\n  \"atualizadoEm\": \"1994-11-24T00:56:34.588Z\",\n  \"cliente\": {\n    \"id\": \"0fa1074e-703a-9ad5-01ea-e51a53d0f2ad\",\n    \"nome\": \"string\",\n    \"cpfCnpj\": \"string\",\n    \"email\": \"string\",\n    \"telefone\": \"string\"\n  },\n  \"veiculo\": {\n    \"id\": \"3d22b259-bc97-d3e3-c373-d9dff05499c7\",\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\",\n    \"ano\": 8920,\n    \"cor\": \"string\",\n    \"clienteId\": \"be30edf9-ab7b-a01c-ef5c-705c4373fe4e\",\n    \"ativo\": false,\n    \"criadoEm\": \"1976-05-12T01:26:19.222Z\",\n    \"atualizadoEm\": \"1973-12-08T09:29:11.238Z\"\n  },\n  \"itens\": [\n    {\n      \"id\": \"ac77ca85-4690-ffaa-6cf4-45a199e7bcdc\",\n      \"ordemId\": \"f505c2c7-6993-646b-e070-18fba5e3e82d\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9797,\n      \"precoUnitario\": 7621.090713021003\n    },\n    {\n      \"id\": \"1d5f8724-6307-9c56-0edb-7d638a48a154\",\n      \"ordemId\": \"356a182b-9e93-da1a-d806-ae748a8237c2\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9222,\n      \"precoUnitario\": 6104.041865540006\n    }\n  ],\n  \"historico\": [\n    {\n      \"id\": \"f565db22-bd9a-5d78-f4f8-0bcfbe0d875e\",\n      \"ordemId\": \"7b5af871-53cb-0210-6214-8999fbe484ca\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2008-08-31T13:39:46.027Z\"\n    },\n    {\n      \"id\": \"325dbe93-1a25-a785-af84-2069d5eb28e6\",\n      \"ordemId\": \"764f84ba-0c8a-b7c6-09b6-f80dfbdf6f6b\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2006-08-23T12:36:10.500Z\"\n    }\n  ],\n  \"saga\": {\n    \"id\": \"70c231d7-34bf-19e6-4238-a6eb29a38111\",\n    \"etapa\": \"string\",\n    \"status\": \"string\",\n    \"motivoFalha\": \"string\",\n    \"compensacoesPendentes\": [\n      \"string\",\n      \"string\"\n    ]\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "bb01daab-fcfe-45b1-849d-7f95e9f66c7c",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "c5dda79f-9a03-4d44-a7a5-2a297ee777c9",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "f0f9a58c-69bb-4dbe-a625-5e20516e686b",
+          "name": "Atualizar descrição e observações da OS",
+          "request": {
+            "name": "Atualizar descrição e observações da OS",
+            "description": {},
+            "url": {
+              "path": [
+                "ordens",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "598913f2-c42d-474e-bd3b-883178af93ab",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1694d1b5-e589-a9ac-de49-aca2a5f61516\",\n  \"numero\": 4388,\n  \"clienteId\": \"4fb65b2d-279f-c7f8-38c7-485796812854\",\n  \"veiculoId\": \"df256e07-fe6a-e958-fac6-f724962ed691\",\n  \"status\": \"string\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\",\n  \"valorTotal\": 6627.270273933978,\n  \"orcamentoId\": \"string\",\n  \"linkPagamento\": \"string\",\n  \"aprovadoEm\": \"1997-12-03T22:10:22.769Z\",\n  \"pagoEm\": \"1971-07-28T13:26:39.296Z\",\n  \"iniciadoEm\": \"1996-11-21T04:18:43.105Z\",\n  \"finalizadoEm\": \"1982-02-05T09:28:21.660Z\",\n  \"entregueEm\": \"1980-10-09T02:46:08.480Z\",\n  \"criadoEm\": \"1984-06-09T12:23:07.077Z\",\n  \"atualizadoEm\": \"1994-11-24T00:56:34.588Z\",\n  \"cliente\": {\n    \"id\": \"0fa1074e-703a-9ad5-01ea-e51a53d0f2ad\",\n    \"nome\": \"string\",\n    \"cpfCnpj\": \"string\",\n    \"email\": \"string\",\n    \"telefone\": \"string\"\n  },\n  \"veiculo\": {\n    \"id\": \"3d22b259-bc97-d3e3-c373-d9dff05499c7\",\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\",\n    \"ano\": 8920,\n    \"cor\": \"string\",\n    \"clienteId\": \"be30edf9-ab7b-a01c-ef5c-705c4373fe4e\",\n    \"ativo\": false,\n    \"criadoEm\": \"1976-05-12T01:26:19.222Z\",\n    \"atualizadoEm\": \"1973-12-08T09:29:11.238Z\"\n  },\n  \"itens\": [\n    {\n      \"id\": \"ac77ca85-4690-ffaa-6cf4-45a199e7bcdc\",\n      \"ordemId\": \"f505c2c7-6993-646b-e070-18fba5e3e82d\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9797,\n      \"precoUnitario\": 7621.090713021003\n    },\n    {\n      \"id\": \"1d5f8724-6307-9c56-0edb-7d638a48a154\",\n      \"ordemId\": \"356a182b-9e93-da1a-d806-ae748a8237c2\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9222,\n      \"precoUnitario\": 6104.041865540006\n    }\n  ],\n  \"historico\": [\n    {\n      \"id\": \"f565db22-bd9a-5d78-f4f8-0bcfbe0d875e\",\n      \"ordemId\": \"7b5af871-53cb-0210-6214-8999fbe484ca\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2008-08-31T13:39:46.027Z\"\n    },\n    {\n      \"id\": \"325dbe93-1a25-a785-af84-2069d5eb28e6\",\n      \"ordemId\": \"764f84ba-0c8a-b7c6-09b6-f80dfbdf6f6b\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2006-08-23T12:36:10.500Z\"\n    }\n  ],\n  \"saga\": {\n    \"id\": \"70c231d7-34bf-19e6-4238-a6eb29a38111\",\n    \"etapa\": \"string\",\n    \"status\": \"string\",\n    \"motivoFalha\": \"string\",\n    \"compensacoesPendentes\": [\n      \"string\",\n      \"string\"\n    ]\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "a2b9b477-58df-4210-9659-228f65682101",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "1803687e-4b05-4b32-a01d-0fab3fd37fd8",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "c8319d23-97a4-415a-81aa-ac3606f13083",
+          "name": "Estado e histórico da saga da OS",
+          "request": {
+            "name": "Estado e histórico da saga da OS",
+            "description": {
+              "content": "Etapa atual, compensações pendentes e cada mensagem enviada ou recebida, em ordem.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "ordens",
+                ":id",
+                "saga"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "26a54185-b0ba-4998-a1da-a8040a555e0d",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id",
+                    "saga"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"41bdaab1-2860-fa47-1233-8f82883c925e\",\n  \"ordemId\": \"37de2236-6a9f-9ed3-8747-e4958a0bd70d\",\n  \"etapa\": \"string\",\n  \"status\": \"string\",\n  \"participantes\": [\n    \"string\",\n    \"string\"\n  ],\n  \"compensacoesPendentes\": [\n    \"string\",\n    \"string\"\n  ],\n  \"motivoFalha\": \"string\",\n  \"versao\": 3033,\n  \"criadoEm\": \"1963-05-31T08:20:00.886Z\",\n  \"atualizadoEm\": \"1964-12-24T05:21:51.705Z\",\n  \"passos\": [\n    {\n      \"id\": \"8bba03fc-98b6-3fe2-433d-9b6cf068a6fb\",\n      \"direcao\": \"RECEBIDA\",\n      \"tipo\": \"string\",\n      \"mensagemId\": \"string\",\n      \"detalhe\": \"string\",\n      \"criadoEm\": \"1996-12-01T10:56:31.744Z\"\n    },\n    {\n      \"id\": \"4ff49347-f5d9-9fec-d08a-882543e24b26\",\n      \"direcao\": \"RECEBIDA\",\n      \"tipo\": \"string\",\n      \"mensagemId\": \"string\",\n      \"detalhe\": \"string\",\n      \"criadoEm\": \"1963-12-17T17:06:44.809Z\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "e2f0a503-fc3a-43f1-8ebd-ebbd4aa55241",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id",
+                    "saga"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "1a1b3a57-3dc6-43de-b218-8c2563694879",
+          "name": "Registrar a entrega do veículo",
+          "request": {
+            "name": "Registrar a entrega do veículo",
+            "description": {
+              "content": "Permitido apenas para OS Finalizada.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "ordens",
+                ":id",
+                "entregar"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"observacao\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "504c796c-2687-4a0a-ab16-b60ab96b756d",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id",
+                    "entregar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"observacao\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1694d1b5-e589-a9ac-de49-aca2a5f61516\",\n  \"numero\": 4388,\n  \"clienteId\": \"4fb65b2d-279f-c7f8-38c7-485796812854\",\n  \"veiculoId\": \"df256e07-fe6a-e958-fac6-f724962ed691\",\n  \"status\": \"string\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\",\n  \"valorTotal\": 6627.270273933978,\n  \"orcamentoId\": \"string\",\n  \"linkPagamento\": \"string\",\n  \"aprovadoEm\": \"1997-12-03T22:10:22.769Z\",\n  \"pagoEm\": \"1971-07-28T13:26:39.296Z\",\n  \"iniciadoEm\": \"1996-11-21T04:18:43.105Z\",\n  \"finalizadoEm\": \"1982-02-05T09:28:21.660Z\",\n  \"entregueEm\": \"1980-10-09T02:46:08.480Z\",\n  \"criadoEm\": \"1984-06-09T12:23:07.077Z\",\n  \"atualizadoEm\": \"1994-11-24T00:56:34.588Z\",\n  \"cliente\": {\n    \"id\": \"0fa1074e-703a-9ad5-01ea-e51a53d0f2ad\",\n    \"nome\": \"string\",\n    \"cpfCnpj\": \"string\",\n    \"email\": \"string\",\n    \"telefone\": \"string\"\n  },\n  \"veiculo\": {\n    \"id\": \"3d22b259-bc97-d3e3-c373-d9dff05499c7\",\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\",\n    \"ano\": 8920,\n    \"cor\": \"string\",\n    \"clienteId\": \"be30edf9-ab7b-a01c-ef5c-705c4373fe4e\",\n    \"ativo\": false,\n    \"criadoEm\": \"1976-05-12T01:26:19.222Z\",\n    \"atualizadoEm\": \"1973-12-08T09:29:11.238Z\"\n  },\n  \"itens\": [\n    {\n      \"id\": \"ac77ca85-4690-ffaa-6cf4-45a199e7bcdc\",\n      \"ordemId\": \"f505c2c7-6993-646b-e070-18fba5e3e82d\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9797,\n      \"precoUnitario\": 7621.090713021003\n    },\n    {\n      \"id\": \"1d5f8724-6307-9c56-0edb-7d638a48a154\",\n      \"ordemId\": \"356a182b-9e93-da1a-d806-ae748a8237c2\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9222,\n      \"precoUnitario\": 6104.041865540006\n    }\n  ],\n  \"historico\": [\n    {\n      \"id\": \"f565db22-bd9a-5d78-f4f8-0bcfbe0d875e\",\n      \"ordemId\": \"7b5af871-53cb-0210-6214-8999fbe484ca\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2008-08-31T13:39:46.027Z\"\n    },\n    {\n      \"id\": \"325dbe93-1a25-a785-af84-2069d5eb28e6\",\n      \"ordemId\": \"764f84ba-0c8a-b7c6-09b6-f80dfbdf6f6b\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2006-08-23T12:36:10.500Z\"\n    }\n  ],\n  \"saga\": {\n    \"id\": \"70c231d7-34bf-19e6-4238-a6eb29a38111\",\n    \"etapa\": \"string\",\n    \"status\": \"string\",\n    \"motivoFalha\": \"string\",\n    \"compensacoesPendentes\": [\n      \"string\",\n      \"string\"\n    ]\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "305300ab-d900-422c-a79f-9644f80ccab8",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id",
+                    "entregar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"observacao\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "0bb0ca62-e6f6-4125-802b-a25d006592db",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id",
+                    "entregar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"observacao\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "d2db29ab-0b6d-43c6-9315-a65ce6f099f7",
+          "name": "Cancelar OS",
+          "request": {
+            "name": "Cancelar OS",
+            "description": {
+              "content": "Inicia a compensação da saga: cancela a execução (devolve peças reservadas) e o orçamento (estorna o pagamento, se houver). Responde 202 e a OS passa a Cancelada quando todos os participantes confirmarem.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "ordens",
+                ":id",
+                "cancelar"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                  "key": "id",
+                  "description": "(Required) "
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "bc2fca0e-fec0-408e-b94f-9633475d7269",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id",
+                    "cancelar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"motivo\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1694d1b5-e589-a9ac-de49-aca2a5f61516\",\n  \"numero\": 4388,\n  \"clienteId\": \"4fb65b2d-279f-c7f8-38c7-485796812854\",\n  \"veiculoId\": \"df256e07-fe6a-e958-fac6-f724962ed691\",\n  \"status\": \"string\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\",\n  \"valorTotal\": 6627.270273933978,\n  \"orcamentoId\": \"string\",\n  \"linkPagamento\": \"string\",\n  \"aprovadoEm\": \"1997-12-03T22:10:22.769Z\",\n  \"pagoEm\": \"1971-07-28T13:26:39.296Z\",\n  \"iniciadoEm\": \"1996-11-21T04:18:43.105Z\",\n  \"finalizadoEm\": \"1982-02-05T09:28:21.660Z\",\n  \"entregueEm\": \"1980-10-09T02:46:08.480Z\",\n  \"criadoEm\": \"1984-06-09T12:23:07.077Z\",\n  \"atualizadoEm\": \"1994-11-24T00:56:34.588Z\",\n  \"cliente\": {\n    \"id\": \"0fa1074e-703a-9ad5-01ea-e51a53d0f2ad\",\n    \"nome\": \"string\",\n    \"cpfCnpj\": \"string\",\n    \"email\": \"string\",\n    \"telefone\": \"string\"\n  },\n  \"veiculo\": {\n    \"id\": \"3d22b259-bc97-d3e3-c373-d9dff05499c7\",\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\",\n    \"ano\": 8920,\n    \"cor\": \"string\",\n    \"clienteId\": \"be30edf9-ab7b-a01c-ef5c-705c4373fe4e\",\n    \"ativo\": false,\n    \"criadoEm\": \"1976-05-12T01:26:19.222Z\",\n    \"atualizadoEm\": \"1973-12-08T09:29:11.238Z\"\n  },\n  \"itens\": [\n    {\n      \"id\": \"ac77ca85-4690-ffaa-6cf4-45a199e7bcdc\",\n      \"ordemId\": \"f505c2c7-6993-646b-e070-18fba5e3e82d\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9797,\n      \"precoUnitario\": 7621.090713021003\n    },\n    {\n      \"id\": \"1d5f8724-6307-9c56-0edb-7d638a48a154\",\n      \"ordemId\": \"356a182b-9e93-da1a-d806-ae748a8237c2\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9222,\n      \"precoUnitario\": 6104.041865540006\n    }\n  ],\n  \"historico\": [\n    {\n      \"id\": \"f565db22-bd9a-5d78-f4f8-0bcfbe0d875e\",\n      \"ordemId\": \"7b5af871-53cb-0210-6214-8999fbe484ca\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2008-08-31T13:39:46.027Z\"\n    },\n    {\n      \"id\": \"325dbe93-1a25-a785-af84-2069d5eb28e6\",\n      \"ordemId\": \"764f84ba-0c8a-b7c6-09b6-f80dfbdf6f6b\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2006-08-23T12:36:10.500Z\"\n    }\n  ],\n  \"saga\": {\n    \"id\": \"70c231d7-34bf-19e6-4238-a6eb29a38111\",\n    \"etapa\": \"string\",\n    \"status\": \"string\",\n    \"motivoFalha\": \"string\",\n    \"compensacoesPendentes\": [\n      \"string\",\n      \"string\"\n    ]\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "bfd46c46-1112-4dcb-99d3-4f44231b6857",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id",
+                    "cancelar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"motivo\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Accepted",
+              "code": 202,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"1694d1b5-e589-a9ac-de49-aca2a5f61516\",\n  \"numero\": 4388,\n  \"clienteId\": \"4fb65b2d-279f-c7f8-38c7-485796812854\",\n  \"veiculoId\": \"df256e07-fe6a-e958-fac6-f724962ed691\",\n  \"status\": \"string\",\n  \"descricao\": \"string\",\n  \"observacoes\": \"string\",\n  \"valorTotal\": 6627.270273933978,\n  \"orcamentoId\": \"string\",\n  \"linkPagamento\": \"string\",\n  \"aprovadoEm\": \"1997-12-03T22:10:22.769Z\",\n  \"pagoEm\": \"1971-07-28T13:26:39.296Z\",\n  \"iniciadoEm\": \"1996-11-21T04:18:43.105Z\",\n  \"finalizadoEm\": \"1982-02-05T09:28:21.660Z\",\n  \"entregueEm\": \"1980-10-09T02:46:08.480Z\",\n  \"criadoEm\": \"1984-06-09T12:23:07.077Z\",\n  \"atualizadoEm\": \"1994-11-24T00:56:34.588Z\",\n  \"cliente\": {\n    \"id\": \"0fa1074e-703a-9ad5-01ea-e51a53d0f2ad\",\n    \"nome\": \"string\",\n    \"cpfCnpj\": \"string\",\n    \"email\": \"string\",\n    \"telefone\": \"string\"\n  },\n  \"veiculo\": {\n    \"id\": \"3d22b259-bc97-d3e3-c373-d9dff05499c7\",\n    \"placa\": \"string\",\n    \"marca\": \"string\",\n    \"modelo\": \"string\",\n    \"ano\": 8920,\n    \"cor\": \"string\",\n    \"clienteId\": \"be30edf9-ab7b-a01c-ef5c-705c4373fe4e\",\n    \"ativo\": false,\n    \"criadoEm\": \"1976-05-12T01:26:19.222Z\",\n    \"atualizadoEm\": \"1973-12-08T09:29:11.238Z\"\n  },\n  \"itens\": [\n    {\n      \"id\": \"ac77ca85-4690-ffaa-6cf4-45a199e7bcdc\",\n      \"ordemId\": \"f505c2c7-6993-646b-e070-18fba5e3e82d\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9797,\n      \"precoUnitario\": 7621.090713021003\n    },\n    {\n      \"id\": \"1d5f8724-6307-9c56-0edb-7d638a48a154\",\n      \"ordemId\": \"356a182b-9e93-da1a-d806-ae748a8237c2\",\n      \"tipo\": \"SERVICO\",\n      \"referenciaId\": \"string\",\n      \"nome\": \"string\",\n      \"quantidade\": 9222,\n      \"precoUnitario\": 6104.041865540006\n    }\n  ],\n  \"historico\": [\n    {\n      \"id\": \"f565db22-bd9a-5d78-f4f8-0bcfbe0d875e\",\n      \"ordemId\": \"7b5af871-53cb-0210-6214-8999fbe484ca\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2008-08-31T13:39:46.027Z\"\n    },\n    {\n      \"id\": \"325dbe93-1a25-a785-af84-2069d5eb28e6\",\n      \"ordemId\": \"764f84ba-0c8a-b7c6-09b6-f80dfbdf6f6b\",\n      \"statusAnterior\": \"string\",\n      \"statusNovo\": \"string\",\n      \"observacao\": \"string\",\n      \"criadoEm\": \"2006-08-23T12:36:10.500Z\"\n    }\n  ],\n  \"saga\": {\n    \"id\": \"70c231d7-34bf-19e6-4238-a6eb29a38111\",\n    \"etapa\": \"string\",\n    \"status\": \"string\",\n    \"motivoFalha\": \"string\",\n    \"compensacoesPendentes\": [\n      \"string\",\n      \"string\"\n    ]\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "fcc4d226-f676-4b63-bbd1-7ca0f8c9b3d8",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id",
+                    "cancelar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"motivo\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "9f532127-3161-4e1d-b2bd-b7b2dc410f92",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "ordens",
+                    ":id",
+                    "cancelar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "ffaee1ca-4896-b698-94f9-b034ee9f3b16",
+                      "key": "id",
+                      "description": "(Required) "
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"motivo\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "45ad7eb6-c0fb-462f-a451-005ab4712f44",
+      "name": "Integração",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "fc97c1d1-338d-4396-9e50-6842df833a87",
+          "name": "Identificar cliente pessoa física pelo CPF (uso da Lambda de autenticação)",
+          "request": {
+            "name": "Identificar cliente pessoa física pelo CPF (uso da Lambda de autenticação)",
+            "description": {
+              "content": "Exige o cabeçalho x-api-key. Substitui a leitura direta da tabela de clientes pela Lambda.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "integracao",
+                "clientes",
+                "identificar"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cpf\": \"stringstrin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "609fbe1b-e11b-4875-8233-f95a8f7a8c40",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "integracao",
+                    "clientes",
+                    "identificar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cpf\": \"stringstrin\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"c954d099-f5ec-a85d-906d-c68df6314dd9\",\n  \"nome\": \"string\",\n  \"email\": \"string\",\n  \"ativo\": true\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "122e01ae-a9ea-4b46-b352-d486fae97c5d",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "integracao",
+                    "clientes",
+                    "identificar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cpf\": \"stringstrin\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "5f270aaf-ea1d-4592-9d9f-0c646ed4abd2",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "integracao",
+                    "clientes",
+                    "identificar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cpf\": \"stringstrin\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "eb8cfa07-6693-4331-a4c4-cd21f332fecb",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "integracao",
+                    "clientes",
+                    "identificar"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cpf\": \"stringstrin\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 7697,\n  \"code\": \"string\",\n  \"message\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    },
+    {
+      "id": "546c65e6-304e-4b3d-9c41-9f768a5be889",
+      "name": "Saúde",
+      "description": {
+        "content": "",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "4296984f-0b97-4d3d-8409-a5b15429871a",
+          "name": "Liveness — o processo está de pé",
+          "request": {
+            "name": "Liveness — o processo está de pé",
+            "description": {},
+            "url": {
+              "path": [
+                "health"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "4bff8357-78c6-4ddf-b1dc-5107770a4640",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "health"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "b6cdfea5-d321-4832-a7d3-2e6a3ea5df1e",
+          "name": "Readiness — dependências acessíveis",
+          "request": {
+            "name": "Readiness — dependências acessíveis",
+            "description": {},
+            "url": {
+              "path": [
+                "health",
+                "ready"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "0f20b336-4abe-4338-baaf-99b87524892d",
+              "name": "Default Response",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "health",
+                    "ready"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/plain"
+                }
+              ],
+              "body": "",
+              "cookie": [],
+              "_postman_previewlanguage": "text"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{osUrl}}"
+    }
+  ],
+  "info": {
+    "_postman_id": "f700ea6e-99c3-4b10-9c35-09538022ba12",
+    "name": "Oficina — OS Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "Clientes, veículos, ordens de serviço e orquestração da saga de atendimento.",
+      "type": "text/plain"
+    }
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  }
+}

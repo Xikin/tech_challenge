@@ -3,17 +3,21 @@
 const licencaPresente = Boolean(process.env.NEW_RELIC_LICENSE_KEY);
 
 exports.config = {
-  app_name: [process.env.NEW_RELIC_APP_NAME || 'oficina-api'],
+  app_name: [process.env.NEW_RELIC_APP_NAME || 'oficina-os'],
   license_key: process.env.NEW_RELIC_LICENSE_KEY,
   agent_enabled: licencaPresente,
 
   labels: {
     environment: process.env.NODE_ENV || 'development',
-    service: 'oficina-api',
+    service: 'oficina-os',
   },
 
   distributed_tracing: {
     enabled: true,
+  },
+
+  instrumentation: {
+    amqplib: { enabled: false },
   },
 
   logging: {

@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { PrismaOrdemRepository } from '../../../infrastructure/database/repositories/prisma-ordens.repository';
+import { PrismaSagaRepository } from '../../../infrastructure/database/repositories/prisma-saga.repository';
 import { NodemailerEmailService } from '../../../infrastructure/services/nodemailer-email.service';
 import { CriarOrdemUseCase } from '../../../application/use-cases/ordens/criar-ordem.use-case';
 import { ListarOrdensUseCase } from '../../../application/use-cases/ordens/listar-ordens.use-case';
@@ -8,20 +9,18 @@ import { BuscarOrdemPorIdUseCase } from '../../../application/use-cases/ordens/b
 import { BuscarOrdemPorNumeroUseCase } from '../../../application/use-cases/ordens/buscar-ordem-por-numero.use-case';
 import { ConsultarStatusPublicoUseCase } from '../../../application/use-cases/ordens/consultar-status-publico.use-case';
 import { AtualizarOrdemUseCase } from '../../../application/use-cases/ordens/atualizar-ordem.use-case';
-import { AdicionarItensUseCase } from '../../../application/use-cases/ordens/adicionar-itens.use-case';
-import { AvancarStatusUseCase } from '../../../application/use-cases/ordens/avancar-status.use-case';
-import { AprovarOrcamentoUseCase } from '../../../application/use-cases/ordens/aprovar-orcamento.use-case';
-import type { ILogger } from '../../../domain/services/logger.service.interface';
-import { ReprovarOrcamentoUseCase } from '../../../application/use-cases/ordens/reprovar-orcamento.use-case';
 import { CancelarOrdemUseCase } from '../../../application/use-cases/ordens/cancelar-ordem.use-case';
+import { EntregarOrdemUseCase } from '../../../application/use-cases/ordens/entregar-ordem.use-case';
+import { ConsultarSagaUseCase } from '../../../application/use-cases/ordens/consultar-saga.use-case';
+import { ExecutorDeSaga } from '../../../application/saga/executor-saga';
+import { NotificadorCliente } from '../../../application/saga/notificador-cliente';
+import type { ICache } from '../../../domain/services/cache.service.interface';
+import type { IRastreamento } from '../../../domain/services/rastreamento.interface';
 import {
   criarOSSchema,
   atualizarOSSchema,
-  adicionarItensSchema,
-  avancarStatusSchema,
-  reprovarOSSchema,
+  entregarOSSchema,
   cancelarOSSchema,
-  aprovarOrcamentoSchema,
   listarOSSchema,
   paramsIdSchema,
   numeroParamsSchema,
@@ -30,28 +29,32 @@ import {
   osResponseSchema,
   listarOSResponseSchema,
   consultaPublicaResponseSchema,
+  sagaResponseSchema,
 } from '../schemas/ordens.schema';
 import { exigirInterno, exigirDonoDoRecurso } from '../middlewares/auth.middleware';
 
-export const ordensRoutes: FastifyPluginAsync = async (instance) => {
+export interface OpcoesOrdensRoutes {
+  cache: ICache;
+  rastreamento: IRastreamento;
+}
+
+export const ordensRoutes: FastifyPluginAsync<OpcoesOrdensRoutes> = async (instance, opcoes) => {
   const fastify = instance.withTypeProvider<ZodTypeProvider>();
+  const { cache, rastreamento } = opcoes;
   const repo = new PrismaOrdemRepository();
-  const emailService = new NodemailerEmailService();
+  const sagas = new PrismaSagaRepository();
+  const notificador = new NotificadorCliente(new NodemailerEmailService(), instance.log);
+  const executor = new ExecutorDeSaga(sagas, notificador, cache, rastreamento, instance.log);
   const tags = ['Ordens de Serviço'];
   const security = [{ bearerAuth: [] }];
 
-  const consultarPublico = new ConsultarStatusPublicoUseCase(repo);
-  const criar = (logger: ILogger) => new CriarOrdemUseCase(repo, logger);
+  const consultarPublico = new ConsultarStatusPublicoUseCase(repo, cache);
   const listar = new ListarOrdensUseCase(repo);
   const buscarPorNumero = new BuscarOrdemPorNumeroUseCase(repo);
   const buscarPorId = new BuscarOrdemPorIdUseCase(repo);
   const atualizar = new AtualizarOrdemUseCase(repo);
-  const adicionarItens = new AdicionarItensUseCase(repo);
-  const avancarStatus = (logger: ILogger) => new AvancarStatusUseCase(repo, emailService, logger);
-  const aprovarOrcamento = (logger: ILogger) =>
-    new AprovarOrcamentoUseCase(repo, emailService, logger);
-  const reprovarOrcamento = new ReprovarOrcamentoUseCase(repo);
-  const cancelar = new CancelarOrdemUseCase(repo);
+  const cancelar = new CancelarOrdemUseCase(repo, sagas, executor, cache);
+  const consultarSaga = new ConsultarSagaUseCase(sagas);
 
   const donoPorId = exigirDonoDoRecurso(async (req) => {
     const { id } = req.params as { id: string };
@@ -80,7 +83,8 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
       schema: {
         tags,
         summary: 'Consultar status da OS (sem login)',
-        description: 'Cliente informa número da OS e CPF/CNPJ para acompanhar sem autenticação.',
+        description:
+          'Cliente informa número da OS e CPF/CNPJ para acompanhar sem autenticação. Resposta em cache no Redis por 60 s, invalidada a cada mudança de status.',
         querystring: consultaPublicaQuerySchema,
         response: {
           200: consultaPublicaResponseSchema,
@@ -100,12 +104,17 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
       schema: {
         tags,
         security,
-        summary: 'Criar OS',
+        summary: 'Abrir OS',
+        description:
+          'Cria a OS e inicia a saga: o comando de abertura de diagnóstico é gravado no outbox e publicado para o serviço de execução.',
         body: criarOSSchema,
         response: { 201: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
       },
     },
-    async (req, rep) => rep.status(201).send(await criar(req.log).execute(req.body)),
+    async (req, rep) =>
+      rep
+        .status(201)
+        .send(await new CriarOrdemUseCase(repo, req.log, rastreamento).execute(req.body)),
   );
 
   fastify.get(
@@ -153,6 +162,23 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
     async (req, rep) => rep.send(await buscarPorId.execute(req.params.id)),
   );
 
+  fastify.get(
+    '/:id/saga',
+    {
+      onRequest: [exigirInterno],
+      schema: {
+        tags,
+        security,
+        summary: 'Estado e histórico da saga da OS',
+        description:
+          'Etapa atual, compensações pendentes e cada mensagem enviada ou recebida, em ordem.',
+        params: paramsIdSchema,
+        response: { 200: sagaResponseSchema, 404: erroResponseSchema },
+      },
+    },
+    async (req, rep) => rep.send(await consultarSaga.execute(req.params.id)),
+  );
+
   fastify.put(
     '/:id',
     {
@@ -160,7 +186,7 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
       schema: {
         tags,
         security,
-        summary: 'Atualizar OS',
+        summary: 'Atualizar descrição e observações da OS',
         params: paramsIdSchema,
         body: atualizarOSSchema,
         response: { 200: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
@@ -169,74 +195,27 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
     async (req, rep) => rep.send(await atualizar.execute(req.params.id, req.body)),
   );
 
-  fastify.post(
-    '/:id/itens',
-    {
-      onRequest: [exigirInterno],
-      schema: {
-        tags,
-        security,
-        summary: 'Adicionar itens à OS',
-        description: 'Permitido apenas para OS Recebida, Em Diagnóstico ou Aguardando Aprovação.',
-        params: paramsIdSchema,
-        body: adicionarItensSchema,
-        response: { 200: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
-      },
-    },
-    async (req, rep) => rep.send(await adicionarItens.execute(req.params.id, req.body)),
-  );
-
   fastify.patch(
-    '/:id/avancar',
+    '/:id/entregar',
     {
       onRequest: [exigirInterno],
       schema: {
         tags,
         security,
-        summary: 'Avançar status da OS',
-        description:
-          'Recebida → Em Diagnóstico → Aguardando Aprovação → Em Execução → Finalizada → Entregue',
+        summary: 'Registrar a entrega do veículo',
+        description: 'Permitido apenas para OS Finalizada.',
         params: paramsIdSchema,
-        body: avancarStatusSchema,
-        response: { 200: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
-      },
-    },
-    async (req, rep) => rep.send(await avancarStatus(req.log).execute(req.params.id, req.body)),
-  );
-
-  fastify.patch(
-    '/:id/aprovar-orcamento',
-    {
-      onRequest: [exigirInterno],
-      schema: {
-        tags,
-        security,
-        summary: 'Aprovar ou recusar orçamento',
-        description: 'Aprovação avança para Em Execução; recusa retorna para Em Diagnóstico.',
-        params: paramsIdSchema,
-        body: aprovarOrcamentoSchema,
-        response: { 200: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
-      },
-    },
-    async (req, rep) => rep.send(await aprovarOrcamento(req.log).execute(req.params.id, req.body)),
-  );
-
-  fastify.patch(
-    '/:id/reprovar',
-    {
-      onRequest: [exigirInterno],
-      schema: {
-        tags,
-        security,
-        summary: 'Reprovar orçamento',
-        description: 'Retorna OS para Em Diagnóstico e devolve as peças ao estoque.',
-        params: paramsIdSchema,
-        body: reprovarOSSchema,
+        body: entregarOSSchema,
         response: { 200: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
       },
     },
     async (req, rep) =>
-      rep.send(await reprovarOrcamento.execute(req.params.id, req.body.observacao)),
+      rep.send(
+        await new EntregarOrdemUseCase(repo, notificador, cache, req.log).execute(
+          req.params.id,
+          req.body.observacao,
+        ),
+      ),
   );
 
   fastify.patch(
@@ -248,12 +227,20 @@ export const ordensRoutes: FastifyPluginAsync = async (instance) => {
         security,
         summary: 'Cancelar OS',
         description:
-          'Cancela a OS e devolve as peças ao estoque. Permitido para: Recebida, Em Diagnóstico, Aguardando Aprovação e Em Execução.',
+          'Inicia a compensação da saga: cancela a execução (devolve peças reservadas) e o orçamento (estorna o pagamento, se houver). Responde 202 e a OS passa a Cancelada quando todos os participantes confirmarem.',
         params: paramsIdSchema,
         body: cancelarOSSchema,
-        response: { 200: osResponseSchema, 404: erroResponseSchema, 422: erroResponseSchema },
+        response: {
+          200: osResponseSchema,
+          202: osResponseSchema,
+          404: erroResponseSchema,
+          422: erroResponseSchema,
+        },
       },
     },
-    async (req, rep) => rep.send(await cancelar.execute(req.params.id, req.body.motivo)),
+    async (req, rep) => {
+      const { ordem, compensacaoIniciada } = await cancelar.execute(req.params.id, req.body.motivo);
+      return rep.status(compensacaoIniciada ? 202 : 200).send(ordem);
+    },
   );
 };

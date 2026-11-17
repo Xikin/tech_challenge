@@ -1,214 +1,58 @@
 # Kubernetes
 
-> **Atualizado na Fase 3.** Este documento descrevia a operação sobre um cluster
-> **Kind local**. A plataforma agora roda em **Amazon EKS**, com o PostgreSQL fora
-> do cluster (Amazon RDS) e exposição por Network Load Balancer atrás do API
-> Gateway. O que mudou:
->
-> | | Fase 2 | Fase 3 |
-> | --- | --- | --- |
-> | Cluster | Kind local | Amazon EKS 1.31, 2 a 4 nós |
-> | Banco | `Deployment` + PVC no cluster | Amazon RDS (manifestos removidos) |
-> | Exposição | `NodePort` 30000 | `Service type: LoadBalancer` (NLB) |
-> | Réplicas | `spec.replicas: 2` no Deployment | removido — quem manda é o HPA |
-> | Readiness | `/health` (raso) | `/health/ready` (verifica o banco) |
-> | Autoscaling | HPA sem metrics-server, nunca escalava | HPA + metrics-server + autoscaling de nós |
->
-> Ver [arquitetura-nuvem.md](arquitetura-nuvem.md) para o desenho atual e
-> [terraform.md](terraform.md) para onde a infraestrutura é provisionada.
+O OS Service roda no EKS provisionado por [oficina-infra-k8s](https://github.com/Xikin/oficina-infra-k8s), no namespace `oficina`, ao lado dos serviços de Execução e Billing. O RabbitMQ fica no namespace `plataforma`, gerenciado pelo repositório de infraestrutura.
 
----
-
-Manifests declarativos em `/k8s/` que descrevem o estado desejado da aplicação no cluster. Aplicados manualmente (local) ou pelo job de deploy do CI/CD (produção).
-
----
-
-## Visão geral dos recursos
+## Recursos deste repositório
 
 ```
-namespace "oficina"
-├── ConfigMap       oficina-config      variáveis não-sensíveis
-├── Secret          oficina-secret      credenciais (criado fora dos manifests)
-├── PVC             postgres-pvc        volume persistente do banco
-├── Deployment      postgres            banco de dados PostgreSQL
-├── Service         postgres            acesso interno ao banco (ClusterIP)
-├── Deployment      oficina-api         API Node.js (2 réplicas)
-├── Service         oficina-api         exposição via NodePort :30000
-└── HPA             oficina-api-hpa     escalonamento automático (2–10 réplicas)
+namespace oficina
+├── ConfigMap      oficina-os-config   variáveis não sensíveis (REDIS_URL, exchange, tentativas, New Relic)
+├── Secret         oficina-os-secret   criado pelo pipeline a partir do SSM; modelo em k8s/secret.example.yaml
+├── Deployment     oficina-os          API + consumidor da saga + relay do outbox (2 a 10 réplicas)
+├── Service        oficina-os          LoadBalancer (NLB) — backend do API Gateway
+├── HPA            oficina-os-hpa      CPU 70% / memória 80%
+├── Deployment     oficina-os-redis    cache e limite de tentativas, sem persistência
+├── Service        oficina-os-redis    ClusterIP :6379
+└── NetworkPolicy  oficina-os-redis    só pods app=oficina-os falam com o Redis
 ```
 
----
+| Arquivo | Conteúdo |
+| --- | --- |
+| [`k8s/namespace.yaml`](../k8s/namespace.yaml) | Namespace `oficina` |
+| [`k8s/configmap.yaml`](../k8s/configmap.yaml) | Configuração não sensível |
+| [`k8s/secret.example.yaml`](../k8s/secret.example.yaml) | Chaves esperadas no Secret |
+| [`k8s/deployment.yaml`](../k8s/deployment.yaml) | Probes, limites, usuário não-root, sistema de arquivos só-leitura |
+| [`k8s/service.yaml`](../k8s/service.yaml) | NLB com health check em `/health/ready` |
+| [`k8s/hpa.yaml`](../k8s/hpa.yaml) | Autoscaling |
+| [`k8s/redis.yaml`](../k8s/redis.yaml) | Redis + Service + NetworkPolicy |
 
-## Namespace
+O mesmo processo atende HTTP, consome a fila `os.saga` e roda o relay do outbox. Com várias réplicas, o consumo é dividido pelo RabbitMQ (`prefetch: 1` por réplica) e o relay divide as linhas com `FOR UPDATE SKIP LOCKED`, então escalar a API escala também o processamento da saga.
 
-**Arquivo:** `k8s/namespace.yaml`
+## Segredos
 
-Isola todos os recursos da aplicação. Label `app.kubernetes.io/part-of: oficina` permite filtrar recursos por projeto.
+| Chave | Origem |
+| --- | --- |
+| `DATABASE_URL` | SSM `/oficina/<env>/db/database_url` (oficina-infra-db) |
+| `RABBITMQ_URL` | SSM `/oficina/<env>/mensageria/rabbitmq_url` (oficina-infra-k8s) |
+| `JWT_SECRET`, `JWT_CLIENTE_SECRET` | Secrets do GitHub; o pipeline também publica no SSM para os outros serviços |
+| `INTEGRACAO_API_KEY` | Gerada pelo pipeline no SSM na primeira vez; lida também pela Lambda |
+| `NEW_RELIC_LICENSE_KEY`, `SMTP_*` | Secrets do GitHub (opcionais) |
+
+## Operação
 
 ```bash
-kubectl get all -n oficina
+CLUSTER=$(aws ssm get-parameter --name /oficina/prod/eks/cluster_name --query Parameter.Value --output text)
+aws eks update-kubeconfig --region us-east-1 --name "$CLUSTER"
+
+kubectl get pods,svc,hpa -n oficina
+kubectl logs -n oficina -l app=oficina-os --tail=50 -f
+kubectl rollout undo deployment/oficina-os -n oficina
+
+kubectl port-forward -n plataforma svc/rabbitmq 15672
 ```
 
----
+O painel do RabbitMQ (http://localhost:15672, usuário `oficina`, senha em `/oficina/<env>/mensageria/rabbitmq_password`) mostra as filas `os.saga`, `execucao.comandos`, `billing.comandos` e as respectivas `.retry` e `.dlq`.
 
-## ConfigMap
+## Capacidade
 
-**Arquivo:** `k8s/configmap.yaml`
-
-Armazena variáveis de ambiente **não-sensíveis**. Pode ser inspecionado livremente:
-
-| Chave           | Valor                                    |
-|-----------------|------------------------------------------|
-| `NODE_ENV`      | `production`                             |
-| `PORT`          | `3000`                                   |
-| `HOST`          | `0.0.0.0`                                |
-| `POSTGRES_DB`   | `oficina_db`                             |
-| `POSTGRES_USER` | `oficina`                                |
-| `JWT_EXPIRES_IN`| `8h`                                     |
-| `BCRYPT_ROUNDS` | `12`                                     |
-| `SMTP_PORT`     | `587`                                    |
-| `SMTP_FROM`     | `Oficina Mecânica <noreply@oficina.com>` |
-
-```bash
-kubectl describe configmap oficina-config -n oficina
-```
-
----
-
-## Secret
-
-**Arquivo:** `k8s/secret.example.yaml` (template de referência — nunca commitar valores reais)
-
-Armazena credenciais sensíveis em Base64. **Nunca é criado pelo `kubectl apply` automático** — deve ser criado manualmente ou pelo Terraform/CI/CD.
-
-| Chave               | Descrição                          |
-|---------------------|------------------------------------|
-| `POSTGRES_PASSWORD` | Senha do PostgreSQL                |
-| `JWT_SECRET`        | Chave de assinatura dos tokens JWT |
-| `JWT_CLIENTE_SECRET`        | Chave de assinatura dos tokens JWT |
-| `SMTP_HOST`         | Host do servidor SMTP (opcional)   |
-| `SMTP_USER`         | Usuário SMTP (opcional)            |
-| `SMTP_PASS`         | Senha SMTP (opcional)              |
-
-**Criação manual (local):**
-```bash
-kubectl create secret generic oficina-secret \
-  --namespace=oficina \
-  --from-literal=POSTGRES_PASSWORD="sua_senha" \
-  --from-literal=JWT_SECRET="sua_chave_jwt_minimo_32_chars" \
-  --from-literal=JWT_CLIENTE_SECRET="sua_chave_jwt_minimo_32_chars" \
-  --from-literal=SMTP_HOST="" \
-  --from-literal=SMTP_USER="" \
-  --from-literal=SMTP_PASS=""
-```
-
-> O Terraform cria o Secret automaticamente ao provisionar o cluster local (valores lidos do `terraform.tfvars`).
-
----
-
-## PostgreSQL
-
-**Arquivos:** `k8s/postgres-pvc.yaml`, `k8s/postgres-deployment.yaml`, `k8s/postgres-service.yaml`
-
-### PVC (PersistentVolumeClaim)
-
-Volume de 1 Gi com acesso `ReadWriteOnce`. Garante que os dados do banco sobrevivam a reinicializações do pod.
-
-### Deployment
-
-- Imagem: `postgres:16-alpine`
-- Variáveis não-sensíveis vêm do **ConfigMap**; senha vem do **Secret**
-- Dados persistidos em `/var/lib/postgresql/data` via PVC
-
-### Probes (3 camadas)
-
-| Probe            | Objetivo                                              | Configuração          |
-|------------------|-------------------------------------------------------|-----------------------|
-| `startupProbe`   | Aguarda o banco inicializar antes de tudo             | 30 × 5s = até 150s   |
-| `readinessProbe` | Remove pod do Service se banco não responder          | a cada 10s            |
-| `livenessProbe`  | Reinicia container se o processo travar definitivamente | a cada 30s          |
-
-Comando de verificação: `pg_isready -U oficina -d oficina_db`
-
-### Service
-
-Tipo `ClusterIP` — visível apenas dentro do cluster, acessível pelos pods da API pelo hostname `postgres:5432`.
-
----
-
-## API
-
-**Arquivos:** `k8s/api-deployment.yaml`, `k8s/api-service.yaml`, `k8s/hpa.yaml`
-
-### Deployment
-
-- **Réplicas:** 2 (mínimo garantido)
-- **Imagem:** substituída dinamicamente via `sed` — o arquivo fonte contém o placeholder `DOCKER_IMAGE_PLACEHOLDER`
-- **`imagePullPolicy: IfNotPresent`** — usa imagem local se já existir no nó (essencial para ambiente Kind)
-- **`DATABASE_URL`** é montada via expansão de variáveis do Kubernetes: `postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)`
-
-### Recursos por pod
-
-| Tipo    | CPU     | Memória |
-|---------|---------|---------|
-| Request | 100m    | 128Mi   |
-| Limit   | 500m    | 512Mi   |
-
-### Probes (3 camadas)
-
-| Probe            | Endpoint       | Objetivo                                            | Configuração        |
-|------------------|----------------|-----------------------------------------------------|---------------------|
-| `startupProbe`   | `GET /health`  | Aguarda app inicializar (migrações, conexão com DB) | 30 × 5s = até 150s  |
-| `readinessProbe` | `GET /health`  | Remove pod do balanceamento se não responder        | a cada 10s          |
-| `livenessProbe`  | `GET /health`  | Reinicia se travar após startup bem-sucedida        | a cada 30s          |
-
-> A `startupProbe` desabilita as outras duas enquanto o app está inicializando. Isso evita reinicializações prematuras durante migrações do banco.
-
-### Service
-
-Tipo `NodePort` na porta `30000`. O Kind mapeia essa porta para o host, tornando a API acessível em `http://localhost:30000`.
-
-### HPA (Horizontal Pod Autoscaler)
-
-Escalonamento automático baseado em uso de recursos:
-
-| Métrica   | Gatilho | Mínimo | Máximo |
-|-----------|---------|--------|--------|
-| CPU       | 70%     | 2      | 10     |
-| Memória   | 80%     | 2      | 10     |
-
-```bash
-kubectl get hpa -n oficina
-kubectl describe hpa oficina-api-hpa -n oficina
-```
-
----
-
-## Comandos úteis
-
-```bash
-# Aplicar todos os manifests (via script)
-./scripts/k8s-deploy.sh oficina:local
-
-# Verificar estado dos pods
-kubectl get pods -n oficina
-kubectl get all -n oficina
-
-# Logs da API
-kubectl logs -n oficina -l app=oficina-api --tail=50 -f
-
-# Logs do PostgreSQL
-kubectl logs -n oficina -l app=postgres --tail=50
-
-# Descrever um pod com falha
-kubectl describe pod <nome-do-pod> -n oficina
-
-# Acompanhar rollout
-kubectl rollout status deployment/oficina-api -n oficina
-
-# Reverter deploy com problema
-kubectl rollout undo deployment/oficina-api -n oficina
-
-# Testar endpoint
-curl http://localhost:30000/health
-```
+Com os três serviços, Redis, MongoDB, RabbitMQ e os agentes do New Relic, o cluster passa de 25 pods. Por isso o node group foi para `t3.medium` (17 pods por nó), detalhado no README do oficina-infra-k8s.

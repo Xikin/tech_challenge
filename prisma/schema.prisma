@@ -57,58 +57,29 @@ model Veiculo {
   @@map("veiculos")
 }
 
-model Servico {
-  id            String          @id @default(uuid())
-  nome          String
-  descricao     String?
-  preco         Decimal         @db.Decimal(10, 2)
-  tempoPrevisto Int?            @map("tempo_previsto")
-  ativo         Boolean         @default(true)
-  criadoEm      DateTime        @default(now()) @map("criado_em")
-  atualizadoEm  DateTime        @updatedAt @map("atualizado_em")
-  itensOS       ItemServicoOS[]
-
-  @@index([ativo])
-  @@map("servicos")
-}
-
-model Peca {
-  id           String       @id @default(uuid())
-  nome         String
-  descricao    String?
-  preco        Decimal      @db.Decimal(10, 2)
-  quantidade   Int          @default(0)
-  estoqueMin   Int          @default(0) @map("estoque_min")
-  unidade      String       @default("un")
-  ativo        Boolean      @default(true)
-  criadoEm     DateTime     @default(now()) @map("criado_em")
-  atualizadoEm DateTime     @updatedAt @map("atualizado_em")
-  itensPecaOS  ItemPecaOS[]
-
-  @@index([ativo])
-  @@map("pecas")
-}
-
 model OrdemServico {
-  id           String          @id @default(uuid())
-  numero       Int             @unique @default(autoincrement())
-  clienteId    String          @map("cliente_id")
-  veiculoId    String          @map("veiculo_id")
-  status       StatusOS        @default(RECEBIDA)
-  descricao    String?
-  observacoes  String?
-  valorTotal   Decimal         @default(0) @map("valor_total") @db.Decimal(10, 2)
-  aprovadoEm   DateTime?       @map("aprovado_em")
-  iniciadoEm   DateTime?       @map("iniciado_em")
-  finalizadoEm DateTime?       @map("finalizado_em")
-  entregueEm   DateTime?       @map("entregue_em")
-  criadoEm     DateTime        @default(now()) @map("criado_em")
-  atualizadoEm DateTime        @updatedAt @map("atualizado_em")
-  cliente      Cliente         @relation(fields: [clienteId], references: [id])
-  veiculo      Veiculo         @relation(fields: [veiculoId], references: [id])
-  servicos     ItemServicoOS[]
-  pecas        ItemPecaOS[]
-  historico    HistoricoOS[]
+  id            String        @id @default(uuid())
+  numero        Int           @unique @default(autoincrement())
+  clienteId     String        @map("cliente_id")
+  veiculoId     String        @map("veiculo_id")
+  status        StatusOS      @default(RECEBIDA)
+  descricao     String?
+  observacoes   String?
+  valorTotal    Decimal       @default(0) @map("valor_total") @db.Decimal(10, 2)
+  orcamentoId   String?       @map("orcamento_id")
+  linkPagamento String?       @map("link_pagamento")
+  aprovadoEm    DateTime?     @map("aprovado_em")
+  pagoEm        DateTime?     @map("pago_em")
+  iniciadoEm    DateTime?     @map("iniciado_em")
+  finalizadoEm  DateTime?     @map("finalizado_em")
+  entregueEm    DateTime?     @map("entregue_em")
+  criadoEm      DateTime      @default(now()) @map("criado_em")
+  atualizadoEm  DateTime      @updatedAt @map("atualizado_em")
+  cliente       Cliente       @relation(fields: [clienteId], references: [id])
+  veiculo       Veiculo       @relation(fields: [veiculoId], references: [id])
+  itens         ItemOS[]
+  historico     HistoricoOS[]
+  saga          SagaOS?
 
   @@index([status])
   @@index([clienteId])
@@ -117,32 +88,18 @@ model OrdemServico {
   @@map("ordens_servico")
 }
 
-model ItemServicoOS {
-  id        String       @id @default(uuid())
-  ordemId   String       @map("ordem_id")
-  servicoId String       @map("servico_id")
-  preco     Decimal      @db.Decimal(10, 2)
-  tempoReal Int?         @map("tempo_real")
-  ordem     OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
-  servico   Servico      @relation(fields: [servicoId], references: [id])
+model ItemOS {
+  id            String       @id @default(uuid())
+  ordemId       String       @map("ordem_id")
+  tipo          TipoItemOS
+  referenciaId  String       @map("referencia_id")
+  nome          String
+  quantidade    Int
+  precoUnitario Decimal      @map("preco_unitario") @db.Decimal(10, 2)
+  ordem         OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
 
   @@index([ordemId])
-  @@index([servicoId])
-  @@map("itens_servico_os")
-}
-
-model ItemPecaOS {
-  id         String       @id @default(uuid())
-  ordemId    String       @map("ordem_id")
-  pecaId     String       @map("peca_id")
-  quantidade Int
-  preco      Decimal      @db.Decimal(10, 2)
-  ordem      OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
-  peca       Peca         @relation(fields: [pecaId], references: [id])
-
-  @@index([ordemId])
-  @@index([pecaId])
-  @@map("itens_peca_os")
+  @@map("itens_os")
 }
 
 model HistoricoOS {
@@ -173,8 +130,89 @@ enum StatusOS {
   RECEBIDA
   EM_DIAGNOSTICO
   AGUARDANDO_APROVACAO
+  AGUARDANDO_PAGAMENTO
+  AGUARDANDO_EXECUCAO
   EM_EXECUCAO
   FINALIZADA
   ENTREGUE
   CANCELADA
+}
+
+enum TipoItemOS {
+  SERVICO
+  PECA
+}
+
+model SagaOS {
+  id                    String       @id @default(uuid())
+  ordemId               String       @unique @map("ordem_id")
+  etapa                 EtapaSaga
+  status                StatusSaga   @default(EM_ANDAMENTO)
+  compensacoesPendentes String[]     @map("compensacoes_pendentes")
+  participantes         String[]
+  motivoFalha           String?      @map("motivo_falha")
+  versao                Int          @default(0)
+  criadoEm              DateTime     @default(now()) @map("criado_em")
+  atualizadoEm          DateTime     @updatedAt @map("atualizado_em")
+  ordem                 OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
+  passos                PassoSaga[]
+
+  @@index([status, etapa])
+  @@map("sagas_os")
+}
+
+model PassoSaga {
+  id         String       @id @default(uuid())
+  sagaId     String       @map("saga_id")
+  direcao    DirecaoPasso
+  tipo       String
+  mensagemId String       @map("mensagem_id")
+  detalhe    String?
+  criadoEm   DateTime     @default(now()) @map("criado_em")
+  saga       SagaOS       @relation(fields: [sagaId], references: [id], onDelete: Cascade)
+
+  @@index([sagaId, criadoEm])
+  @@map("passos_saga")
+}
+
+model Outbox {
+  id          String    @id
+  routingKey  String    @map("routing_key")
+  payload     Json
+  cabecalhos  Json      @default("{}")
+  tentativas  Int       @default(0)
+  criadoEm    DateTime  @default(now()) @map("criado_em")
+  publicadoEm DateTime? @map("publicado_em")
+
+  @@index([publicadoEm, criadoEm])
+  @@map("outbox")
+}
+
+model MensagemProcessada {
+  id           String   @id
+  consumidor   String
+  processadaEm DateTime @default(now()) @map("processada_em")
+
+  @@map("mensagens_processadas")
+}
+
+enum EtapaSaga {
+  DIAGNOSTICO
+  ORCAMENTO
+  APROVACAO
+  PAGAMENTO
+  EXECUCAO
+  CONCLUIDA
+}
+
+enum StatusSaga {
+  EM_ANDAMENTO
+  CONCLUIDA
+  COMPENSANDO
+  COMPENSADA
+}
+
+enum DirecaoPasso {
+  ENVIADA
+  RECEBIDA
 }

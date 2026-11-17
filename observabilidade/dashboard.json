@@ -1,6 +1,6 @@
 {
   "name": "Oficina Mecânica — Operação",
-  "description": "Painéis exigidos na Fase 3: volume diário de OS, tempo médio por status, erros de integração, latência das APIs, recursos do Kubernetes e uptime. Substitua ACCOUNT_ID_AQUI pelo Account ID numérico antes de importar.",
+  "description": "Painéis exigidos na Fase 3: volume diário de OS, tempo médio por status, erros de integração, latência das APIs, recursos do Kubernetes e uptime. Substitua 0 pelo Account ID numérico antes de importar.",
   "permissions": "PUBLIC_READ_WRITE",
   "pages": [
     {
@@ -9,104 +9,160 @@
       "widgets": [
         {
           "title": "Volume diário de ordens de serviço",
-          "layout": { "column": 1, "row": 1, "width": 8, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 8,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'os_criada' TIMESERIES 1 day SINCE 30 days ago"
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'os_criada' TIMESERIES 1 day SINCE 30 days ago"
               }
             ]
           }
         },
         {
           "title": "OS abertas (7 dias)",
-          "layout": { "column": 9, "row": 1, "width": 4, "height": 3 },
-          "visualization": { "id": "viz.billboard" },
+          "layout": {
+            "column": 9,
+            "row": 1,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'os_criada' SINCE 7 days ago COMPARE WITH 7 days ago"
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'os_criada' SINCE 7 days ago COMPARE WITH 7 days ago"
               }
             ]
           }
         },
         {
           "title": "Tempo médio por status (horas)",
-          "layout": { "column": 1, "row": 4, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.bar" },
+          "layout": {
+            "column": 1,
+            "row": 4,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.bar"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT average(duracaoNoStatusAnteriorMs) / 3600000 AS 'Horas' FROM Log WHERE service = 'oficina-api' AND evento = 'os_status_alterado' FACET statusAnterior SINCE 30 days ago"
+                "query": "SELECT average(duracaoNoStatusAnteriorMs) / 3600000 AS 'Horas' FROM Log WHERE service = 'oficina-os' AND evento = 'os_status_alterado' FACET statusAnterior SINCE 30 days ago"
               }
             ]
           }
         },
         {
           "title": "Tempo por status ao longo do tempo",
-          "layout": { "column": 7, "row": 4, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 7,
+            "row": 4,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT average(duracaoNoStatusAnteriorMs) / 3600000 FROM Log WHERE service = 'oficina-api' AND evento = 'os_status_alterado' AND statusAnterior IN ('EM_DIAGNOSTICO', 'EM_EXECUCAO', 'FINALIZADA') FACET statusAnterior TIMESERIES 1 day SINCE 30 days ago"
+                "query": "SELECT average(duracaoNoStatusAnteriorMs) / 3600000 FROM Log WHERE service = 'oficina-os' AND evento = 'os_status_alterado' AND statusAnterior IN ('EM_DIAGNOSTICO', 'EM_EXECUCAO', 'FINALIZADA') FACET statusAnterior TIMESERIES 1 day SINCE 30 days ago"
               }
             ]
           }
         },
         {
           "title": "Percentis de duração por status (horas)",
-          "layout": { "column": 1, "row": 7, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.table" },
+          "layout": {
+            "column": 1,
+            "row": 7,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT percentile(duracaoNoStatusAnteriorMs / 3600000, 50, 90, 99) FROM Log WHERE service = 'oficina-api' AND evento = 'os_status_alterado' FACET statusAnterior SINCE 30 days ago"
+                "query": "SELECT percentile(duracaoNoStatusAnteriorMs / 3600000, 50, 90, 99) FROM Log WHERE service = 'oficina-os' AND evento = 'os_status_alterado' FACET statusAnterior SINCE 30 days ago"
               }
             ]
           }
         },
         {
           "title": "Transições de status (funil)",
-          "layout": { "column": 7, "row": 7, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.table" },
+          "layout": {
+            "column": 7,
+            "row": 7,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'os_status_alterado' FACET statusAnterior, statusNovo SINCE 30 days ago"
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'os_status_alterado' FACET statusAnterior, statusNovo SINCE 30 days ago"
               }
             ]
           }
         },
         {
           "title": "Falhas de integração",
-          "layout": { "column": 1, "row": 10, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 1,
+            "row": 10,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'falha_integracao' FACET integracao, operacao TIMESERIES 1 hour SINCE 24 hours ago"
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'falha_integracao' FACET integracao, operacao TIMESERIES 1 hour SINCE 24 hours ago"
               }
             ]
           }
         },
         {
           "title": "Últimas falhas de integração",
-          "layout": { "column": 7, "row": 10, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.table" },
+          "layout": {
+            "column": 7,
+            "row": 10,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT timestamp, integracao, operacao, numeroOS, erro, reqId FROM Log WHERE service = 'oficina-api' AND evento = 'falha_integracao' SINCE 24 hours ago LIMIT 50"
+                "query": "SELECT timestamp, integracao, operacao, numeroOS, erro, reqId FROM Log WHERE service = 'oficina-os' AND evento = 'falha_integracao' SINCE 24 hours ago LIMIT 50"
               }
             ]
           }
@@ -119,21 +175,35 @@
       "widgets": [
         {
           "title": "Latência da API (p50 / p95 / p99, ms)",
-          "layout": { "column": 1, "row": 1, "width": 8, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 8,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT percentile(duration, 50, 95, 99) * 1000 FROM Transaction WHERE appName = 'oficina-api' TIMESERIES SINCE 6 hours ago"
+                "query": "SELECT percentile(duration, 50, 95, 99) * 1000 FROM Transaction WHERE appName = 'oficina-os' TIMESERIES SINCE 6 hours ago"
               }
             ]
           }
         },
         {
           "title": "Status HTTP no gateway",
-          "layout": { "column": 9, "row": 1, "width": 4, "height": 3 },
-          "visualization": { "id": "viz.area" },
+          "layout": {
+            "column": 9,
+            "row": 1,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.area"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
@@ -145,21 +215,35 @@
         },
         {
           "title": "Rotas mais lentas",
-          "layout": { "column": 1, "row": 4, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.table" },
+          "layout": {
+            "column": 1,
+            "row": 4,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT average(duration) * 1000 AS 'ms médio', count(*) AS 'chamadas' FROM Transaction WHERE appName = 'oficina-api' FACET name SINCE 24 hours ago LIMIT 20"
+                "query": "SELECT average(duration) * 1000 AS 'ms médio', count(*) AS 'chamadas' FROM Transaction WHERE appName = 'oficina-os' FACET name SINCE 24 hours ago LIMIT 20"
               }
             ]
           }
         },
         {
           "title": "Latência no API Gateway por rota",
-          "layout": { "column": 7, "row": 4, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 7,
+            "row": 4,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
@@ -171,26 +255,40 @@
         },
         {
           "title": "Erros internos (5xx) por rota",
-          "layout": { "column": 1, "row": 7, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 1,
+            "row": 7,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'erro_interno' FACET rota TIMESERIES SINCE 24 hours ago"
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'erro_interno' FACET rota TIMESERIES SINCE 24 hours ago"
               }
             ]
           }
         },
         {
           "title": "Acessos negados pelo guard de autorização",
-          "layout": { "column": 7, "row": 7, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 7,
+            "row": 7,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'acesso_negado' FACET motivo TIMESERIES SINCE 24 hours ago"
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'acesso_negado' FACET motivo TIMESERIES SINCE 24 hours ago"
               }
             ]
           }
@@ -203,8 +301,15 @@
       "widgets": [
         {
           "title": "Autenticações por CPF (sucesso)",
-          "layout": { "column": 1, "row": 1, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
@@ -216,8 +321,15 @@
         },
         {
           "title": "Recusas de autenticação por motivo",
-          "layout": { "column": 7, "row": 1, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.pie" },
+          "layout": {
+            "column": 7,
+            "row": 1,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.pie"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
@@ -229,8 +341,15 @@
         },
         {
           "title": "Latência da Lambda (ms)",
-          "layout": { "column": 1, "row": 4, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 1,
+            "row": 4,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
@@ -242,8 +361,15 @@
         },
         {
           "title": "Erros na Lambda",
-          "layout": { "column": 7, "row": 4, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 7,
+            "row": 4,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
@@ -261,47 +387,75 @@
       "widgets": [
         {
           "title": "CPU dos pods da API (%)",
-          "layout": { "column": 1, "row": 1, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT average(cpuUsedCores / cpuLimitCores) * 100 AS 'CPU %' FROM K8sContainerSample WHERE containerName = 'oficina-api' TIMESERIES SINCE 3 hours ago"
+                "query": "SELECT average(cpuUsedCores / cpuLimitCores) * 100 AS 'CPU %' FROM K8sContainerSample WHERE containerName = 'oficina-os' TIMESERIES SINCE 3 hours ago"
               }
             ]
           }
         },
         {
           "title": "Memória por pod (MB)",
-          "layout": { "column": 7, "row": 1, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 7,
+            "row": 1,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT average(memoryWorkingSetBytes) / 1048576 AS 'MB' FROM K8sContainerSample WHERE containerName = 'oficina-api' FACET podName TIMESERIES SINCE 3 hours ago"
+                "query": "SELECT average(memoryWorkingSetBytes) / 1048576 AS 'MB' FROM K8sContainerSample WHERE containerName = 'oficina-os' FACET podName TIMESERIES SINCE 3 hours ago"
               }
             ]
           }
         },
         {
           "title": "Réplicas — HPA em ação",
-          "layout": { "column": 1, "row": 4, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 1,
+            "row": 4,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT latest(podsDesired), latest(podsReady) FROM K8sReplicasetSample WHERE deploymentName = 'oficina-api' TIMESERIES SINCE 3 hours ago"
+                "query": "SELECT latest(podsDesired), latest(podsReady) FROM K8sReplicasetSample WHERE deploymentName = 'oficina-os' TIMESERIES SINCE 3 hours ago"
               }
             ]
           }
         },
         {
           "title": "Utilização dos nós",
-          "layout": { "column": 7, "row": 4, "width": 6, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 7,
+            "row": 4,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
@@ -313,39 +467,264 @@
         },
         {
           "title": "Uptime (%)",
-          "layout": { "column": 1, "row": 7, "width": 4, "height": 3 },
-          "visualization": { "id": "viz.billboard" },
+          "layout": {
+            "column": 1,
+            "row": 7,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT percentage(count(*), WHERE result = 'SUCCESS') AS 'Uptime %' FROM SyntheticCheck WHERE monitorName = 'oficina-api-health' SINCE 7 days ago"
+                "query": "SELECT percentage(count(*), WHERE result = 'SUCCESS') AS 'Uptime %' FROM SyntheticCheck WHERE monitorName = 'oficina-os-health' SINCE 7 days ago"
               }
             ]
           }
         },
         {
           "title": "Readiness falhando (banco inacessível)",
-          "layout": { "column": 5, "row": 7, "width": 4, "height": 3 },
-          "visualization": { "id": "viz.line" },
+          "layout": {
+            "column": 5,
+            "row": 7,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-api' AND evento = 'readiness_falhou' FACET dependencia TIMESERIES SINCE 24 hours ago"
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'readiness_falhou' FACET dependencia TIMESERIES SINCE 24 hours ago"
               }
             ]
           }
         },
         {
           "title": "Reinícios de container",
-          "layout": { "column": 9, "row": 7, "width": 4, "height": 3 },
-          "visualization": { "id": "viz.table" },
+          "layout": {
+            "column": 9,
+            "row": 7,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
           "rawConfiguration": {
             "nrqlQueries": [
               {
                 "accountIds": [ACCOUNT_ID_AQUI],
-                "query": "SELECT latest(restartCount) FROM K8sContainerSample WHERE containerName = 'oficina-api' FACET podName SINCE 24 hours ago"
+                "query": "SELECT latest(restartCount) FROM K8sContainerSample WHERE containerName = 'oficina-os' FACET podName SINCE 24 hours ago"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saga e mensageria",
+      "description": "Fluxo da OS entre os três microsserviços: transições, compensações, retentativas e pagamentos",
+      "widgets": [
+        {
+          "title": "Transições da saga por evento",
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 8,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  ACCOUNT_ID_AQUI
+                ],
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-os' AND evento = 'saga_transicao' FACET tipoMensagem TIMESERIES SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Compensações por motivo",
+          "layout": {
+            "column": 9,
+            "row": 1,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  ACCOUNT_ID_AQUI
+                ],
+                "query": "SELECT count(*) FROM Log WHERE evento = 'saga_compensacao_iniciada' FACET motivo SINCE 7 days ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Mensagens que falharam (retentativa ou DLQ)",
+          "layout": {
+            "column": 1,
+            "row": 4,
+            "width": 6,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  ACCOUNT_ID_AQUI
+                ],
+                "query": "SELECT count(*) FROM Log WHERE service IN ('oficina-os','oficina-execucao','oficina-billing') AND evento = 'mensagem_falhou' FACET service, destino TIMESERIES SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Eventos adiados por chegarem antes da hora",
+          "layout": {
+            "column": 7,
+            "row": 4,
+            "width": 3,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  ACCOUNT_ID_AQUI
+                ],
+                "query": "SELECT count(*) FROM Log WHERE evento = 'saga_evento_adiado' SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Mensagens hoje na fila de mortas",
+          "layout": {
+            "column": 10,
+            "row": 4,
+            "width": 3,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  ACCOUNT_ID_AQUI
+                ],
+                "query": "SELECT count(*) FROM Log WHERE service IN ('oficina-os','oficina-execucao','oficina-billing') AND evento = 'mensagem_falhou' AND destino LIKE '%.dlq' SINCE today"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Desfecho dos pagamentos",
+          "layout": {
+            "column": 1,
+            "row": 7,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.pie"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  ACCOUNT_ID_AQUI
+                ],
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-billing' AND evento IN ('pagamento_confirmado', 'pagamento_recusado', 'pagamento_estornado', 'pagamento_excedente_estornado') FACET evento SINCE 7 days ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Fila do mecânico — transições",
+          "layout": {
+            "column": 5,
+            "row": 7,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  ACCOUNT_ID_AQUI
+                ],
+                "query": "SELECT count(*) FROM Log WHERE service = 'oficina-execucao' AND evento = 'execucao_status_alterado' FACET statusNovo SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Consumo de mensagens por fila e tipo",
+          "layout": {
+            "column": 9,
+            "row": 7,
+            "width": 4,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  ACCOUNT_ID_AQUI
+                ],
+                "query": "SELECT count(*) AS 'mensagens', average(duration) * 1000 AS 'ms médio' FROM Transaction WHERE appName IN ('oficina-os','oficina-execucao','oficina-billing') AND name LIKE 'OtherTransaction/RabbitMQ/%' FACET appName, name SINCE 1 day ago"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Latência p95 por serviço (ms)",
+          "layout": {
+            "column": 1,
+            "row": 10,
+            "width": 12,
+            "height": 3
+          },
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  ACCOUNT_ID_AQUI
+                ],
+                "query": "SELECT percentile(duration, 95) * 1000 FROM Transaction WHERE appName IN ('oficina-os','oficina-execucao','oficina-billing') AND transactionType = 'Web' FACET appName TIMESERIES SINCE 1 day ago"
               }
             ]
           }

@@ -1,21 +1,30 @@
 import { Prisma, StatusOS } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
+import { enfileirarNoOutbox } from './prisma-outbox';
+import { marcosDoStatus } from '../../../domain/ordens/marcos-de-status';
 import type {
   IOrdemRepository,
   ListarOrdensParams,
   CriarOrdemData,
-  AvancarStatusData,
-  ReprovarOrdemData,
-  CancelarOrdemData,
-  AdicionarItensData,
+  InicioSaga,
+  MudancaDeStatusData,
+  OrdemRecord,
 } from '../../../domain/repositories/ordens.repository.interface';
 
 const includeCompleto = {
   cliente: { select: { id: true, nome: true, cpfCnpj: true, email: true, telefone: true } },
   veiculo: true,
-  servicos: { include: { servico: true } },
-  pecas: { include: { peca: true } },
+  itens: { orderBy: { tipo: 'asc' as const } },
   historico: { orderBy: { criadoEm: 'asc' as const } },
+  saga: {
+    select: {
+      id: true,
+      etapa: true,
+      status: true,
+      motivoFalha: true,
+      compensacoesPendentes: true,
+    },
+  },
 } satisfies Prisma.OrdemServicoInclude;
 
 type DecimalValue = { toNumber(): number } | number;
@@ -25,25 +34,12 @@ function toNumber(value: DecimalValue): number {
 }
 
 function mapOrdemCompleta<
-  T extends {
-    valorTotal: DecimalValue;
-    servicos: { preco: DecimalValue; servico: { preco: DecimalValue } }[];
-    pecas: { preco: DecimalValue; peca: { preco: DecimalValue } }[];
-  },
+  T extends { valorTotal: DecimalValue; itens: { precoUnitario: DecimalValue }[] },
 >(ordem: T) {
   return {
     ...ordem,
     valorTotal: toNumber(ordem.valorTotal),
-    servicos: ordem.servicos.map((s) => ({
-      ...s,
-      preco: toNumber(s.preco),
-      servico: { ...s.servico, preco: toNumber(s.servico.preco) },
-    })),
-    pecas: ordem.pecas.map((p) => ({
-      ...p,
-      preco: toNumber(p.preco),
-      peca: { ...p.peca, preco: toNumber(p.peca.preco) },
-    })),
+    itens: ordem.itens.map((i) => ({ ...i, precoUnitario: toNumber(i.precoUnitario) })),
   };
 }
 
@@ -51,20 +47,22 @@ function mapValorTotal<T extends { valorTotal: DecimalValue }>(ordem: T) {
   return { ...ordem, valorTotal: toNumber(ordem.valorTotal) };
 }
 
-const STATUS_PRIORITY: Record<string, number> = {
+const PRIORIDADE_NA_LISTAGEM: Record<string, number> = {
   EM_EXECUCAO: 1,
-  AGUARDANDO_APROVACAO: 2,
-  EM_DIAGNOSTICO: 3,
-  RECEBIDA: 4,
-  CANCELADA: 5,
-  FINALIZADA: 6,
-  ENTREGUE: 7,
+  AGUARDANDO_EXECUCAO: 2,
+  AGUARDANDO_PAGAMENTO: 3,
+  AGUARDANDO_APROVACAO: 4,
+  EM_DIAGNOSTICO: 5,
+  RECEBIDA: 6,
+  CANCELADA: 7,
+  FINALIZADA: 8,
+  ENTREGUE: 9,
 };
 
 export class PrismaOrdemRepository implements IOrdemRepository {
   async buscarPorId(id: string) {
     const ordem = await prisma.ordemServico.findUnique({ where: { id }, include: includeCompleto });
-    return ordem ? mapOrdemCompleta(ordem) : null;
+    return ordem ? (mapOrdemCompleta(ordem) as OrdemRecord) : null;
   }
 
   async buscarPorNumero(numero: number) {
@@ -72,7 +70,7 @@ export class PrismaOrdemRepository implements IOrdemRepository {
       where: { numero },
       include: includeCompleto,
     });
-    return ordem ? mapOrdemCompleta(ordem) : null;
+    return ordem ? (mapOrdemCompleta(ordem) as OrdemRecord) : null;
   }
 
   async buscarStatusPublico(numero: number, cpfCnpj: string) {
@@ -83,25 +81,25 @@ export class PrismaOrdemRepository implements IOrdemRepository {
         numero: true,
         status: true,
         valorTotal: true,
+        linkPagamento: true,
         criadoEm: true,
         aprovadoEm: true,
+        pagoEm: true,
         iniciadoEm: true,
         finalizadoEm: true,
         entregueEm: true,
         veiculo: { select: { placa: true, marca: true, modelo: true } },
-        servicos: { select: { servico: { select: { nome: true } }, preco: true } },
+        itens: {
+          orderBy: { tipo: 'asc' },
+          select: { tipo: true, nome: true, quantidade: true, precoUnitario: true },
+        },
         historico: {
           orderBy: { criadoEm: 'asc' },
           select: { statusNovo: true, observacao: true, criadoEm: true },
         },
       },
     });
-    if (!ordem) return null;
-    return {
-      ...ordem,
-      valorTotal: toNumber(ordem.valorTotal),
-      servicos: ordem.servicos.map((s) => ({ ...s, preco: toNumber(s.preco) })),
-    };
+    return ordem ? mapOrdemCompleta(ordem) : null;
   }
 
   async listar(params: ListarOrdensParams) {
@@ -127,7 +125,7 @@ export class PrismaOrdemRepository implements IOrdemRepository {
         include: {
           cliente: { select: { id: true, nome: true, cpfCnpj: true } },
           veiculo: { select: { id: true, placa: true, marca: true, modelo: true } },
-          _count: { select: { servicos: true, pecas: true } },
+          _count: { select: { itens: true } },
         },
       }),
       prisma.ordemServico.count({ where }),
@@ -135,45 +133,61 @@ export class PrismaOrdemRepository implements IOrdemRepository {
 
     const ordenadas = todasOrdens.sort(
       (a, b) =>
-        (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99) ||
+        (PRIORIDADE_NA_LISTAGEM[a.status] ?? 99) - (PRIORIDADE_NA_LISTAGEM[b.status] ?? 99) ||
         a.criadoEm.getTime() - b.criadoEm.getTime(),
     );
 
     return { data: ordenadas.slice(skip, skip + limit).map(mapValorTotal), total };
   }
 
-  async criar(dados: CriarOrdemData) {
+  async criarComSaga(dados: CriarOrdemData, saga: InicioSaga) {
     return prisma.$transaction(async (tx) => {
-      const ordem = await tx.ordemServico.create({
+      const criada = await tx.ordemServico.create({
         data: {
           clienteId: dados.clienteId,
           veiculoId: dados.veiculoId,
           descricao: dados.descricao,
           observacoes: dados.observacoes,
-          valorTotal: dados.valorTotal,
-          servicos: {
-            create: dados.servicos.map((s) => ({ servicoId: s.servicoId, preco: s.preco })),
-          },
-          pecas: {
-            create: dados.pecas.map((p) => ({
-              pecaId: p.pecaId,
-              quantidade: p.quantidade,
-              preco: p.preco,
-            })),
-          },
-          historico: {
-            create: { statusNovo: StatusOS.RECEBIDA, observacao: 'Ordem de serviço criada' },
-          },
+          historico: { create: { statusNovo: StatusOS.RECEBIDA, observacao: saga.observacao } },
         },
         include: includeCompleto,
       });
-      for (const p of dados.pecas) {
-        await tx.peca.update({
-          where: { id: p.pecaId },
-          data: { quantidade: { decrement: p.quantidade } },
+
+      const sagaCriada = await tx.sagaOS.create({
+        data: {
+          ordemId: criada.id,
+          etapa: saga.estado.etapa,
+          status: saga.estado.status,
+          participantes: saga.estado.participantes,
+          compensacoesPendentes: saga.estado.compensacoesPendentes,
+          motivoFalha: saga.estado.motivoFalha,
+        },
+      });
+
+      const ordem = {
+        ...mapOrdemCompleta(criada),
+        saga: {
+          id: sagaCriada.id,
+          etapa: sagaCriada.etapa,
+          status: sagaCriada.status,
+          motivoFalha: sagaCriada.motivoFalha,
+          compensacoesPendentes: sagaCriada.compensacoesPendentes,
+        },
+      } as OrdemRecord;
+
+      const saidas = saga.montarMensagens(ordem, sagaCriada.id);
+      await enfileirarNoOutbox(tx, saidas);
+      if (saidas.length)
+        await tx.passoSaga.createMany({
+          data: saidas.map((s) => ({
+            sagaId: sagaCriada.id,
+            direcao: 'ENVIADA' as const,
+            tipo: s.mensagem.tipo,
+            mensagemId: s.mensagem.id,
+          })),
         });
-      }
-      return mapOrdemCompleta(ordem);
+
+      return ordem;
     });
   }
 
@@ -183,125 +197,24 @@ export class PrismaOrdemRepository implements IOrdemRepository {
       data,
       include: includeCompleto,
     });
-    return mapOrdemCompleta(ordem);
+    return mapOrdemCompleta(ordem) as OrdemRecord;
   }
 
-  async avancarStatus(dados: AvancarStatusData): Promise<void> {
+  async mudarStatus(dados: MudancaDeStatusData): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await tx.ordemServico.update({
         where: { id: dados.id },
-        data: { status: dados.novoStatus, ...dados.timestampExtra },
-      });
-      await tx.historicoOS.create({
-        data: {
-          ordemId: dados.id,
-          statusAnterior: dados.statusAtual,
-          statusNovo: dados.novoStatus,
-          observacao: dados.observacao,
-        },
-      });
-      if (dados.novoStatus === StatusOS.FINALIZADA && dados.tempoReal && dados.qtdServicos > 0) {
-        const tempoPorServico = Math.round(dados.tempoReal / dados.qtdServicos);
-        const itens = await tx.itemServicoOS.findMany({
-          where: { ordemId: dados.id },
-          select: { id: true },
-        });
-        for (const item of itens) {
-          await tx.itemServicoOS.update({
-            where: { id: item.id },
-            data: { tempoReal: tempoPorServico },
-          });
-        }
-      }
-    });
-  }
-
-  async reprovar(dados: ReprovarOrdemData): Promise<void> {
-    await prisma.$transaction(async (tx) => {
-      for (const p of dados.pecas) {
-        await tx.peca.update({
-          where: { id: p.pecaId },
-          data: { quantidade: { increment: p.quantidade } },
-        });
-      }
-      await tx.ordemServico.update({
-        where: { id: dados.id },
-        data: { status: StatusOS.EM_DIAGNOSTICO },
-      });
-      await tx.historicoOS.create({
-        data: {
-          ordemId: dados.id,
-          statusAnterior: StatusOS.AGUARDANDO_APROVACAO,
-          statusNovo: StatusOS.EM_DIAGNOSTICO,
-          observacao: dados.observacao ?? 'Cliente não aprovou o orçamento',
-        },
-      });
-    });
-  }
-
-  async cancelar(dados: CancelarOrdemData): Promise<void> {
-    await prisma.$transaction(async (tx) => {
-      for (const p of dados.pecas) {
-        await tx.peca.update({
-          where: { id: p.pecaId },
-          data: { quantidade: { increment: p.quantidade } },
-        });
-      }
-      await tx.ordemServico.update({
-        where: { id: dados.id },
-        data: { status: StatusOS.CANCELADA },
+        data: { status: dados.novoStatus, ...marcosDoStatus(dados.novoStatus) },
       });
       await tx.historicoOS.create({
         data: {
           ordemId: dados.id,
           statusAnterior: dados.statusAnterior,
-          statusNovo: StatusOS.CANCELADA,
-          observacao: dados.motivo ?? 'Ordem de serviço cancelada',
+          statusNovo: dados.novoStatus,
+          observacao: dados.observacao,
         },
       });
     });
-  }
-
-  async adicionarItens(dados: AdicionarItensData): Promise<void> {
-    await prisma.$transaction(async (tx) => {
-      if (dados.servicos.length) {
-        await tx.itemServicoOS.createMany({
-          data: dados.servicos.map((s) => ({
-            ordemId: dados.ordemId,
-            servicoId: s.servicoId,
-            preco: s.preco,
-          })),
-        });
-      }
-      if (dados.pecas.length) {
-        await tx.itemPecaOS.createMany({
-          data: dados.pecas.map((p) => ({
-            ordemId: dados.ordemId,
-            pecaId: p.pecaId,
-            quantidade: p.quantidade,
-            preco: p.preco,
-          })),
-        });
-        for (const p of dados.pecas) {
-          await tx.peca.update({
-            where: { id: p.pecaId },
-            data: { quantidade: { decrement: p.quantidade } },
-          });
-        }
-      }
-      await tx.ordemServico.update({
-        where: { id: dados.ordemId },
-        data: { valorTotal: dados.novoTotal },
-      });
-    });
-  }
-
-  async buscarServico(id: string) {
-    return prisma.servico.findFirst({ where: { id, ativo: true } });
-  }
-
-  async buscarPeca(id: string) {
-    return prisma.peca.findFirst({ where: { id, ativo: true } });
   }
 
   async buscarCliente(id: string) {
